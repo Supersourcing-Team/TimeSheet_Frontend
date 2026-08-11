@@ -1,0 +1,894 @@
+import React, { useState } from 'react';
+import { User, TimesheetEntry, Project } from '../../types';
+import {
+  Calendar as CalendarIcon,
+  ListFilter,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Download,
+  Search,
+  X,
+  Trash2,
+  Edit3,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Info,
+} from 'lucide-react';
+
+interface TimesheetsHistoryProps {
+  currentUser: User;
+  timesheets: TimesheetEntry[];
+  projects: Project[];
+  onDeleteTimesheet: (id: string) => void;
+  onUpdateTimesheet?: (entry: TimesheetEntry) => void;
+  onSubmitTimesheets?: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
+  onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
+  currentUser,
+  timesheets,
+  projects,
+  onDeleteTimesheet,
+  onUpdateTimesheet,
+  onSubmitTimesheets,
+  onShowToast,
+}) => {
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [selectedDateModal, setSelectedDateModal] = useState<string | null>(null);
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Edit modal states
+  const [editingEntry, setEditingEntry] = useState<TimesheetEntry | null>(null);
+  const [editProjectId, setEditProjectId] = useState<string>('');
+  const [editDate, setEditDate] = useState<string>('');
+  const [editHours, setEditHours] = useState<number>(8);
+  const [editBillableHours, setEditBillableHours] = useState<number>(8);
+  const [editCategory, setEditCategory] = useState<TimesheetEntry['category']>('Development');
+  const [editBillableDesc, setEditBillableDesc] = useState<string>('');
+  const [editNonBillableDesc, setEditNonBillableDesc] = useState<string>('');
+
+  // Add for date modal states
+  const [addingForDate, setAddingForDate] = useState<string | null>(null);
+  const [addProjectId, setAddProjectId] = useState<string>('');
+  const [addHours, setAddHours] = useState<number>(8);
+  const [addBillableHours, setAddBillableHours] = useState<number>(8);
+  const [addCategory, setAddCategory] = useState<TimesheetEntry['category']>('Development');
+  const [addBillableDesc, setAddBillableDesc] = useState<string>('');
+  const [addNonBillableDesc, setAddNonBillableDesc] = useState<string>('');
+
+  // Month navigation for Calendar (Aug 2025)
+  const [currentYear] = useState(2025);
+  const [currentMonth] = useState(7); // 0-indexed, 7 = August
+
+  const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
+
+  // Calendar logic
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
+
+  const calendarDays = [];
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const formattedDay = d < 10 ? `0${d}` : `${d}`;
+    const dateStr = `${currentYear}-08-${formattedDay}`;
+    calendarDays.push(dateStr);
+  }
+
+  // Filtered List View items
+  const filteredTimesheets = userTimesheets.filter((ts) => {
+    if (selectedProjectFilter !== 'all' && ts.projectId !== selectedProjectFilter) return false;
+    if (selectedStatusFilter !== 'all' && ts.status !== selectedStatusFilter) return false;
+    if (
+      searchQuery &&
+      !ts.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !ts.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const handleExportCSV = () => {
+    const headers = 'ID,Date,Project,Category,Hours,Billable,Status,BillableDescription,NonBillableDescription\n';
+    const rows = filteredTimesheets
+      .map(
+        (t) =>
+          `"${t.id}","${t.date}","${t.projectName}","${t.category}",${t.hours},${t.billableHours},"${t.status}","${(
+            t.billableDescription || t.description
+          ).replace(/"/g, '""')}","${(t.nonBillableDescription || '').replace(/"/g, '""')}"`
+      )
+      .join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Timesheets_History_${currentUser.name.replace(' ', '_')}.csv`;
+    a.click();
+    onShowToast('Exported to CSV', 'Your timesheet history log was downloaded successfully.', 'success');
+  };
+
+  const modalEntries = selectedDateModal
+    ? userTimesheets.filter((ts) => ts.date === selectedDateModal)
+    : [];
+
+  const handleStartEdit = (entry: TimesheetEntry) => {
+    setEditingEntry(entry);
+    setEditProjectId(entry.projectId);
+    setEditDate(entry.date);
+    setEditHours(entry.hours);
+    setEditBillableHours(entry.billableHours);
+    setEditCategory(entry.category || 'Development');
+    setEditBillableDesc(entry.billableDescription || entry.description || '');
+    setEditNonBillableDesc(entry.nonBillableDescription || '');
+  };
+
+  const handleSaveEditedEntry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEntry) return;
+
+    const targetProject = (projects || []).find((p) => p.id === editProjectId);
+    const projectName = targetProject ? targetProject.name : editingEntry.projectName;
+
+    const updated: TimesheetEntry = {
+      ...editingEntry,
+      projectId: editProjectId,
+      projectName: projectName,
+      date: editDate,
+      hours: Number(editHours),
+      billableHours: Number(editBillableHours),
+      nonBillableHours: Math.max(0, Number(editHours) - Number(editBillableHours)),
+      category: editCategory,
+      description: editBillableDesc || 'Updated work log',
+      billableDescription: editBillableDesc,
+      nonBillableDescription: editNonBillableDesc,
+      status: editingEntry.status === 'rejected' ? 'pending' : editingEntry.status,
+    };
+
+    if (onUpdateTimesheet) {
+      onUpdateTimesheet(updated);
+    }
+    onShowToast('Timesheet Updated', `Changes saved for ${projectName} on ${editDate}`, 'success');
+    setEditingEntry(null);
+  };
+
+  const handleStartAddForDate = (dateStr: string) => {
+    const userProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
+    const defaultProjId = userProjects[0]?.id || (projects && projects[0]?.id) || '';
+    setAddingForDate(dateStr);
+    setAddProjectId(defaultProjId);
+    setAddHours(8);
+    setAddBillableHours(8);
+    setAddCategory('Development');
+    setAddBillableDesc('');
+    setAddNonBillableDesc('');
+  };
+
+  const handleSaveNewEntryForDate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addingForDate || !addProjectId) return;
+
+    const targetProject = (projects || []).find((p) => p.id === addProjectId);
+    const projectName = targetProject ? targetProject.name : 'Project';
+
+    const newEntry: Omit<TimesheetEntry, 'id'> = {
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      projectId: addProjectId,
+      projectName: projectName,
+      date: addingForDate,
+      hours: Number(addHours),
+      billableHours: Number(addBillableHours),
+      nonBillableHours: Math.max(0, Number(addHours) - Number(addBillableHours)),
+      category: addCategory,
+      description: addBillableDesc || 'Daily work log',
+      billableDescription: addBillableDesc,
+      nonBillableDescription: addNonBillableDesc,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+    };
+
+    if (onSubmitTimesheets) {
+      onSubmitTimesheets([newEntry]);
+    }
+    onShowToast('Timesheet Logged', `Added ${addHours}h for ${projectName} on ${addingForDate}`, 'success');
+    setAddingForDate(null);
+  };
+
+  return (
+    <div className="space-y-6 text-slate-900 font-sans">
+      {/* Header & View Mode Switcher */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
+            <Clock className="w-3.5 h-3.5 text-blue-300" />
+            <span>Timesheet History & Calendar Logs</span>
+          </div>
+          <h2 className="text-2xl font-black tracking-tight">Timesheet History</h2>
+          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
+            Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Calendar vs List Toggle */}
+          <div className="bg-white/10 p-1 rounded-xl border border-white/20 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('calendar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-blue-200 hover:text-white'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Calendar View</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-blue-200 hover:text-white'
+              }`}
+            >
+              <ListFilter className="w-3.5 h-3.5" />
+              <span>List View</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition-all cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-300" />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* CALENDAR VIEW */}
+      {viewMode === 'calendar' && (
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <h3 className="text-base font-extrabold text-slate-900">August 2025</h3>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span>8.0h+ Complete</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <span>Partial (&lt;8h)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                <span>Off / Weekend</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div
+                key={day}
+                className="text-center text-[10px] font-bold text-slate-400 uppercase py-2"
+              >
+                {day}
+              </div>
+            ))}
+
+            {calendarDays.map((dateStr, idx) => {
+              if (!dateStr) {
+                return <div key={`empty-${idx}`} className="h-24 bg-slate-50/50 rounded-xl" />;
+              }
+
+              const dayEntries = userTimesheets.filter((t) => t.date === dateStr);
+              const dayTotalHours = dayEntries.reduce((acc, curr) => acc + curr.hours, 0);
+
+              const dateObj = new Date(dateStr);
+              const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+              return (
+                <button
+                  type="button"
+                  key={dateStr}
+                  onClick={() => setSelectedDateModal(dateStr)}
+                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-md cursor-pointer ${
+                    isWeekend
+                      ? 'bg-slate-50 border-slate-200/60 opacity-60'
+                      : dayTotalHours >= 8
+                      ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500'
+                      : dayTotalHours > 0
+                      ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500'
+                      : 'bg-white border-slate-200 hover:border-blue-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-extrabold text-slate-900">
+                      {dateStr.split('-')[2]}
+                    </span>
+                    {dayTotalHours > 0 && (
+                      <span
+                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                          dayTotalHours >= 8
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {dayTotalHours}h
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    {dayEntries.slice(0, 2).map((e) => (
+                      <div
+                        key={e.id}
+                        className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-100 flex items-center justify-between"
+                      >
+                        <span className="truncate">{e.projectName}</span>
+                        <span className="font-extrabold shrink-0 ml-1">{e.hours}h</span>
+                      </div>
+                    ))}
+                    {dayEntries.length > 2 && (
+                      <div className="text-[9px] text-slate-500 font-bold px-1">
+                        +{dayEntries.length - 2} more
+                      </div>
+                    )}
+                    {dayEntries.length === 0 && !isWeekend && (
+                      <span className="text-[10px] text-slate-400 italic">Click to log</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* LIST VIEW */}
+      {viewMode === 'list' && (
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+          {/* Filter Toolbar */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search descriptions..."
+                className="w-full bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              />
+            </div>
+
+            <select
+              value={selectedProjectFilter}
+              onChange={(e) => setSelectedProjectFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStatusFilter}
+              onChange={(e) => setSelectedStatusFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            >
+              <option value="all">All Approval Statuses</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending Approval</option>
+              <option value="draft">Draft</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <div className="text-right flex items-center justify-end text-xs text-slate-500 font-bold">
+              Total Found: {filteredTimesheets.length} entries
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] bg-slate-50">
+                  <th className="py-3 px-3">Date</th>
+                  <th className="py-3 px-3">Project</th>
+                  <th className="py-3 px-3">Billable Work</th>
+                  <th className="py-3 px-3">Non-Billable Work</th>
+                  <th className="py-3 px-3 text-right">Hours (Billable)</th>
+                  <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filteredTimesheets.map((ts) => (
+                  <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>
+                    <td className="py-3.5 px-3 font-bold text-blue-600">{ts.projectName}</td>
+                    <td className="py-3.5 px-3 text-slate-800 max-w-xs font-medium">
+                      {ts.billableDescription || ts.description}
+                    </td>
+                    <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
+                      {ts.nonBillableDescription || 'N/A'}
+                    </td>
+                    <td className="py-3.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
+                      {ts.hours}h <span className="text-emerald-600 font-semibold">({ts.billableHours}h billable)</span>
+                    </td>
+                    <td className="py-3.5 px-3 text-center">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
+                          ts.status === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : ts.status === 'pending'
+                            ? 'bg-amber-100 text-amber-800'
+                            : ts.status === 'rejected'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {ts.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(ts)}
+                          className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer"
+                          title="Edit timesheet entry"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeleteTimesheet(ts.id);
+                            onShowToast('Deleted Entry', 'Timesheet entry removed.', 'info');
+                          }}
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                          title="Delete log"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* DAY LOG DETAILS MODAL (When Date is Clicked in Calendar) */}
+      {selectedDateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Timesheet Logs • {selectedDateModal}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Total Logged:{' '}
+                  <span className="font-extrabold text-blue-600">
+                    {modalEntries.reduce((sum, e) => sum + e.hours, 0)} Hours
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDateModal(null)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+              {modalEntries.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-xs space-y-3">
+                  <p>No hours logged for this date.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const dateToLog = selectedDateModal;
+                      setSelectedDateModal(null);
+                      if (dateToLog) handleStartAddForDate(dateToLog);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Log Hours for {selectedDateModal}</span>
+                  </button>
+                </div>
+              ) : (
+                modalEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-blue-600">{entry.projectName}</span>
+                      <span className="font-extrabold text-slate-900">
+                        {entry.hours}h ({entry.billableHours}h billable)
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-[11px]">
+                      <p className="text-slate-800 font-semibold">
+                        <span className="text-emerald-700 font-bold">Billable Work: </span>
+                        {entry.billableDescription || entry.description}
+                      </p>
+                      {entry.nonBillableDescription && (
+                        <p className="text-slate-500 italic">
+                          <span className="font-bold text-slate-600">Non-Billable: </span>
+                          {entry.nonBillableDescription}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                      <span className="text-[10px] text-slate-600 font-bold bg-slate-200 px-2 py-0.5 rounded">
+                        {entry.category}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDateModal(null);
+                            handleStartEdit(entry);
+                          }}
+                          className="text-[11px] text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Edit & Update</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeleteTimesheet(entry.id);
+                            onShowToast('Removed', 'Log entry deleted.', 'info');
+                          }}
+                          className="text-[11px] text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              {modalEntries.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dateToLog = selectedDateModal;
+                    setSelectedDateModal(null);
+                    handleStartAddForDate(dateToLog);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add Another Entry</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSelectedDateModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs cursor-pointer ml-auto"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TIMESHEET MODAL */}
+      {editingEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-blue-600" />
+                  <span>Edit Timesheet Entry</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Update your daily logged work hours and descriptions.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingEntry(null)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedEntry} className="space-y-4 text-xs font-medium">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Project</label>
+                  <select
+                    value={editProjectId}
+                    onChange={(e) => setEditProjectId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Log Date</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Category</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    <option value="Development">Development</option>
+                    <option value="Design">Design</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Code Review">Code Review</option>
+                    <option value="Testing">Testing</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="DevOps">DevOps</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Total Hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="24"
+                    value={editHours}
+                    onChange={(e) => setEditHours(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Billable Hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max={editHours}
+                    value={editBillableHours}
+                    onChange={(e) => setEditBillableHours(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Billable Work Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={editBillableDesc}
+                  onChange={(e) => setEditBillableDesc(e.target.value)}
+                  placeholder="Describe billable deliverables completed..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Non-Billable Work Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={editNonBillableDesc}
+                  onChange={(e) => setEditNonBillableDesc(e.target.value)}
+                  placeholder="e.g. Internal syncs, administrative setup..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingEntry(null)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 font-extrabold rounded-xl shadow-md shadow-blue-600/20 cursor-pointer"
+                >
+                  Update & Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD TIMESHEET FOR CLICKED DATE MODAL */}
+      {addingForDate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-blue-600" />
+                  <span>Log Hours • {addingForDate}</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Add a new timesheet entry for this specific date.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddingForDate(null)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewEntryForDate} className="space-y-4 text-xs font-medium">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Select Project</label>
+                <select
+                  value={addProjectId}
+                  onChange={(e) => setAddProjectId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                >
+                  <option value="">-- Choose Project --</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.client})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Category</label>
+                  <select
+                    value={addCategory}
+                    onChange={(e) => setAddCategory(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    <option value="Development">Development</option>
+                    <option value="Design">Design</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Code Review">Code Review</option>
+                    <option value="Testing">Testing</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="DevOps">DevOps</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Total Hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="24"
+                    value={addHours}
+                    onChange={(e) => setAddHours(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Billable Hours</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max={addHours}
+                    value={addBillableHours}
+                    onChange={(e) => setAddBillableHours(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Billable Work Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={addBillableDesc}
+                  onChange={(e) => setAddBillableDesc(e.target.value)}
+                  placeholder="Describe billable deliverables completed..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Non-Billable Work Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={addNonBillableDesc}
+                  onChange={(e) => setAddNonBillableDesc(e.target.value)}
+                  placeholder="e.g. Team standup, documentation..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAddingForDate(null)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 font-extrabold rounded-xl shadow-md shadow-blue-600/20 cursor-pointer"
+                >
+                  Save Entry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
