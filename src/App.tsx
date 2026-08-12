@@ -1,4 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from './store';
+import { setPortalMode, logout } from './store/slices/authSlice';
+import {
+  useGetUsersQuery,
+  useGetProjectsQuery,
+  useGetTimesheetsQuery,
+  useGetLeaveRequestsQuery,
+  useGetMyLeaveRequestsQuery,
+  useGetWeekendRequestsQuery,
+  useGetHolidaysQuery,
+  useCreateHolidayMutation,
+  useUpdateHolidayMutation,
+  useDeleteHolidayMutation,
+  useCreateTimesheetsMutation,
+  useUpdateTimesheetStatusMutation,
+  useCreateLeaveRequestMutation,
+  useUpdateLeaveStatusMutation,
+} from './store/api/dataApi';
+import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
+import { setCredentials } from './store/slices/authSlice';
+
 import {
   User,
   Project,
@@ -12,23 +34,8 @@ import {
   ProjectTool,
   HolidayItem,
   LeaveTypeConfig,
-  WorkingCalendarConfig,
-  SystemSettingsConfig,
 } from './types';
-import {
-  CURRENT_USER,
-  INITIAL_USERS,
-  INITIAL_PROJECTS,
-  INITIAL_TIMESHEETS,
-  INITIAL_LEAVE_BALANCE,
-  INITIAL_LEAVE_REQUESTS,
-  INITIAL_WEEKEND_WORK,
-  INITIAL_ACTIVITIES,
-  INITIAL_HOLIDAYS,
-  INITIAL_LEAVE_TYPES,
-  INITIAL_WORKING_CALENDAR,
-  INITIAL_SETTINGS,
-} from './data/initialData';
+
 import { LoginPage } from './components/LoginPage';
 import { Header } from './components/Header';
 import { Sidebar, EmployeeTab, AdminTab, PMTab, ACManagerTab } from './components/Sidebar';
@@ -58,155 +65,66 @@ import { LeaveTypesManagement } from './components/admin/LeaveTypesManagement';
 import { WorkingCalendar } from './components/admin/WorkingCalendar';
 import { SettingsManagement } from './components/admin/SettingsManagement';
 
-function loadStorage<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return fallback;
-    const parsed = JSON.parse(saved);
-    if (parsed === null || parsed === undefined) return fallback;
-    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
-    return parsed as T;
-  } catch {
-    return fallback;
-  }
-}
-
-import { fetchCurrentUserApi, logoutApi } from './utils/api';
+// Initial mocks for things not yet in backend API endpoints
+import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    return loadStorage<User | null>('chronos_current_user', null);
+  const dispatch = useDispatch();
+  const { user: currentUser, portalMode } = useSelector((state: RootState) => state.auth);
+
+  // Attempt to restore session on load
+  const { data: userProfile, isLoading: isAuthLoading } = useGetCurrentUserQuery(undefined, {
+    skip: !!currentUser, // don't fetch if we already have the user in state
   });
 
-  const [portalMode, setPortalMode] = useState<ActivePortalMode>(() => {
-    if (currentUser) return currentUser.role as ActivePortalMode;
-    return 'employee';
-  });
-
-
-  // Automatically check & restore backend user session if access token exists
-  useEffect(() => {
-    const token = localStorage.getItem('chronos_access_token');
-    if (token) {
-      fetchCurrentUserApi(token)
-        .then((user) => {
-          setCurrentUser(user);
-          setPortalMode(user.role as ActivePortalMode);
-        })
-        .catch(() => {
-          // If token invalid/expired, clear token
-          localStorage.removeItem('chronos_access_token');
-          localStorage.removeItem('chronos_refresh_token');
-        });
+  // If user profile is successfully fetched, set the credentials
+  React.useEffect(() => {
+    if (userProfile && !currentUser) {
+      dispatch(setCredentials({ user: userProfile }));
     }
-  }, []);
+  }, [userProfile, currentUser, dispatch]);
 
+  // Local UI State
   const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>('my_dashboard');
   const [activePmTab, setActivePmTab] = useState<PMTab>('pm_dashboard');
   const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>('ac_dashboard');
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('admin_overview');
-
-  // Persistent States
-  const [users, setUsers] = useState<User[]>(() => {
-    return loadStorage('chronos_users', INITIAL_USERS);
-  });
-
-  const [projects, setProjects] = useState<Project[]>(() => {
-    return loadStorage('chronos_projects', INITIAL_PROJECTS);
-  });
-
-  const [timesheets, setTimesheets] = useState<TimesheetEntry[]>(() => {
-    return loadStorage('chronos_timesheets', INITIAL_TIMESHEETS);
-  });
-
-  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>(() => {
-    return loadStorage('chronos_leave_balance', INITIAL_LEAVE_BALANCE);
-  });
-
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(() => {
-    return loadStorage('chronos_leave_requests', INITIAL_LEAVE_REQUESTS);
-  });
-
-  const [weekendRequests, setWeekendRequests] = useState<WeekendWorkRequest[]>(() => {
-    return loadStorage('chronos_weekend_requests', INITIAL_WEEKEND_WORK);
-  });
-
-  const [activities, setActivities] = useState<ActivityLog[]>(() => {
-    return loadStorage('chronos_activities', INITIAL_ACTIVITIES);
-  });
-
-  const [holidays, setHolidays] = useState(() => {
-    return loadStorage('chronos_holidays', INITIAL_HOLIDAYS);
-  });
-
-  const [leaveTypes, setLeaveTypes] = useState(() => {
-    return loadStorage('chronos_leave_types', INITIAL_LEAVE_TYPES);
-  });
-
-  const [workingCalendar, setWorkingCalendar] = useState(() => {
-    return loadStorage('chronos_working_calendar', INITIAL_WORKING_CALENDAR);
-  });
-
-  const [settings, setSettings] = useState(() => {
-    return loadStorage('chronos_settings', INITIAL_SETTINGS);
-  });
-
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // LocalStorage Persistence Sync
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('chronos_current_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('chronos_current_user');
-    }
-  }, [currentUser]);
+  // RTK Queries (Skipped if not logged in)
+  const skip = !currentUser;
+  const isAdmin = currentUser?.role === 'admin';
+  const isPm = currentUser?.role === 'pm';
+  
+  const { data: users = [] } = useGetUsersQuery(undefined, { skip });
+  const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
+  const { data: timesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
+  
+  // Admins need all leave requests; others just need theirs
+  const { data: allLeaveRequests = [] } = useGetLeaveRequestsQuery(undefined, { skip: skip || !isAdmin });
+  const { data: myLeaveRequests = [] } = useGetMyLeaveRequestsQuery(undefined, { skip: skip || isAdmin });
+  const leaveRequests = isAdmin ? allLeaveRequests : myLeaveRequests;
 
-  useEffect(() => {
-    localStorage.setItem('chronos_users', JSON.stringify(users));
-  }, [users]);
+  const { data: weekendRequests = [] } = useGetWeekendRequestsQuery(undefined, { skip });
+  const { data: holidays = [] } = useGetHolidaysQuery(undefined, { skip });
 
-  useEffect(() => {
-    localStorage.setItem('chronos_projects', JSON.stringify(projects));
-  }, [projects]);
+  // Fallbacks for data not yet wired up
+  const [leaveBalance] = useState<LeaveBalance>(INITIAL_LEAVE_BALANCE);
+  const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
+  const [leaveTypes] = useState(INITIAL_LEAVE_TYPES);
+  const [workingCalendar] = useState(INITIAL_WORKING_CALENDAR);
+  const [settings] = useState(INITIAL_SETTINGS);
 
-  useEffect(() => {
-    localStorage.setItem('chronos_timesheets', JSON.stringify(timesheets));
-  }, [timesheets]);
+  // RTK Mutations
+  const [createTimesheets] = useCreateTimesheetsMutation();
+  const [updateTimesheetStatus] = useUpdateTimesheetStatusMutation();
+  const [createLeaveRequest] = useCreateLeaveRequestMutation();
+  const [updateLeaveStatus] = useUpdateLeaveStatusMutation();
+  const [createHoliday] = useCreateHolidayMutation();
+  const [updateHoliday] = useUpdateHolidayMutation();
+  const [deleteHoliday] = useDeleteHolidayMutation();
+  const [logoutApi] = useLogoutMutation();
 
-  useEffect(() => {
-    localStorage.setItem('chronos_leave_balance', JSON.stringify(leaveBalance));
-  }, [leaveBalance]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_leave_requests', JSON.stringify(leaveRequests));
-  }, [leaveRequests]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_weekend_requests', JSON.stringify(weekendRequests));
-  }, [weekendRequests]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_activities', JSON.stringify(activities));
-  }, [activities]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_holidays', JSON.stringify(holidays));
-  }, [holidays]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_leave_types', JSON.stringify(leaveTypes));
-  }, [leaveTypes]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_working_calendar', JSON.stringify(workingCalendar));
-  }, [workingCalendar]);
-
-  useEffect(() => {
-    localStorage.setItem('chronos_settings', JSON.stringify(settings));
-  }, [settings]);
-
-  // Toast Helper
   const showToast = (title: string, description?: string, type: 'success' | 'error' | 'info' = 'info') => {
     const newToast: ToastMessage = {
       id: Date.now().toString() + Math.random().toString().slice(2, 5),
@@ -224,376 +142,210 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Login handler
-  const handleSelectUserRole = (user: User) => {
-    setCurrentUser(user);
-    setPortalMode(user.role as ActivePortalMode);
-    showToast(`Logged in as ${user.name}`, `Role: ${user.role.replace('_', ' ').toUpperCase()}`, 'success');
-  };
-
-  const handleLogout = () => {
-    const token = localStorage.getItem('chronos_access_token');
-    if (token) {
-      logoutApi(token);
+  const handleLogout = async () => {
+    try {
+      await logoutApi().unwrap();
+    } catch (e) {
+      console.error('Logout API failed:', e);
+    } finally {
+      dispatch(logout());
     }
-    localStorage.removeItem('chronos_access_token');
-    localStorage.removeItem('chronos_refresh_token');
-    localStorage.removeItem('chronos_current_user');
-    setCurrentUser(null);
   };
 
-
-  // Handlers for Employee Actions
-  const handleTimesheetSubmit = (entries: Omit<TimesheetEntry, 'id'>[]) => {
-    if (!currentUser) return;
-    const newEntriesWithIds: TimesheetEntry[] = entries.map((e, index) => ({
-      ...e,
-      id: `ts-${Date.now()}-${index}`,
-    }));
-
-    setTimesheets((prev) => [...newEntriesWithIds, ...prev]);
-
-    const totalHours = entries.reduce((s, e) => s + e.hours, 0);
-    setActivities((prev) => [
-      {
-        id: `act-${Date.now()}`,
-        userName: currentUser.name,
-        userAvatar: currentUser.avatar,
-        action: 'Submitted timesheet log',
-        target: `${totalHours} hrs on ${entries[0]?.date}`,
-        timestamp: 'Just now',
-        type: 'timesheet',
-      },
-      ...prev,
-    ]);
+  // --- Timesheet Handlers ---
+  const handleTimesheetSubmit = async (entries: Omit<TimesheetEntry, 'id'>[]) => {
+    try {
+      await createTimesheets(entries).unwrap();
+      showToast('Success', 'Timesheets submitted', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to submit timesheets', 'error');
+    }
   };
 
   const handleDeleteTimesheet = (id: string) => {
-    setTimesheets((prev) => prev.filter((t) => t.id !== id));
+    showToast('Info', 'Delete not yet integrated with API', 'info');
   };
 
   const handleUpdateTimesheet = (updatedEntry: TimesheetEntry) => {
-    setTimesheets((prev) =>
-      prev.map((t) => (t.id === updatedEntry.id ? updatedEntry : t))
-    );
+    showToast('Info', 'Update not yet integrated with API', 'info');
   };
 
-  const handleApplyLeave = (req: Omit<LeaveRequest, 'id'>) => {
-    if (!currentUser) return;
-    const newReq: LeaveRequest = {
-      ...req,
-      id: `lv-${Date.now()}`,
-    };
-    setLeaveRequests((prev) => [newReq, ...prev]);
+  const handleApproveTimesheet = async (id: string) => {
+    try {
+      await updateTimesheetStatus({ id, status: 'approved' }).unwrap();
+      showToast('Success', 'Timesheet approved', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to approve', 'error');
+    }
+  };
 
-    setActivities((prev) => [
-      {
-        id: `act-${Date.now()}`,
-        userName: currentUser.name,
-        userAvatar: currentUser.avatar,
-        action: 'Applied for leave',
-        target: `${req.type} (${req.daysCount} days)`,
-        timestamp: 'Just now',
-        type: 'leave',
-      },
-      ...prev,
-    ]);
+  const handleRejectTimesheet = async (id: string, reason: string) => {
+    try {
+      await updateTimesheetStatus({ id, status: 'rejected', reason }).unwrap();
+      showToast('Success', 'Timesheet rejected', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to reject', 'error');
+    }
+  };
+
+  // --- Leave Handlers ---
+  const handleApplyLeave = async (req: Omit<LeaveRequest, 'id'>) => {
+    try {
+      await createLeaveRequest(req).unwrap();
+      showToast('Success', 'Leave applied', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to apply leave', 'error');
+    }
   };
 
   const handleCancelLeave = (id: string) => {
-    setLeaveRequests((prev) => prev.filter((l) => l.id !== id));
+    showToast('Info', 'Cancel leave not yet integrated', 'info');
   };
 
+  const handleApproveLeave = async (id: string, comment?: string) => {
+    try {
+      await updateLeaveStatus({ id, status: 'approved', comment }).unwrap();
+      showToast('Success', 'Leave approved', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to approve leave', 'error');
+    }
+  };
+
+  const handleRejectLeave = async (id: string, comment?: string) => {
+    try {
+      await updateLeaveStatus({ id, status: 'rejected', comment }).unwrap();
+      showToast('Success', 'Leave rejected', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to reject leave', 'error');
+    }
+  };
+
+  // --- Weekend Work ---
   const handleRequestWeekendWork = (req: Omit<WeekendWorkRequest, 'id'>) => {
-    const newReq: WeekendWorkRequest = {
-      ...req,
-      id: `ww-${Date.now()}`,
-    };
-    setWeekendRequests((prev) => [newReq, ...prev]);
-  };
-
-  // Handlers for Admin/PM/AC Actions
-  const handleApproveTimesheet = (id: string) => {
-    setTimesheets((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: 'approved' } : t))
-    );
-  };
-
-  const handleRejectTimesheet = (id: string, reason: string) => {
-    setTimesheets((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, status: 'rejected', rejectionReason: reason } : t
-      )
-    );
-  };
-
-  const handleBulkApproveTimesheets = (ids: string[]) => {
-    setTimesheets((prev) =>
-      prev.map((t) => (ids.includes(t.id) ? { ...t, status: 'approved' } : t))
-    );
-  };
-
-  const handleApproveLeave = (id: string, comment?: string) => {
-    setLeaveRequests((prev) =>
-      prev.map((l) =>
-        l.id === id
-          ? {
-              ...l,
-              status: 'approved',
-              reviewedBy: currentUser?.name || 'Admin',
-              reviewComment: comment || 'Approved by Admin',
-            }
-          : l
-      )
-    );
-    const targetReq = leaveRequests.find((r) => r.id === id);
-    if (targetReq && currentUser) {
-      setActivities((prev) => [
-        {
-          id: `act-${Date.now()}`,
-          userName: currentUser.name,
-          userAvatar: currentUser.avatar,
-          action: 'Approved leave request',
-          target: `${targetReq.userName} (${targetReq.type})`,
-          timestamp: 'Just now',
-          type: 'leave',
-        },
-        ...prev,
-      ]);
-    }
-  };
-
-  const handleRejectLeave = (id: string, comment?: string) => {
-    setLeaveRequests((prev) =>
-      prev.map((l) =>
-        l.id === id
-          ? {
-              ...l,
-              status: 'rejected',
-              reviewedBy: currentUser?.name || 'Admin',
-              reviewComment: comment || 'Rejected by Admin',
-            }
-          : l
-      )
-    );
-    const targetReq = leaveRequests.find((r) => r.id === id);
-    if (targetReq && currentUser) {
-      setActivities((prev) => [
-        {
-          id: `act-${Date.now()}`,
-          userName: currentUser.name,
-          userAvatar: currentUser.avatar,
-          action: 'Rejected leave request',
-          target: `${targetReq.userName} (${targetReq.type})`,
-          timestamp: 'Just now',
-          type: 'leave',
-        },
-        ...prev,
-      ]);
-    }
-  };
-
-  const handleUpdateProjectBudget = (projectId: string, newBudget: number, newRate: number) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, budget: newBudget, hourlyRate: newRate } : p
-      )
-    );
-  };
-
-  const handleToggleUserProject = (userId: string, projectId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === projectId) {
-          const currentIds = p.assignedUserIds || [];
-          const exists = currentIds.includes(userId);
-          const updatedIds = exists
-            ? currentIds.filter((id) => id !== userId)
-            : [...currentIds, userId];
-          return { ...p, assignedUserIds: updatedIds };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleAddToolToProject = (projectId: string, tool: Omit<ProjectTool, 'id'>) => {
-    const newTool: ProjectTool = {
-      ...tool,
-      id: `t-${Date.now()}`,
-    };
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, tools: [...(p.tools || []), newTool] } : p
-      )
-    );
-  };
-
-  const handleAddProject = (newProj: Omit<Project, 'id'>) => {
-    const project: Project = {
-      ...newProj,
-      id: `proj-${Date.now()}`,
-    };
-    setProjects((prev) => [project, ...prev]);
-  };
-
-  const handleUpdateProject = (updatedProj: Project) => {
-    setProjects((prev) => prev.map((p) => (p.id === updatedProj.id ? updatedProj : p)));
-  };
-
-  const handleAssignUserToProject = (projectId: string, userId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === projectId) {
-          const currentIds = p.assignedUserIds || [];
-          if (!currentIds.includes(userId)) {
-            return { ...p, assignedUserIds: [...currentIds, userId] };
-          }
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleRemoveUserFromProject = (projectId: string, userId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === projectId) {
-          const currentIds = p.assignedUserIds || [];
-          return {
-            ...p,
-            assignedUserIds: currentIds.filter((id) => id !== userId),
-          };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleRemoveToolFromProject = (projectId: string, toolId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === projectId) {
-          const currentTools = p.tools || [];
-          return {
-            ...p,
-            tools: currentTools.filter((t) => t.id !== toolId),
-          };
-        }
-        return p;
-      })
-    );
+    showToast('Info', 'Weekend work API pending', 'info');
   };
 
   const handleApproveWeekendWork = (id: string) => {
-    if (!currentUser) return;
-    setWeekendRequests((prev) =>
-      prev.map((w) =>
-        w.id === id ? { ...w, status: 'approved', reviewedBy: currentUser.name } : w
-      )
-    );
+    showToast('Info', 'Weekend work API pending', 'info');
   };
 
   const handleRejectWeekendWork = (id: string, comment?: string) => {
-    if (!currentUser) return;
-    setWeekendRequests((prev) =>
-      prev.map((w) =>
-        w.id === id ? { ...w, status: 'rejected', reviewedBy: currentUser.name } : w
-      )
-    );
+    showToast('Info', 'Weekend work API pending', 'info');
   };
 
+  // --- Projects / PM / AC ---
+  const handleUpdateProjectBudget = (projectId: string, newBudget: number, newRate: number) => {
+    showToast('Info', 'Project budget update pending', 'info');
+  };
+
+  const handleAddProject = (newProj: Omit<Project, 'id'>) => {
+    showToast('Info', 'Add project pending', 'info');
+  };
+
+  const handleUpdateProject = (updatedProj: Project) => {
+    showToast('Info', 'Update project pending', 'info');
+  };
+
+  const handleAssignUserToProject = (projectId: string, userId: string) => {
+    showToast('Info', 'Assign user pending', 'info');
+  };
+
+  const handleRemoveUserFromProject = (projectId: string, userId: string) => {
+    showToast('Info', 'Remove user pending', 'info');
+  };
+
+  const handleAddToolToProject = (projectId: string, tool: Omit<ProjectTool, 'id'>) => {
+    showToast('Info', 'Add tool pending', 'info');
+  };
+
+  const handleRemoveToolFromProject = (projectId: string, toolId: string) => {
+    showToast('Info', 'Remove tool pending', 'info');
+  };
+
+  // --- User / Admin ---
   const handleAddUser = (user: Omit<User, 'id'>) => {
-    const newUser: User = {
-      ...user,
-      id: `usr-${Date.now()}`,
-    };
-    setUsers((prev) => [newUser, ...prev]);
+    showToast('Info', 'Add user API pending', 'info');
   };
 
   const handleUpdateUser = (updatedUser: User) => {
-    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    showToast('Info', 'Update user API pending', 'info');
   };
 
   const handleToggleUserStatus = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          const nextStatus = u.status === 'active' ? 'inactive' : u.status === 'inactive' ? 'resigned' : 'active';
-          return { ...u, status: nextStatus };
-        }
-        return u;
-      })
-    );
+    showToast('Info', 'Toggle user status pending', 'info');
   };
 
-  const handleResetUserPassword = (userId: string) => {
-    showToast('Password Reset', 'Password reset instructions dispatched to user email.', 'success');
+  // --- Holidays / Settings ---
+  const handleAddHoliday = async (item: Omit<HolidayItem, 'id'>) => {
+    try {
+      await createHoliday(item).unwrap();
+      showToast('Success', 'Holiday Added', 'success');
+    } catch (e: any) {
+      showToast('Error', e.message || 'Failed to add holiday', 'error');
+    }
   };
 
-  const handleAddHoliday = (item: Omit<HolidayItem, 'id'>) => {
-    const newHoliday: HolidayItem = {
-      ...item,
-      id: `hol-${Date.now()}`,
-    };
-    setHolidays((prev) => [...prev, newHoliday]);
+  const handleEditHoliday = async (updatedItem: HolidayItem) => {
+    try {
+      await updateHoliday(updatedItem).unwrap();
+      showToast('Success', 'Holiday Updated', 'success');
+    } catch (e: any) {
+      showToast('Error', e.message || 'Failed to update holiday', 'error');
+    }
   };
 
-  const handleEditHoliday = (updatedItem: HolidayItem) => {
-    setHolidays((prev) => prev.map((h) => (h.id === updatedItem.id ? updatedItem : h)));
-  };
-
-  const handleDeleteHoliday = (id: string) => {
-    setHolidays((prev) => prev.filter((h) => h.id !== id));
+  const handleDeleteHoliday = async (id: string) => {
+    try {
+      await deleteHoliday(id).unwrap();
+      showToast('Success', 'Holiday Deleted', 'success');
+    } catch (e: any) {
+      showToast('Error', e.message || 'Failed to delete holiday', 'error');
+    }
   };
 
   const handleAddLeaveType = (item: Omit<LeaveTypeConfig, 'id'>) => {
-    const newType: LeaveTypeConfig = {
-      ...item,
-      id: `lt-${Date.now()}`,
-    };
-    setLeaveTypes((prev) => [...prev, newType]);
+    showToast('Info', 'API pending', 'info');
   };
 
   const handleEditLeaveType = (updatedItem: LeaveTypeConfig) => {
-    setLeaveTypes((prev) => prev.map((l) => (l.id === updatedItem.id ? updatedItem : l)));
+    showToast('Info', 'API pending', 'info');
   };
 
   const handleToggleLeaveTypeStatus = (id: string) => {
-    setLeaveTypes((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, isActive: !l.isActive } : l))
-    );
+    showToast('Info', 'API pending', 'info');
   };
 
-  // Counts for pending items
-  const pendingTimesheetsCount = (timesheets || []).filter((t) => t.status === 'pending').length;
-  const pendingLeavesCount = (leaveRequests || []).filter((l) => l.status === 'pending').length;
-  const pendingWeekendCount = (weekendRequests || []).filter((w) => w.status === 'pending').length;
 
-  // Render Login Page if no active user session
+  const pendingTimesheetsCount = (timesheets || []).filter((t: any) => t.status === 'pending').length;
+  const pendingLeavesCount = (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
+  const pendingWeekendCount = (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
+
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-slate-50 font-sans">
-        <LoginPage users={users} onLogin={handleSelectUserRole} onSelectUserRole={handleSelectUserRole} />
+      <div className="min-h-screen bg-slate-50 font-sans relative">
+        {isAuthLoading && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-white shadow-md rounded-full border border-blue-100 animate-pulse">
+             <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-xs font-bold text-blue-600">Checking existing session...</p>
+          </div>
+        )}
+        <LoginPage />
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
       </div>
     );
   }
 
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
       <Header
         currentUser={currentUser}
         portalMode={portalMode}
-        onTogglePortalMode={(mode) => setPortalMode(mode)}
+        onTogglePortalMode={(mode) => dispatch(setPortalMode(mode))}
         pendingApprovalsCount={pendingTimesheetsCount + pendingLeavesCount}
         onLogout={handleLogout}
       />
 
       <div className="flex flex-1">
-        {/* Left Navigation Sidebar */}
         <Sidebar
           portalMode={portalMode}
           activeEmployeeTab={activeEmployeeTab}
@@ -608,15 +360,10 @@ export default function App() {
           pendingLeavesCount={pendingLeavesCount}
           pendingWeekendCount={pendingWeekendCount}
           onQuickAddTimesheet={() => {
-            if (portalMode === 'employee') {
-              setActiveEmployeeTab('submit_timesheet');
-            } else {
-              showToast('Timesheet Action', 'Opening timesheet submission portal...', 'info');
-            }
+            if (portalMode === 'employee') setActiveEmployeeTab('submit_timesheet');
           }}
         />
 
-        {/* Main Content Area */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
           {portalMode === 'employee' && (
             <>
@@ -792,6 +539,7 @@ export default function App() {
 
               {activeAdminTab === 'user_management' && (
                 <UserManagement
+                  currentUser={currentUser}
                   onShowToast={showToast}
                 />
               )}
@@ -800,14 +548,13 @@ export default function App() {
                 <AdminLeaveApprovals
                   currentUser={currentUser}
                   leaveRequests={leaveRequests}
-                  users={users}
                   onApproveLeave={handleApproveLeave}
                   onRejectLeave={handleRejectLeave}
                   onShowToast={showToast}
                 />
               )}
 
-              {activeAdminTab === 'admin_holidays' && (
+              {activeAdminTab === 'holidays' && (
                 <HolidaysManagement
                   holidays={holidays}
                   onAddHoliday={handleAddHoliday}
@@ -817,28 +564,28 @@ export default function App() {
                 />
               )}
 
-              {activeAdminTab === 'admin_leave_types' && (
+              {activeAdminTab === 'leave_types' && (
                 <LeaveTypesManagement
                   leaveTypes={leaveTypes}
                   onAddLeaveType={handleAddLeaveType}
                   onEditLeaveType={handleEditLeaveType}
-                  onToggleLeaveTypeStatus={handleToggleLeaveTypeStatus}
+                  onToggleStatus={handleToggleLeaveTypeStatus}
                   onShowToast={showToast}
                 />
               )}
 
-              {activeAdminTab === 'admin_working_calendar' && (
+              {activeAdminTab === 'working_calendar' && (
                 <WorkingCalendar
-                  config={workingCalendar}
-                  onUpdateConfig={(newConfig) => setWorkingCalendar(newConfig)}
+                  calendar={workingCalendar}
+                  onUpdateCalendar={() => { showToast('Info', 'API pending', 'info'); }}
                   onShowToast={showToast}
                 />
               )}
 
-              {activeAdminTab === 'admin_settings' && (
+              {activeAdminTab === 'settings' && (
                 <SettingsManagement
                   settings={settings}
-                  onUpdateSettings={(newSettings) => setSettings(newSettings)}
+                  onUpdateSettings={() => { showToast('Info', 'API pending', 'info'); }}
                   onShowToast={showToast}
                 />
               )}
@@ -846,8 +593,6 @@ export default function App() {
           )}
         </main>
       </div>
-
-      {/* Floating Notification Toasts */}
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
     </div>
   );

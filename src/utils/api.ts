@@ -46,6 +46,7 @@ export interface AuthSuccessData {
 export async function loginWithGoogleApi(credential: string): Promise<AuthSuccessData> {
   const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -63,19 +64,14 @@ export async function loginWithGoogleApi(credential: string): Promise<AuthSucces
   const frontendUser = mapBackendUserToFrontendUser(data.user);
 
   return {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    token_type: data.token_type,
     user: frontendUser,
   };
 }
 
-export async function fetchCurrentUserApi(token: string): Promise<User> {
+export async function fetchCurrentUserApi(): Promise<User> {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: 'include',
   });
 
   const json = await response.json();
@@ -87,13 +83,13 @@ export async function fetchCurrentUserApi(token: string): Promise<User> {
   return mapBackendUserToFrontendUser(json.data);
 }
 
-export async function refreshAccessTokenApi(refreshToken: string): Promise<AuthSuccessData> {
+export async function refreshAccessTokenApi(): Promise<AuthSuccessData> {
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
   const json = await response.json();
@@ -106,18 +102,15 @@ export async function refreshAccessTokenApi(refreshToken: string): Promise<AuthS
   const frontendUser = mapBackendUserToFrontendUser(data.user);
 
   return {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    token_type: data.token_type,
     user: frontendUser,
   };
 }
 
-export async function logoutApi(token?: string): Promise<void> {
+export async function logoutApi(): Promise<void> {
   try {
     await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: 'include',
     });
   } catch {
     // Stateless logout ignore network errors
@@ -170,8 +163,8 @@ export interface UserUpdatePayload {
   status?: string;
 }
 
-function authHeader(token: string) {
-  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+function authHeader() {
+  return { 'Content-Type': 'application/json' };
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -183,7 +176,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function fetchUsersApi(
-  token: string,
   params?: { page?: number; limit?: number; role_id?: number; status?: string; search?: string }
 ): Promise<PaginatedUsersResponse> {
   const query = new URLSearchParams();
@@ -193,37 +185,40 @@ export async function fetchUsersApi(
   if (params?.status) query.set('status', params.status);
   if (params?.search) query.set('search', params.search);
 
-  const res = await fetch(`${API_BASE_URL}/users?${query}`, { headers: authHeader(token) });
+  const res = await fetch(`${API_BASE_URL}/users?${query}`, { credentials: 'include', headers: authHeader() });
   return handleResponse<PaginatedUsersResponse>(res);
 }
 
-export async function fetchUserByIdApi(token: string, userId: number): Promise<BackendUser> {
-  const res = await fetch(`${API_BASE_URL}/users/${userId}`, { headers: authHeader(token) });
+export async function fetchUserByIdApi(userId: number): Promise<BackendUser> {
+  const res = await fetch(`${API_BASE_URL}/users/${userId}`, { credentials: 'include', headers: authHeader() });
   return handleResponse<BackendUser>(res);
 }
 
-export async function createUserApi(token: string, payload: UserCreatePayload): Promise<BackendUser> {
+export async function createUserApi(payload: UserCreatePayload): Promise<BackendUser> {
   const res = await fetch(`${API_BASE_URL}/users`, {
     method: 'POST',
-    headers: authHeader(token),
+    credentials: 'include',
+    headers: authHeader(),
     body: JSON.stringify(payload),
   });
   return handleResponse<BackendUser>(res);
 }
 
-export async function updateUserApi(token: string, userId: number, payload: UserUpdatePayload): Promise<BackendUser> {
+export async function updateUserApi(userId: number, payload: UserUpdatePayload): Promise<BackendUser> {
   const res = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'PUT',
-    headers: authHeader(token),
+    credentials: 'include',
+    headers: authHeader(),
     body: JSON.stringify(payload),
   });
   return handleResponse<BackendUser>(res);
 }
 
-export async function toggleUserStatusApi(token: string, userId: number, status: 'Active' | 'Inactive'): Promise<BackendUser> {
+export async function toggleUserStatusApi(userId: number, status: 'Active' | 'Inactive'): Promise<BackendUser> {
   const res = await fetch(`${API_BASE_URL}/users/${userId}/status`, {
     method: 'PATCH',
-    headers: authHeader(token),
+    credentials: 'include',
+    headers: authHeader(),
     body: JSON.stringify({ status }),
   });
   return handleResponse<BackendUser>(res);
@@ -240,7 +235,7 @@ export interface BackendRole {
   created_at: string;
 }
 
-export async function fetchRolesApi(token: string): Promise<BackendRole[]> {
-  const res = await fetch(`${API_BASE_URL}/roles`, { headers: authHeader(token) });
+export async function fetchRolesApi(): Promise<BackendRole[]> {
+  const res = await fetch(`${API_BASE_URL}/roles`, { credentials: 'include', headers: authHeader() });
   return handleResponse<BackendRole[]>(res);
 }

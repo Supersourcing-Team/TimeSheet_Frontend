@@ -27,7 +27,7 @@ export interface HolidayItem {
   dayOfWeek: string;
   type: 'National' | 'Global' | 'Regional' | 'Observance';
   description?: string;
-  isMandatory: boolean;
+  is_mandatory: boolean;
 }
 
 export interface LeaveTypeConfig {

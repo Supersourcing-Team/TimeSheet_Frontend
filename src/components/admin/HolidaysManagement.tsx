@@ -41,14 +41,14 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   const [date, setDate] = useState('2025-08-15');
   const [type, setType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
   const [description, setDescription] = useState('');
-  const [isMandatory, setIsMandatory] = useState(true);
+  const [is_mandatory, setis_mandatory] = useState(true);
 
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editType, setEditType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
   const [editDescription, setEditDescription] = useState('');
-  const [editIsMandatory, setEditIsMandatory] = useState(true);
+  const [editis_mandatory, setEditis_mandatory] = useState(true);
 
   const filteredHolidays = (holidays || []).filter((h) => {
     if (filterType !== 'all' && h.type !== filterType) return false;
@@ -81,7 +81,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
       dayOfWeek: days[dateObj.getDay()],
       type,
       description,
-      isMandatory,
+      is_mandatory,
     });
 
     onShowToast('Holiday Added', `Added "${name}" to organization holiday calendar`, 'success');
@@ -96,7 +96,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
     setEditDate(h.date);
     setEditType(h.type);
     setEditDescription(h.description || '');
-    setEditIsMandatory(h.isMandatory);
+    setEditis_mandatory(h.is_mandatory);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -116,7 +116,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
       dayOfWeek: days[dateObj.getDay()],
       type: editType,
       description: editDescription,
-      isMandatory: editIsMandatory,
+      is_mandatory: editis_mandatory,
     });
 
     onShowToast('Holiday Updated', `Updated details for ${editName}`, 'success');
@@ -222,8 +222,15 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredHolidays.map((holiday) => (
-                  <tr key={holiday.id} className="hover:bg-slate-50 transition-colors">
+                {filteredHolidays.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                      No holidays found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHolidays.map((holiday) => (
+                    <tr key={holiday.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-2.5">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex flex-col items-center justify-center text-center shrink-0">
@@ -261,12 +268,12 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                     <td className="py-3.5 px-3">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                          holiday.isMandatory
+                          holiday.is_mandatory
                             ? 'bg-rose-50 text-rose-700 border border-rose-200'
                             : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        {holiday.isMandatory ? 'Mandatory Off' : 'Optional'}
+                        {holiday.is_mandatory ? 'Mandatory Off' : 'Optional'}
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-slate-600 font-medium max-w-xs truncate">
@@ -296,7 +303,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
@@ -314,8 +321,13 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredHolidays.map((holiday) => (
+          {filteredHolidays.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 font-medium">
+              No holidays found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredHolidays.map((holiday) => (
               <div
                 key={holiday.id}
                 className="p-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 to-white shadow-xs space-y-3 relative group hover:border-blue-400 transition-all"
@@ -352,7 +364,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                   <span className="text-rose-600 font-bold">
-                    {holiday.isMandatory ? 'Mandatory Off' : 'Optional'}
+                    {holiday.is_mandatory ? 'Mandatory Off' : 'Optional'}
                   </span>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -367,6 +379,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
@@ -450,12 +463,12 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
-                  id="isMandatory"
-                  checked={isMandatory}
-                  onChange={(e) => setIsMandatory(e.target.checked)}
+                  id="is_mandatory"
+                  checked={is_mandatory}
+                  onChange={(e) => setis_mandatory(e.target.checked)}
                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="isMandatory" className="font-bold text-slate-800 text-xs">
+                <label htmlFor="is_mandatory" className="font-bold text-slate-800 text-xs">
                   Mandatory Organization Holiday (Restricted Timesheets)
                 </label>
               </div>
@@ -558,12 +571,12 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
-                  id="editIsMandatory"
-                  checked={editIsMandatory}
-                  onChange={(e) => setEditIsMandatory(e.target.checked)}
+                  id="editis_mandatory"
+                  checked={editis_mandatory}
+                  onChange={(e) => setEditis_mandatory(e.target.checked)}
                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="editIsMandatory" className="font-bold text-slate-800 text-xs">
+                <label htmlFor="editis_mandatory" className="font-bold text-slate-800 text-xs">
                   Mandatory Organization Holiday
                 </label>
               </div>

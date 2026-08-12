@@ -588,7 +588,7 @@ export const INITIAL_HOLIDAYS = [
     dayOfWeek: 'Friday',
     type: 'National' as const,
     description: 'National holiday observing Independence Day.',
-    isMandatory: true,
+    is_mandatory: true,
   },
   {
     id: 'hol-2',
@@ -599,7 +599,7 @@ export const INITIAL_HOLIDAYS = [
     dayOfWeek: 'Monday',
     type: 'National' as const,
     description: 'Corporate holiday celebrating Diwali.',
-    isMandatory: true,
+    is_mandatory: true,
   },
   {
     id: 'hol-3',
@@ -610,7 +610,7 @@ export const INITIAL_HOLIDAYS = [
     dayOfWeek: 'Thursday',
     type: 'Global' as const,
     description: 'Global holiday observing Christmas Day.',
-    isMandatory: true,
+    is_mandatory: true,
   },
   {
     id: 'hol-4',
@@ -621,7 +621,7 @@ export const INITIAL_HOLIDAYS = [
     dayOfWeek: 'Thursday',
     type: 'Global' as const,
     description: "New Year's Day observance.",
-    isMandatory: true,
+    is_mandatory: true,
   },
   {
     id: 'hol-5',
@@ -632,7 +632,7 @@ export const INITIAL_HOLIDAYS = [
     dayOfWeek: 'Monday',
     type: 'National' as const,
     description: 'National holiday observing Republic Day.',
-    isMandatory: true,
+    is_mandatory: true,
   },
 ];
 
