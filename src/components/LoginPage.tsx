@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import { User, UserRole } from '../types';
 import { INITIAL_USERS } from '../data/initialData';
-import { loginWithGoogleApi } from '../utils/api';
+import { useLoginWithGoogleMutation } from '../store/api/authApi';
+import { setCredentials, setUser } from '../store/slices/authSlice';
 import {
   ShieldCheck,
   Building2,
@@ -14,16 +16,10 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
-interface LoginPageProps {
-  onLogin?: (user: User) => void;
-  onSelectUserRole?: (user: User) => void;
-  users?: User[];
-}
-
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSelectUserRole }) => {
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
+export const LoginPage: React.FC = () => {
+  const dispatch = useDispatch();
+  const [loginWithGoogle, { isLoading: isGoogleSigningIn }] = useLoginWithGoogleMutation();
   const [authError, setAuthError] = useState<string | null>(null);
-  const [showDevPersonas, setShowDevPersonas] = useState(false);
   const initializedRef = useRef(false);
 
   const registeredAccounts = [
@@ -33,30 +29,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSelectUserRole 
     { role: 'employee' as UserRole, title: 'Employee', email: 'balram.btech@gmail.com', icon: <Users className="w-4 h-4 text-blue-600" />, badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
   ];
 
-  const triggerLogin = (user: User) => {
-    if (typeof onLogin === 'function') {
-      onLogin(user);
-    } else if (typeof onSelectUserRole === 'function') {
-      onSelectUserRole(user);
-    } else {
-      console.warn('Neither onLogin nor onSelectUserRole was provided to LoginPage.');
-    }
-  };
-
   const handleCredentialResponse = async (response: { credential?: string }) => {
     if (!response.credential) return;
-    setIsGoogleSigningIn(true);
     setAuthError(null);
 
     try {
-      const authData = await loginWithGoogleApi(response.credential);
-      localStorage.setItem('chronos_access_token', authData.access_token);
-      localStorage.setItem('chronos_refresh_token', authData.refresh_token);
-      triggerLogin(authData.user);
+      const authData = await loginWithGoogle(response.credential).unwrap();
+      dispatch(setCredentials({
+        user: authData.user,
+      }));
     } catch (err: any) {
-      setAuthError(err.message || 'Google SSO Authentication failed');
-    } finally {
-      setIsGoogleSigningIn(false);
+      setAuthError(err?.data?.message || err.message || 'Google SSO Authentication failed');
     }
   };
 
@@ -102,24 +85,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSelectUserRole 
           }
         });
       } catch {
-        setIsGoogleSigningIn(true);
-        setTimeout(() => {
-          setIsGoogleSigningIn(false);
-        }, 500);
+        setAuthError('Google Identity SDK failed to prompt.');
       }
     } else {
-      setIsGoogleSigningIn(true);
-      setTimeout(() => {
-        setIsGoogleSigningIn(false);
-        setAuthError('Google Identity SDK initializing... Please click the official Google button above.');
-      }, 600);
+      setAuthError('Google Identity SDK initializing... Please click the official Google button above.');
     }
   };
 
-  const handleDevPersonaLogin = (role: UserRole) => {
-    const sampleUser = INITIAL_USERS.find((u) => u.role === role) || INITIAL_USERS[0];
-    triggerLogin(sampleUser);
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 sm:p-6 font-sans selection:bg-blue-600 selection:text-white">
@@ -225,32 +197,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSelectUserRole 
             </div>
           </div>
 
-          {/* Dev Persona Switcher Accordion */}
-          <div className="border-t border-slate-100 pt-3">
-            <button
-              type="button"
-              onClick={() => setShowDevPersonas(!showDevPersonas)}
-              className="w-full text-slate-400 hover:text-slate-600 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors py-1"
-            >
-              <span>Demo Persona Bypass</span>
-              {showDevPersonas ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
 
-            {showDevPersonas && (
-              <div className="grid grid-cols-2 gap-2 pt-3 animate-fade-in">
-                {registeredAccounts.map((acc) => (
-                  <button
-                    key={acc.role}
-                    type="button"
-                    onClick={() => handleDevPersonaLogin(acc.role)}
-                    className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-slate-700 font-semibold text-[11px] text-center transition-all"
-                  >
-                    Bypass as {acc.title}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Footer */}

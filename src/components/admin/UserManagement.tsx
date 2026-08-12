@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 interface UserManagementProps {
+  currentUser?: { id: string } | null;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -69,8 +70,8 @@ const defaultCreate = {
   status: 'Active',
 };
 
-export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) => {
-  const token = localStorage.getItem('chronos_access_token') || '';
+export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
+  const currentUserId = currentUser ? Number(currentUser.id) : null;
 
   // ── Server state ──────────────────────────────────────────────────────────
   const [users, setUsers] = useState<BackendUser[]>([]);
@@ -116,7 +117,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
 
   // ── Fetch users ───────────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
@@ -125,7 +125,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       if (selectedStatus) params.status = selectedStatus;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const resp = await fetchUsersApi(token, params);
+      const resp = await fetchUsersApi(params);
       setUsers(resp.items);
       setTotal(resp.total);
       setTotalPages(resp.total_pages || Math.ceil(resp.total / itemsPerPage) || 1);
@@ -134,15 +134,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     } finally {
       setLoading(false);
     }
-  }, [token, currentPage, selectedRoleId, selectedStatus, searchQuery]);
+  }, [currentPage, selectedRoleId, selectedStatus, searchQuery]);
 
   // ── Fetch roles (with retry support) ─────────────────────────────────────
   const loadRoles = useCallback(async () => {
-    if (!token) return;
     setRolesLoading(true);
     setRolesError(null);
     try {
-      const data = await fetchRolesApi(token);
+      const data = await fetchRolesApi();
       setRoles(data);
     } catch (e: any) {
       const msg = e.message || 'Failed to load roles';
@@ -151,7 +150,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     } finally {
       setRolesLoading(false);
     }
-  }, [token, onShowToast]);
+  }, [onShowToast]);
 
   useEffect(() => {
     loadRoles();
@@ -175,7 +174,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
       setRolesLoading(true);
       setRolesError(null);
       try {
-        const data = await fetchRolesApi(token);
+        const data = await fetchRolesApi();
         setRoles(data);
         resolvedRoles = data;
       } catch (e: any) {
@@ -208,7 +207,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     }
     setCreateLoading(true);
     try {
-      await createUserApi(token, {
+      await createUserApi({
         email: createForm.email,
         first_name: createForm.first_name,
         last_name: createForm.last_name,
@@ -246,7 +245,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     if (!editingUser || !editForm) return;
     setEditLoading(true);
     try {
-      await updateUserApi(token, editingUser.id, {
+      await updateUserApi(editingUser.id, {
         email: editForm.email,
         first_name: editForm.first_name,
         last_name: editForm.last_name,
@@ -270,7 +269,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
     const nextStatus: 'Active' | 'Inactive' = user.status === 'Active' ? 'Inactive' : 'Active';
     setTogglingIds((prev) => new Set(prev).add(user.id));
     try {
-      await toggleUserStatusApi(token, user.id, nextStatus);
+      await toggleUserStatusApi(user.id, nextStatus);
       onShowToast('Status Updated', `${user.first_name} ${user.last_name} is now ${nextStatus}.`, 'info');
       loadUsers();
     } catch (e: any) {
@@ -504,22 +503,23 @@ export const UserManagement: React.FC<UserManagementProps> = ({ onShowToast }) =
                           <span>Edit</span>
                         </button>
 
-                        <button
+                        {/* <button
                           onClick={() => setResetPassUser(user)}
                           className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold transition-colors border border-amber-200/60"
                           title="Reset Password"
                         >
                           <KeyRound className="w-3.5 h-3.5" />
-                        </button>
+                        </button> */}
 
                         <button
                           onClick={() => handleToggleStatus(user)}
-                          disabled={togglingIds.has(user.id)}
+                          disabled={togglingIds.has(user.id) || user.id === currentUserId}
+                          title={user.id === currentUserId ? "You cannot deactivate your own account" : ""}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors border ${
                             user.status === 'Active'
                               ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200/60'
                               : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/60'
-                          } disabled:opacity-50`}
+                          } disabled:opacity-50 ${user.id === currentUserId ? 'cursor-not-allowed' : ''}`}
                         >
                           {togglingIds.has(user.id) ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

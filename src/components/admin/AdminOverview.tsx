@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Project, TimesheetEntry, LeaveRequest, ActivityLog } from '../../types';
+import { useGetDashboardSummaryQuery } from '../../store/api/dataApi';
 import {
   Users,
   Clock,
@@ -51,12 +52,24 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   const safeTimesheets = timesheets || [];
   const safeProjects = projects || [];
 
-  // Dynamic Metrics
-  const activeUsersCount = safeUsers.filter((u) => u.status === 'active').length;
-  const onLeaveUsersCount = safeUsers.filter((u) => u.status === 'on_leave').length || 18;
-  const pendingLeaves = safeLeaveRequests.filter((l) => l.status === 'pending');
-  const pendingTimesheets = safeTimesheets.filter((t) => t.status === 'pending');
-  const activeProjectsCount = safeProjects.filter((p) => p.status === 'active').length || 24;
+  const { data: dashboardData, isLoading } = useGetDashboardSummaryQuery();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Map API data to component variables
+  const activeUsersCount = users.filter((u) => u.status === 'active').length;
+  const onLeaveUsersCount = users.filter((u) => u.status === 'on_leave').length || 0;
+  
+  const pendingLeaves = dashboardData?.recent_leaves?.filter((l: any) => l.status.toLowerCase() === 'pending') || [];
+  const activeProjectsCount = dashboardData?.role_overview?.active_org_projects || 0;
+  
+  const nextHoliday = dashboardData?.upcoming_holiday;
 
   // Department distribution calculation for pie/doughnut chart
   const deptMap: { [key: string]: number } = {
@@ -72,13 +85,6 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     if (statusFilter === 'all') return true;
     return u.status === statusFilter;
   });
-
-  const upcomingHolidays = [
-    { month: 'DEC', day: '25', name: 'Christmas Day', type: 'Wednesday, National' },
-    { month: 'JAN', day: '01', name: "New Year's Day", type: 'Wednesday, Global' },
-    { month: 'JAN', day: '20', name: 'MLK Day', type: 'Monday, Regional' },
-    { month: 'FEB', day: '14', name: "Valentine's Day", type: 'Friday, Observance' },
-  ];
 
   const barChartData = [
     { day: 'Mon', active: 1100, inactive: 148 },
@@ -134,7 +140,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
             Active Users
           </p>
-          <h3 className="text-2xl font-black text-slate-900 mt-1">1,248</h3>
+          <h3 className="text-2xl font-black text-slate-900 mt-1">{activeUsersCount || 0}</h3>
         </div>
 
         {/* Pending Leave */}
@@ -167,7 +173,9 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
             Next Holiday
           </p>
-          <h3 className="text-2xl font-black text-slate-900 mt-1">5 Days</h3>
+          <h3 className="text-2xl font-black text-slate-900 mt-1">
+            {nextHoliday ? `${nextHoliday.days_remaining} Days` : 'N/A'}
+          </h3>
         </div>
 
         {/* Active Projects */}
@@ -363,25 +371,26 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {upcomingHolidays.map((h, i) => (
+            {nextHoliday ? (
               <div
-                key={i}
                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer border border-transparent hover:border-slate-200"
               >
                 <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center shrink-0 group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors">
                   <span className="text-[9px] font-extrabold text-blue-600 uppercase leading-none">
-                    {h.month}
+                    {new Date(nextHoliday.date).toLocaleString('default', { month: 'short' })}
                   </span>
                   <span className="text-sm font-black text-slate-900 leading-tight mt-0.5">
-                    {h.day}
+                    {new Date(nextHoliday.date).getDate()}
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-900 truncate">{h.name}</p>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">{h.type}</p>
+                  <p className="text-xs font-bold text-slate-900 truncate">{nextHoliday.name}</p>
+                  <p className="text-[10px] text-slate-400 font-medium truncate">{nextHoliday.days_remaining} days away</p>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="text-xs text-slate-500 text-center py-4">No upcoming holidays scheduled</div>
+            )}
           </div>
 
           <div className="pt-2 text-[11px] text-slate-400 text-center font-medium">
@@ -427,11 +436,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.slice(0, 5).map((user, idx) => {
                   const empId = `EMP-${4052 - idx * 65}`;
-                  const initials = user.name
+                  const initials = (user?.name || 'User')
                     .split(' ')
-                    .map((n) => n[0])
+                    .map((n) => n[0] || '')
                     .join('')
-                    .toUpperCase();
+                    .toUpperCase() || 'U';
 
                   return (
                     <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
@@ -496,27 +505,25 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           </div>
 
           <div className="divide-y divide-slate-100 flex-1 overflow-y-auto max-h-80">
-            {pendingLeaves.length > 0 ? (
-              pendingLeaves.map((req) => (
+            {dashboardData?.recent_leaves?.length > 0 ? (
+              dashboardData.recent_leaves.map((req: any) => (
                 <div key={req.id} className="p-4 hover:bg-slate-50/80 transition-colors space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={req.userAvatar}
-                        alt={req.userName}
-                        className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-amber-500/20"
-                      />
+                      <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs ring-2 ring-amber-500/20">
+                        LR
+                      </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-slate-900 truncate">
-                          {req.userName}
+                        <p className="text-xs font-extrabold text-slate-900 truncate capitalize">
+                          {req.status}
                         </p>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          {req.type} - {req.daysCount} Days
+                          {req.type} - {req.days_count} Days
                         </p>
                       </div>
                     </div>
                     <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-                      Today
+                      {req.start_date}
                     </span>
                   </div>
 
@@ -526,84 +533,13 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                       onClick={() => onNavigateTab('admin_leave_approvals')}
                       className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                     >
-                      Review Requests
+                      Review Request
                     </button>
                   </div>
                 </div>
               ))
             ) : (
-              // Fallback sample view matching screenshot
-              <>
-                <div className="p-4 hover:bg-slate-50/80 transition-colors space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                        alt="Elena Kosta"
-                        className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-amber-500/20"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-slate-900 truncate">Elena Kosta</p>
-                        <p className="text-[11px] text-slate-500 font-medium">Sick Leave - 3 Days</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-semibold shrink-0">Today</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onNavigateTab('admin_leave_approvals')}
-                    className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                  >
-                    Review Leave Requests
-                  </button>
-                </div>
-
-                <div className="p-4 hover:bg-slate-50/80 transition-colors space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
-                        alt="Mark Thompson"
-                        className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-amber-500/20"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-slate-900 truncate">Mark Thompson</p>
-                        <p className="text-[11px] text-slate-500 font-medium">Annual - 10 Days</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-semibold shrink-0">Yesterday</span>
-                  </div>
-                  <button
-                    onClick={() => onShowToast('Leave Detail', 'Opening leave detail modal for Mark Thompson', 'info')}
-                    className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs"
-                  >
-                    View Details
-                  </button>
-                </div>
-
-                <div className="p-4 hover:bg-slate-50/80 transition-colors space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80"
-                        alt="Jasmine Rice"
-                        className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-amber-500/20"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-slate-900 truncate">Jasmine Rice</p>
-                        <p className="text-[11px] text-slate-500 font-medium">Personal - 1 Day</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-semibold shrink-0">Yesterday</span>
-                  </div>
-                  <button
-                    onClick={() => onShowToast('Leave Detail', 'Opening leave detail modal for Jasmine Rice', 'info')}
-                    className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </>
+              <div className="text-xs text-slate-500 text-center py-6">No recent leave requests found.</div>
             )}
           </div>
         </div>
