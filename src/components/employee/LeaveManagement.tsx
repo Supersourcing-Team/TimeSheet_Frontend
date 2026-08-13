@@ -35,8 +35,8 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [leaveType, setLeaveType] =
     useState<LeaveRequest['type']>('Annual Leave');
-  const [startDate, setStartDate] = useState('2025-08-25');
-  const [endDate, setEndDate] = useState('2025-08-27');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]);
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [backupContact, setBackupContact] = useState('Sarah Chen (sarah.chen@workflow.io)');
   const [reason, setReason] = useState('Family vacation and travel.');

@@ -26,6 +26,17 @@ import {
   useUpdateLeaveTypeMutation,
   useDeleteLeaveTypeMutation,
   useGetMyProjectAssignmentsQuery,
+  useGetWorkingCalendarQuery,
+  useUpdateWorkingCalendarMutation,
+  useGetClientsQuery,
+  useCreateClientMutation,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
+  useAssignUserToProjectMutation,
+  useRemoveUserFromProjectMutation,
+  useAllocateToolMutation,
+  useDeallocateToolMutation,
 } from './store/api/dataApi';
 import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
 import { setCredentials } from './store/slices/authSlice';
@@ -115,6 +126,7 @@ export default function App() {
   
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
+  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || !isPm });
   const { data: timesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
   
   // Admins need all leave requests; others just need theirs
@@ -126,15 +138,34 @@ export default function App() {
   const { data: holidays = [] } = useGetHolidaysQuery(undefined, { skip });
   const { data: myProjectAssignments = [] } = useGetMyProjectAssignmentsQuery(undefined, { skip });
   const { data: fetchedLeaveBalance } = useGetMyLeaveBalancesQuery(undefined, { skip });
-  const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip: skip || !isAdmin });
+  const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip });
 
+  const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip });
+  
+  const [createProjectMutation] = useCreateProjectMutation();
+  const [updateProjectMutation] = useUpdateProjectMutation();
+  const [deleteProjectMutation] = useDeleteProjectMutation();
+  const [assignUserMutation] = useAssignUserToProjectMutation();
+  const [removeUserMutation] = useRemoveUserFromProjectMutation();
+  const [createToolMutation] = useAllocateToolMutation(); // we'll use allocate directly since FE says "add tool"
+  const [removeToolMutation] = useDeallocateToolMutation();
   // Fallbacks for data not yet wired up
-  const leaveBalance = fetchedLeaveBalance || INITIAL_LEAVE_BALANCE;
+  const leaveBalance = fetchedLeaveBalance || {
+    annualLeaveTotal: 0,
+    annualLeaveUsed: 0,
+    sickLeaveTotal: 0,
+    sickLeaveUsed: 0,
+    parentalLeaveTotal: 0,
+    parentalLeaveUsed: 0,
+    compOffTotal: 0,
+    compOffUsed: 0,
+  };
+  const workingCalendar = fetchedWorkingCalendar || INITIAL_WORKING_CALENDAR;
   const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
-  const [workingCalendar] = useState(INITIAL_WORKING_CALENDAR);
   const [settings] = useState(INITIAL_SETTINGS);
 
   // RTK Mutations
+  const [updateWorkingCalendar] = useUpdateWorkingCalendarMutation();
   const [createTimesheets] = useCreateTimesheetsMutation();
   const [updateTimesheetApi] = useUpdateTimesheetMutation();
   const [deleteTimesheetApi] = useDeleteTimesheetMutation();
@@ -223,11 +254,9 @@ export default function App() {
   // --- Leave Handlers ---
   const handleApplyLeave = async (req: Omit<LeaveRequest, 'id'>) => {
     try {
-      // Map frontend type to leave_type_id
-      let leaveTypeId = 3; // Default to Annual
-      if (req.type === 'Sick Leave') leaveTypeId = 2;
-      else if (req.type === 'Parental Leave') leaveTypeId = 4;
-      else if (req.type === 'Compensatory Off') leaveTypeId = 5;
+      // Map frontend type to leave_type_id dynamically using the fetched leaveTypes
+      const matchedType = leaveTypes.find(lt => lt.name.toLowerCase() === req.type.toLowerCase());
+      const leaveTypeId = matchedType ? matchedType.id : 3; // Fallback to 3 if not found
 
       await createLeaveRequest({
         leave_type_id: leaveTypeId,
@@ -235,9 +264,9 @@ export default function App() {
         end_date: req.endDate,
         reason: req.reason,
       }).unwrap();
-      showToast('Success', 'Leave applied successfully', 'success');
+      showToast('Success', 'Leave request submitted successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to apply leave', 'error');
+      showToast('Error', e?.data?.message || 'Failed to apply for leave', 'error');
     }
   };
 
@@ -286,28 +315,98 @@ export default function App() {
     showToast('Info', 'Project budget update pending', 'info');
   };
 
-  const handleAddProject = (newProj: Omit<Project, 'id'>) => {
-    showToast('Info', 'Add project pending', 'info');
+  const [createClientMutation] = useCreateClientMutation();
+
+  const handleCreateClient = async (name: string) => {
+    try {
+      await createClientMutation({ name }).unwrap();
+      showToast('Success', `Client "${name}" created successfully`, 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to create client', 'error');
+    }
   };
 
-  const handleUpdateProject = (updatedProj: Project) => {
-    showToast('Info', 'Update project pending', 'info');
+  const handleAddProject = async (newProj: Omit<Project, 'id'>) => {
+    if (!currentUser) return;
+    try {
+      await createProjectMutation({
+        client_id: Number(newProj.client), // using client field to pass client_id
+        project_manager_id: Number(currentUser.id),
+        project_name: newProj.name,
+        description: newProj.description,
+        budget: newProj.budget,
+        start_date: newProj.startDate,
+        end_date: newProj.endDate,
+      }).unwrap();
+      showToast('Success', 'Project created successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to create project', 'error');
+    }
   };
 
-  const handleAssignUserToProject = (projectId: string, userId: string) => {
-    showToast('Info', 'Assign user pending', 'info');
+  const handleUpdateProject = async (updatedProj: Project) => {
+    try {
+      await updateProjectMutation({
+        id: updatedProj.id,
+        project_name: updatedProj.name,
+        status: updatedProj.status,
+        budget: updatedProj.budget,
+        start_date: updatedProj.startDate,
+        end_date: updatedProj.endDate,
+      }).unwrap();
+      showToast('Success', 'Project updated successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to update project', 'error');
+    }
   };
 
-  const handleRemoveUserFromProject = (projectId: string, userId: string) => {
-    showToast('Info', 'Remove user pending', 'info');
+  const handleAssignUserToProject = async (projectId: string, userId: string) => {
+    try {
+      await assignUserMutation({
+        project_id: Number(projectId),
+        user_id: Number(userId),
+      }).unwrap();
+      showToast('Success', 'User assigned successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to assign user', 'error');
+    }
   };
 
-  const handleAddToolToProject = (projectId: string, tool: Omit<ProjectTool, 'id'>) => {
-    showToast('Info', 'Add tool pending', 'info');
+  const handleRemoveUserFromProject = async (projectId: string, userId: string) => {
+    try {
+      // The API takes the project_assignment_id, but the frontend currently only passes projectId and userId.
+      // For now, this is a bit tricky since we don't have assignmentId directly here.
+      // But we can find it if we look it up in projects data.
+      const project = projects.find(p => p.id === projectId);
+      // Wait, we need the assignment ID. 
+      // Actually, we'll need backend to accept DELETE /project-assignments?project_id=X&user_id=Y or we just skip this stub logic update.
+      // But wait! RTK query is already written as: url: `/project-assignments/${assignmentId}`
+      // Let's assume the frontend will pass assignmentId in `userId` parameter for now, or we find it.
+      // To prevent breaking, let's keep it as stub for a sec or use a workaround.
+      // Let's pass the assignment ID.
+      showToast('Info', 'Remove user pending (requires assignment ID lookup)', 'info');
+    } catch (e: any) {
+      showToast('Error', 'Failed to remove user', 'error');
+    }
   };
 
-  const handleRemoveToolFromProject = (projectId: string, toolId: string) => {
-    showToast('Info', 'Remove tool pending', 'info');
+  const handleAddToolToProject = async (projectId: string, tool: Omit<import('./types').ProjectTool, 'id'>) => {
+    try {
+      // Need to create tool first then allocate. For now, assume tool is created and we allocate.
+      // Or just stub it for now if createTool is not fully wired.
+      showToast('Info', 'Add tool pending (requires tool creation flow)', 'info');
+    } catch (e: any) {
+      showToast('Error', 'Failed to add tool', 'error');
+    }
+  };
+
+  const handleRemoveToolFromProject = async (projectId: string, toolId: string) => {
+    try {
+      await removeToolMutation(toolId).unwrap();
+      showToast('Success', 'Tool removed', 'success');
+    } catch (e: any) {
+      showToast('Error', 'Failed to remove tool', 'error');
+    }
   };
 
   // --- User / Admin ---
@@ -529,9 +628,11 @@ export default function App() {
                   currentUser={currentUser}
                   projects={projects}
                   allUsers={users}
+                  clients={clients}
                   timesheets={timesheets}
                   onAddProject={handleAddProject}
                   onUpdateProject={handleUpdateProject}
+                  onCreateClient={handleCreateClient}
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
                   onAddToolToProject={handleAddToolToProject}
@@ -625,6 +726,7 @@ export default function App() {
               {activeAdminTab === 'admin_leave_approvals' && currentUser && (
                 <AdminLeaveApprovals
                   currentUser={currentUser}
+                  users={users}
                   leaveRequests={leaveRequests}
                   onApproveLeave={handleApproveLeave}
                   onRejectLeave={handleRejectLeave}
@@ -654,8 +756,15 @@ export default function App() {
 
               {activeAdminTab === 'admin_working_calendar' && (
                 <WorkingCalendar
-                  calendar={workingCalendar}
-                  onUpdateCalendar={() => { showToast('Info', 'API pending', 'info'); }}
+                  config={workingCalendar}
+                  onUpdateConfig={async (newConfig) => {
+                    try {
+                      await updateWorkingCalendar(newConfig).unwrap();
+                      showToast('Success', 'Working calendar updated', 'success');
+                    } catch (e: any) {
+                      showToast('Error', e?.data?.message || 'Failed to update working calendar', 'error');
+                    }
+                  }}
                   onShowToast={showToast}
                 />
               )}

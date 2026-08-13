@@ -98,7 +98,7 @@ function mapBackendLeaveToFrontend(r: any): LeaveRequest {
     reason: r.reason ?? '',
     backupContact: '',
     isHalfDay: false,
-    status: (r.status ?? 'pending') as LeaveRequest['status'],
+    status: (r.status?.toLowerCase() ?? 'pending') as LeaveRequest['status'],
     appliedOn: r.created_at ? r.created_at.split('T')[0] : '',
     reviewedBy: r.manager ? `${r.manager.first_name} ${r.manager.last_name}` : undefined,
     reviewComment: r.rejection_reason ?? undefined,
@@ -118,12 +118,60 @@ export interface LeaveRequestCreatePayload {
 export const dataApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // -----------------------------------------------------------------------
+    // Clients
+    // -----------------------------------------------------------------------
+    getClients: builder.query<{ id: number; name: string }[], void>({
+      query: () => '/clients',
+      transformResponse: (res: any) => res.data || [],
+      providesTags: ['Project'],
+    }),
+    createClient: builder.mutation<any, { name: string; contact_info?: string }>({
+      query: (body) => ({ url: '/clients', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+
+    // -----------------------------------------------------------------------
     // Projects
     // -----------------------------------------------------------------------
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',
-      transformResponse: (res: any) => res.data?.items || res.data || [],
+      transformResponse: (res: any) => {
+        const items = res.data?.items || res.data || [];
+        return items.map((p: any) => ({
+          id: String(p.id),
+          name: p.project_name,
+          code: `PRJ-${p.id}`,
+          client: p.client_name || 'Unknown',
+          pmName: p.project_manager_name || 'Unknown',
+          pmAvatar: '',
+          status: (p.status?.toLowerCase() || 'planning') as Project['status'],
+          budget: p.budget || 0,
+          hourlyRate: 0,
+          allocatedHours: 0,
+          loggedHours: 0,
+          billableHours: 0,
+          startDate: p.start_date || '',
+          endDate: p.end_date || '',
+          assignedUserIds: p.assigned_user_ids?.map(String) || [],
+          tools: p.tools?.map((t: any) => ({ id: String(t.id), allocatedHours: t.allocated_hours })) || [],
+        }));
+      },
       providesTags: ['Project'],
+    }),
+    createProject: builder.mutation<any, {
+      client_id: number; project_manager_id: number; project_name: string;
+      description?: string; budget?: number; start_date?: string; end_date?: string;
+    }>({
+      query: (body) => ({ url: '/projects', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    updateProject: builder.mutation<any, { id: string } & Partial<any>>({
+      query: ({ id, ...body }) => ({ url: `/projects/${id}`, method: 'PUT', body }),
+      invalidatesTags: ['Project'],
+    }),
+    deleteProject: builder.mutation<void, string>({
+      query: (id) => ({ url: `/projects/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Project'],
     }),
 
     // -----------------------------------------------------------------------
@@ -133,6 +181,29 @@ export const dataApi = apiSlice.injectEndpoints({
       query: () => '/project-assignments/user/me',
       transformResponse: (res: any) => res.data || [],
       providesTags: ['Project'],
+    }),
+    assignUserToProject: builder.mutation<any, { project_id: number; user_id: number }>({
+      query: (body) => ({ url: '/project-assignments', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    removeUserFromProject: builder.mutation<void, string>({
+      query: (assignmentId) => ({ url: `/project-assignments/${assignmentId}`, method: 'DELETE' }),
+      invalidatesTags: ['Project'],
+    }),
+
+    // -----------------------------------------------------------------------
+    // Tools
+    // -----------------------------------------------------------------------
+    createTool: builder.mutation<any, { name: string; description?: string }>({
+      query: (body) => ({ url: '/tools', method: 'POST', body }),
+    }),
+    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; allocated_hours?: number }>({
+      query: (body) => ({ url: '/tool-allocations', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    deallocateTool: builder.mutation<void, string>({
+      query: (allocationId) => ({ url: `/tool-allocations/${allocationId}`, method: 'DELETE' }),
+      invalidatesTags: ['Project'],
     }),
 
     // -----------------------------------------------------------------------
@@ -441,12 +512,60 @@ export const dataApi = apiSlice.injectEndpoints({
       query: () => '/dashboard/summary',
       transformResponse: (res: any) => res.data || {},
     }),
+
+    // -----------------------------------------------------------------------
+    // Working Calendar
+    // -----------------------------------------------------------------------
+    getWorkingCalendar: builder.query<import('../../types').WorkingCalendarConfig, void>({
+      query: () => '/working-calendar',
+      transformResponse: (res: any) => {
+        const data = res.data || res;
+        return {
+          fullDayHours: data.full_day_hours,
+          halfDayHours: data.half_day_hours,
+          partialDayMinHours: data.partial_day_min_hours,
+          partialDayMaxHours: data.partial_day_max_hours,
+          workingDays: data.working_days,
+          timeZone: data.time_zone,
+        };
+      },
+      providesTags: ['WorkingCalendar' as any],
+    }),
+    updateWorkingCalendar: builder.mutation<import('../../types').WorkingCalendarConfig, import('../../types').WorkingCalendarConfig>({
+      query: (body) => ({
+        url: '/working-calendar',
+        method: 'PUT',
+        body: {
+          full_day_hours: body.fullDayHours,
+          half_day_hours: body.halfDayHours,
+          partial_day_min_hours: body.partialDayMinHours,
+          partial_day_max_hours: body.partialDayMaxHours,
+          working_days: body.workingDays,
+          time_zone: body.timeZone,
+        },
+      }),
+      invalidatesTags: ['WorkingCalendar' as any],
+    }),
   }),
 });
 
 export const {
+  // Clients
+  useGetClientsQuery,
+  useCreateClientMutation,
+  // Projects
   useGetProjectsQuery,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
+  // Assignments
   useGetMyProjectAssignmentsQuery,
+  useAssignUserToProjectMutation,
+  useRemoveUserFromProjectMutation,
+  // Tools
+  useCreateToolMutation,
+  useAllocateToolMutation,
+  useDeallocateToolMutation,
   // Timesheets
   useGetTimesheetsQuery,
   useCreateTimesheetMutation,
@@ -482,5 +601,7 @@ export const {
   // Misc
   useGetRolesQuery,
   useGetDashboardSummaryQuery,
+  useGetWorkingCalendarQuery,
+  useUpdateWorkingCalendarMutation,
 } = dataApi;
 
