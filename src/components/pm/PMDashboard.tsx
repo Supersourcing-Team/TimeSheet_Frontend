@@ -21,7 +21,8 @@ interface PMDashboardProps {
   allUsers: User[];
   timesheets: TimesheetEntry[];
   weekendRequests: WeekendWorkRequest[];
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab: (tab: string) => void;
+  onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const PMDashboard: React.FC<PMDashboardProps> = ({
@@ -31,6 +32,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   timesheets = [],
   weekendRequests = [],
   onNavigateTab,
+  onShowToast,
 }) => {
   const safeProjects = projects || [];
   const safeTimesheets = timesheets || [];

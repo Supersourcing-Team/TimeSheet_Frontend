@@ -14,9 +14,18 @@ import {
   useUpdateHolidayMutation,
   useDeleteHolidayMutation,
   useCreateTimesheetsMutation,
-  useUpdateTimesheetStatusMutation,
+  useUpdateTimesheetMutation,
+  useDeleteTimesheetMutation,
   useCreateLeaveRequestMutation,
-  useUpdateLeaveStatusMutation,
+  useApproveLeaveRequestMutation,
+  useRejectLeaveRequestMutation,
+  useCancelLeaveRequestMutation,
+  useGetMyLeaveBalancesQuery,
+  useGetLeaveTypesQuery,
+  useCreateLeaveTypeMutation,
+  useUpdateLeaveTypeMutation,
+  useDeleteLeaveTypeMutation,
+  useGetMyProjectAssignmentsQuery,
 } from './store/api/dataApi';
 import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
 import { setCredentials } from './store/slices/authSlice';
@@ -57,16 +66,24 @@ import { PMTeamUtilization } from './components/pm/PMTeamUtilization';
 
 import { AccountManagerDashboard } from './components/ac_manager/AccountManagerDashboard';
 
-import { AdminOverview } from './components/admin/AdminOverview';
-import { UserManagement } from './components/admin/UserManagement';
-import { AdminLeaveApprovals } from './components/admin/AdminLeaveApprovals';
-import { HolidaysManagement } from './components/admin/HolidaysManagement';
-import { LeaveTypesManagement } from './components/admin/LeaveTypesManagement';
-import { WorkingCalendar } from './components/admin/WorkingCalendar';
-import { SettingsManagement } from './components/admin/SettingsManagement';
+const AdminOverview = React.lazy(() => import('./components/admin/AdminOverview').then(m => ({ default: m.AdminOverview })));
+AdminOverview.displayName = 'AdminOverview';
+const UserManagement = React.lazy(() => import('./components/admin/UserManagement').then(m => ({ default: m.UserManagement })));
+UserManagement.displayName = 'UserManagement';
+const AdminLeaveApprovals = React.lazy(() => import('./components/admin/AdminLeaveApprovals').then(m => ({ default: m.AdminLeaveApprovals })));
+AdminLeaveApprovals.displayName = 'AdminLeaveApprovals';
+const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysManagement').then(m => ({ default: m.HolidaysManagement })));
+HolidaysManagement.displayName = 'HolidaysManagement';
+const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
+LeaveTypesManagement.displayName = 'LeaveTypesManagement';
+const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
+WorkingCalendar.displayName = 'WorkingCalendar';
+const SettingsManagement = React.lazy(() => import('./components/admin/SettingsManagement').then(m => ({ default: m.SettingsManagement })));
+SettingsManagement.displayName = 'SettingsManagement';
 
 // Initial mocks for things not yet in backend API endpoints
 import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -107,22 +124,30 @@ export default function App() {
 
   const { data: weekendRequests = [] } = useGetWeekendRequestsQuery(undefined, { skip });
   const { data: holidays = [] } = useGetHolidaysQuery(undefined, { skip });
+  const { data: myProjectAssignments = [] } = useGetMyProjectAssignmentsQuery(undefined, { skip });
+  const { data: fetchedLeaveBalance } = useGetMyLeaveBalancesQuery(undefined, { skip });
+  const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip: skip || !isAdmin });
 
   // Fallbacks for data not yet wired up
-  const [leaveBalance] = useState<LeaveBalance>(INITIAL_LEAVE_BALANCE);
+  const leaveBalance = fetchedLeaveBalance || INITIAL_LEAVE_BALANCE;
   const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
-  const [leaveTypes] = useState(INITIAL_LEAVE_TYPES);
   const [workingCalendar] = useState(INITIAL_WORKING_CALENDAR);
   const [settings] = useState(INITIAL_SETTINGS);
 
   // RTK Mutations
   const [createTimesheets] = useCreateTimesheetsMutation();
-  const [updateTimesheetStatus] = useUpdateTimesheetStatusMutation();
+  const [updateTimesheetApi] = useUpdateTimesheetMutation();
+  const [deleteTimesheetApi] = useDeleteTimesheetMutation();
   const [createLeaveRequest] = useCreateLeaveRequestMutation();
-  const [updateLeaveStatus] = useUpdateLeaveStatusMutation();
+  const [approveLeaveRequest] = useApproveLeaveRequestMutation();
+  const [rejectLeaveRequest] = useRejectLeaveRequestMutation();
+  const [cancelLeaveRequest] = useCancelLeaveRequestMutation();
   const [createHoliday] = useCreateHolidayMutation();
   const [updateHoliday] = useUpdateHolidayMutation();
   const [deleteHoliday] = useDeleteHolidayMutation();
+  const [createLeaveType] = useCreateLeaveTypeMutation();
+  const [updateLeaveType] = useUpdateLeaveTypeMutation();
+  const [deleteLeaveType] = useDeleteLeaveTypeMutation();
   const [logoutApi] = useLogoutMutation();
 
   const showToast = (title: string, description?: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -155,68 +180,91 @@ export default function App() {
   // --- Timesheet Handlers ---
   const handleTimesheetSubmit = async (entries: Omit<TimesheetEntry, 'id'>[]) => {
     try {
-      await createTimesheets(entries).unwrap();
+      const payload = entries.map(e => ({
+        project_assignment_id: Number(e.projectId),
+        timesheet_date: e.date,
+        billable_hours: e.billableHours,
+        non_billable_hours: e.nonBillableHours,
+        billable_work_summary: e.billableDescription || e.description,
+        non_billable_work_summary: e.nonBillableDescription,
+      }));
+      await createTimesheets(payload as any).unwrap();
       showToast('Success', 'Timesheets submitted', 'success');
     } catch (e: any) {
       showToast('Error', e?.data?.message || 'Failed to submit timesheets', 'error');
     }
   };
 
-  const handleDeleteTimesheet = (id: string) => {
-    showToast('Info', 'Delete not yet integrated with API', 'info');
-  };
-
-  const handleUpdateTimesheet = (updatedEntry: TimesheetEntry) => {
-    showToast('Info', 'Update not yet integrated with API', 'info');
-  };
-
-  const handleApproveTimesheet = async (id: string) => {
+  const handleDeleteTimesheet = async (id: string) => {
     try {
-      await updateTimesheetStatus({ id, status: 'approved' }).unwrap();
-      showToast('Success', 'Timesheet approved', 'success');
-    } catch (e) {
-      showToast('Error', 'Failed to approve', 'error');
+      await deleteTimesheetApi(id).unwrap();
+      showToast('Success', 'Timesheet entry deleted', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to delete timesheet', 'error');
     }
   };
 
-  const handleRejectTimesheet = async (id: string, reason: string) => {
+  const handleUpdateTimesheet = async (updatedEntry: TimesheetEntry) => {
     try {
-      await updateTimesheetStatus({ id, status: 'rejected', reason }).unwrap();
-      showToast('Success', 'Timesheet rejected', 'success');
-    } catch (e) {
-      showToast('Error', 'Failed to reject', 'error');
+      await updateTimesheetApi({
+        id: updatedEntry.id,
+        billable_hours: updatedEntry.billableHours,
+        non_billable_hours: updatedEntry.nonBillableHours,
+        billable_work_summary: updatedEntry.billableDescription || updatedEntry.description,
+        non_billable_work_summary: updatedEntry.nonBillableDescription,
+        timesheet_date: updatedEntry.date,
+      }).unwrap();
+      showToast('Success', 'Timesheet entry updated', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to update timesheet', 'error');
     }
   };
 
   // --- Leave Handlers ---
   const handleApplyLeave = async (req: Omit<LeaveRequest, 'id'>) => {
     try {
-      await createLeaveRequest(req).unwrap();
-      showToast('Success', 'Leave applied', 'success');
-    } catch (e) {
-      showToast('Error', 'Failed to apply leave', 'error');
+      // Map frontend type to leave_type_id
+      let leaveTypeId = 3; // Default to Annual
+      if (req.type === 'Sick Leave') leaveTypeId = 2;
+      else if (req.type === 'Parental Leave') leaveTypeId = 4;
+      else if (req.type === 'Compensatory Off') leaveTypeId = 5;
+
+      await createLeaveRequest({
+        leave_type_id: leaveTypeId,
+        start_date: req.startDate,
+        end_date: req.endDate,
+        reason: req.reason,
+      }).unwrap();
+      showToast('Success', 'Leave applied successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to apply leave', 'error');
     }
   };
 
-  const handleCancelLeave = (id: string) => {
-    showToast('Info', 'Cancel leave not yet integrated', 'info');
+  const handleCancelLeave = async (id: string) => {
+    try {
+      await cancelLeaveRequest(id).unwrap();
+      showToast('Success', 'Leave request cancelled', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to cancel leave', 'error');
+    }
   };
 
   const handleApproveLeave = async (id: string, comment?: string) => {
     try {
-      await updateLeaveStatus({ id, status: 'approved', comment }).unwrap();
+      await approveLeaveRequest({ id, comment }).unwrap();
       showToast('Success', 'Leave approved', 'success');
-    } catch (e) {
-      showToast('Error', 'Failed to approve leave', 'error');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to approve leave', 'error');
     }
   };
 
   const handleRejectLeave = async (id: string, comment?: string) => {
     try {
-      await updateLeaveStatus({ id, status: 'rejected', comment }).unwrap();
+      await rejectLeaveRequest({ id, rejection_reason: comment }).unwrap();
       showToast('Success', 'Leave rejected', 'success');
-    } catch (e) {
-      showToast('Error', 'Failed to reject leave', 'error');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to reject leave', 'error');
     }
   };
 
@@ -297,25 +345,56 @@ export default function App() {
   const handleDeleteHoliday = async (id: string) => {
     try {
       await deleteHoliday(id).unwrap();
-      showToast('Success', 'Holiday Deleted', 'success');
-    } catch (e: any) {
-      showToast('Error', e.message || 'Failed to delete holiday', 'error');
+      showToast('Success', 'Holiday deleted', 'success');
+    } catch (e) {
+      showToast('Error', 'Failed to delete holiday', 'error');
     }
   };
 
-  const handleAddLeaveType = (item: Omit<LeaveTypeConfig, 'id'>) => {
-    showToast('Info', 'API pending', 'info');
+  // --- Leave Types Handlers ---
+  const handleAddLeaveType = async (type: Omit<LeaveTypeConfig, 'id'>) => {
+    try {
+      await createLeaveType({
+        name: type.name,
+        code: type.code,
+        daysPerYear: type.daysPerYear,
+        isPaid: type.isPaid,
+        requiresDocument: type.requiresDocument,
+        description: type.description,
+      }).unwrap();
+      showToast('Success', 'Leave type added', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to add leave type', 'error');
+    }
   };
 
-  const handleEditLeaveType = (updatedItem: LeaveTypeConfig) => {
-    showToast('Info', 'API pending', 'info');
+  const handleEditLeaveType = async (updated: LeaveTypeConfig) => {
+    try {
+      await updateLeaveType({
+        id: updated.id,
+        name: updated.name,
+        code: updated.code,
+        daysPerYear: updated.daysPerYear,
+        isPaid: updated.isPaid,
+        requiresDocument: updated.requiresDocument,
+        description: updated.description,
+      }).unwrap();
+      showToast('Success', 'Leave type updated', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to update leave type', 'error');
+    }
   };
 
-  const handleToggleLeaveTypeStatus = (id: string) => {
-    showToast('Info', 'API pending', 'info');
+  const handleToggleLeaveTypeStatus = async (id: string) => {
+    try {
+      await deleteLeaveType(id).unwrap();
+      showToast('Success', 'Leave type status toggled', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to toggle status', 'error');
+    }
   };
 
-
+  // -----------------------------------------------------------------
   const pendingTimesheetsCount = (timesheets || []).filter((t: any) => t.status === 'pending').length;
   const pendingLeavesCount = (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
   const pendingWeekendCount = (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
@@ -382,6 +461,7 @@ export default function App() {
                 <SubmitTimesheet
                   currentUser={currentUser}
                   projects={projects}
+                  projectAssignments={myProjectAssignments}
                   onSubmitTimesheet={handleTimesheetSubmit}
                   onShowToast={showToast}
                 />
@@ -439,8 +519,6 @@ export default function App() {
                   allUsers={users}
                   timesheets={timesheets}
                   weekendRequests={weekendRequests}
-                  onApproveTimesheet={handleApproveTimesheet}
-                  onRejectTimesheet={handleRejectTimesheet}
                   onNavigateTab={(tab) => setActivePmTab(tab as PMTab)}
                   onShowToast={showToast}
                 />
@@ -522,8 +600,9 @@ export default function App() {
           )}
 
           {portalMode === 'admin' && (
-            <>
-              {activeAdminTab === 'admin_overview' && (
+            <ErrorBoundary>
+              <React.Suspense fallback={<div className="flex h-full items-center justify-center p-12 text-slate-400 font-medium animate-pulse">Loading admin module...</div>}>
+                {activeAdminTab === 'admin_overview' && (
                 <AdminOverview
                   users={users}
                   projects={projects}
@@ -531,7 +610,6 @@ export default function App() {
                   leaveRequests={leaveRequests}
                   activities={activities}
                   onNavigateTab={(tab) => setActiveAdminTab(tab)}
-                  onApproveTimesheet={handleApproveTimesheet}
                   onApproveLeave={handleApproveLeave}
                   onShowToast={showToast}
                 />
@@ -554,27 +632,27 @@ export default function App() {
                 />
               )}
 
-              {activeAdminTab === 'holidays' && (
+              {activeAdminTab === 'admin_holidays' && (
                 <HolidaysManagement
                   holidays={holidays}
                   onAddHoliday={handleAddHoliday}
-                  onEditHoliday={handleEditHoliday}
+                  onUpdateHoliday={handleEditHoliday}
                   onDeleteHoliday={handleDeleteHoliday}
                   onShowToast={showToast}
                 />
               )}
 
-              {activeAdminTab === 'leave_types' && (
+              {activeAdminTab === 'admin_leave_types' && (
                 <LeaveTypesManagement
                   leaveTypes={leaveTypes}
                   onAddLeaveType={handleAddLeaveType}
-                  onEditLeaveType={handleEditLeaveType}
-                  onToggleStatus={handleToggleLeaveTypeStatus}
+                  onUpdateLeaveType={handleEditLeaveType}
+                  onToggleLeaveTypeStatus={handleToggleLeaveTypeStatus}
                   onShowToast={showToast}
                 />
               )}
 
-              {activeAdminTab === 'working_calendar' && (
+              {activeAdminTab === 'admin_working_calendar' && (
                 <WorkingCalendar
                   calendar={workingCalendar}
                   onUpdateCalendar={() => { showToast('Info', 'API pending', 'info'); }}
@@ -582,14 +660,15 @@ export default function App() {
                 />
               )}
 
-              {activeAdminTab === 'settings' && (
+              {activeAdminTab === 'admin_settings' && (
                 <SettingsManagement
                   settings={settings}
                   onUpdateSettings={() => { showToast('Info', 'API pending', 'info'); }}
                   onShowToast={showToast}
                 />
               )}
-            </>
+              </React.Suspense>
+            </ErrorBoundary>
           )}
         </main>
       </div>

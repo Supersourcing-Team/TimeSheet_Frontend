@@ -28,7 +28,6 @@ interface AdminOverviewProps {
   leaveRequests: LeaveRequest[];
   activities: ActivityLog[];
   onNavigateTab: (tab: AdminTab) => void;
-  onApproveTimesheet: (id: string) => void;
   onApproveLeave: (id: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -40,7 +39,6 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   leaveRequests,
   activities,
   onNavigateTab,
-  onApproveTimesheet,
   onApproveLeave,
   onShowToast,
 }) => {
@@ -66,8 +64,8 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   const activeUsersCount = users.filter((u) => u.status === 'active').length;
   const onLeaveUsersCount = users.filter((u) => u.status === 'on_leave').length || 0;
   
-  const pendingLeaves = dashboardData?.recent_leaves?.filter((l: any) => l.status.toLowerCase() === 'pending') || [];
-  const activeProjectsCount = dashboardData?.role_overview?.active_org_projects || 0;
+  const pendingLeaves = safeLeaveRequests.filter((l) => l.status.toLowerCase() === 'pending');
+  const activeProjectsCount = safeProjects.length;
   
   const nextHoliday = dashboardData?.upcoming_holiday;
 
