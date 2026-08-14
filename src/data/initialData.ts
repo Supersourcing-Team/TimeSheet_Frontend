@@ -713,7 +713,7 @@ export const INITIAL_WORKING_CALENDAR = {
 };
 
 export const INITIAL_SETTINGS = {
-  orgName: 'Chronos Enterprise Solutions Pvt. Ltd.',
+  orgName: 'SuperTime Enterprise Solutions Pvt. Ltd.',
   orgRegId: 'CIN-U72900MH2021PTC368912',
   contactEmail: 'admin@chronosenterprise.com',
   companyLogoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',

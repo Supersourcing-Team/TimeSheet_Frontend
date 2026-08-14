@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-black text-lg tracking-tight text-slate-900">
-              CHRONOS
+              SuperTime
             </span>
             <span className="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-blue-50 text-blue-700 border border-blue-200 uppercase">
               ENTERPRISE
@@ -94,65 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Role Portal Switcher */}
-        <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onTogglePortalMode('employee')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              portalMode === 'employee'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Employee</span>
-          </button>
 
-          <button
-            type="button"
-            onClick={() => onTogglePortalMode('pm')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              portalMode === 'pm'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">PM</span>
-            {pendingApprovalsCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                {pendingApprovalsCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTogglePortalMode('ac_manager')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              portalMode === 'ac_manager'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">AC Manager</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTogglePortalMode('admin')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              portalMode === 'admin'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Admin</span>
-          </button>
-        </div>
 
         {/* Notifications Dropdown */}
         <div className="relative">
@@ -255,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-rose-200"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Switch Role / Logout</span>
+                  <span>Logout</span>
                 </button>
               </div>
             </div>
