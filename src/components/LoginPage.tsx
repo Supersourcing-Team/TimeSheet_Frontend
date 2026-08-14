@@ -202,20 +202,22 @@ export const LoginPage: React.FC = () => {
 
              {/* Auth Error Banner */}
              {authError && (
-               <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2">
-                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                 <span className="leading-relaxed">{authError}</span>
+               <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                 <div className="p-1 bg-white rounded-full shrink-0 shadow-sm">
+                   <AlertCircle className="w-4 h-4 text-red-500" />
+                 </div>
+                 <span className="leading-relaxed font-medium">{authError}</span>
                </div>
              )}
 
-             <div className="flex flex-col items-center space-y-4 relative z-10 min-h-[56px]">
+             <div className="flex flex-col items-center space-y-4 relative z-10 min-h-[60px]">
                 {isGoogleSigningIn ? (
-                  <div className="w-full h-14 rounded-xl border border-slate-200 bg-white flex items-center justify-center gap-3">
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-slate-600 font-medium text-[15px]">Connecting...</span>
+                  <div className="w-full h-[60px] rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center gap-3 animate-pulse">
+                    <div className="w-5 h-5 border-[2.5px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                    <span className="text-blue-700 font-semibold text-[15px]">Connecting to workspace...</span>
                   </div>
                 ) : (
-                  <div id="google-sso-btn-container" className="flex justify-center w-full"></div>
+                  <div id="google-sso-btn-container" className="flex justify-center w-full hover:scale-[1.02] transition-transform duration-200"></div>
                 )}
              </div>
 

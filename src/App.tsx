@@ -45,6 +45,7 @@ import {
 } from './store/api/dataApi';
 import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
 import { setCredentials } from './store/slices/authSlice';
+import { apiSlice } from './store/apiSlice';
 
 import {
   User,
@@ -110,18 +111,54 @@ export default function App() {
     skip: !!currentUser, // don't fetch if we already have the user in state
   });
 
+  // Initialize URL Sync variables
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const urlPortal = searchParams.get('portal');
+  const urlTab = searchParams.get('tab');
+
   // If user profile is successfully fetched, set the credentials
   React.useEffect(() => {
     if (userProfile && !currentUser) {
       dispatch(setCredentials({ user: userProfile }));
+      // Restore portal mode if explicitly provided in the URL and valid
+      if (urlPortal && ['employee', 'pm', 'ac_manager', 'admin'].includes(urlPortal)) {
+        setTimeout(() => dispatch(setPortalMode(urlPortal as ActivePortalMode)), 0);
+      }
     }
-  }, [userProfile, currentUser, dispatch]);
+  }, [userProfile, currentUser, dispatch, urlPortal]);
 
-  // Local UI State
-  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>('my_dashboard');
-  const [activePmTab, setActivePmTab] = useState<PMTab>('pm_dashboard');
-  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>('ac_dashboard');
-  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('admin_overview');
+  // Local UI State initialized from URL
+  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>(
+    () => (urlPortal === 'employee' && urlTab ? urlTab : 'my_dashboard') as EmployeeTab
+  );
+  const [activePmTab, setActivePmTab] = useState<PMTab>(
+    () => (urlPortal === 'pm' && urlTab ? urlTab : 'pm_dashboard') as PMTab
+  );
+  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>(
+    () => (urlPortal === 'ac_manager' && urlTab ? urlTab : 'ac_dashboard') as ACManagerTab
+  );
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>(
+    () => (urlPortal === 'admin' && urlTab ? urlTab : 'admin_overview') as AdminTab
+  );
+
+  // Sync state changes to URL
+  React.useEffect(() => {
+    if (currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      params.set('portal', portalMode);
+      if (portalMode === 'employee') params.set('tab', activeEmployeeTab);
+      else if (portalMode === 'pm') params.set('tab', activePmTab);
+      else if (portalMode === 'ac_manager') params.set('tab', activeAcTab);
+      else if (portalMode === 'admin') params.set('tab', activeAdminTab);
+      
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, '', newUrl);
+    } else {
+      // Clear URL parameters when logged out
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [currentUser, portalMode, activeEmployeeTab, activePmTab, activeAcTab, activeAdminTab]);
+
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // RTK Queries (Skipped if not logged in)
@@ -214,6 +251,7 @@ export default function App() {
     } catch (e) {
       console.error('Logout API failed:', e);
     } finally {
+      dispatch(apiSlice.util.resetApiState());
       dispatch(logout());
     }
   };
@@ -531,15 +569,20 @@ export default function App() {
   const pendingLeavesCount = (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
   const pendingWeekendCount = (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
 
+  if (isAuthLoading && !currentUser) {
+    return (
+      <div className="min-h-screen bg-[#f8fafe] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-medium animate-pulse">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative">
-        {isAuthLoading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-white shadow-md rounded-full border border-blue-100 animate-pulse">
-             <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="text-xs font-bold text-blue-600">Checking existing session...</p>
-          </div>
-        )}
         <LoginPage />
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
       </div>
