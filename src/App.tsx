@@ -9,6 +9,11 @@ import {
   useGetLeaveRequestsQuery,
   useGetMyLeaveRequestsQuery,
   useGetWeekendRequestsQuery,
+  useGetPendingWeekendRequestsQuery,
+  useSubmitWeekendWorkMutation,
+  useApproveWeekendWorkMutation,
+  useRejectWeekendWorkMutation,
+  useCancelWeekendWorkMutation,
   useGetHolidaysQuery,
   useCreateHolidayMutation,
   useUpdateHolidayMutation,
@@ -134,7 +139,9 @@ export default function App() {
   const { data: myLeaveRequests = [] } = useGetMyLeaveRequestsQuery(undefined, { skip: skip || isAdmin });
   const leaveRequests = isAdmin ? allLeaveRequests : myLeaveRequests;
 
-  const { data: weekendRequests = [] } = useGetWeekendRequestsQuery(undefined, { skip });
+  const { data: myWeekendRequests = [] } = useGetWeekendRequestsQuery(undefined, { skip });
+  const { data: pendingWeekendRequests = [] } = useGetPendingWeekendRequestsQuery(undefined, { skip: skip || (!isPm && !isAdmin) });
+  const weekendRequests = isPm || isAdmin ? pendingWeekendRequests : myWeekendRequests;
   const { data: holidays = [] } = useGetHolidaysQuery(undefined, { skip });
   const { data: myProjectAssignments = [] } = useGetMyProjectAssignmentsQuery(undefined, { skip });
   const { data: fetchedLeaveBalance } = useGetMyLeaveBalancesQuery(undefined, { skip });
@@ -179,6 +186,9 @@ export default function App() {
   const [createLeaveType] = useCreateLeaveTypeMutation();
   const [updateLeaveType] = useUpdateLeaveTypeMutation();
   const [deleteLeaveType] = useDeleteLeaveTypeMutation();
+  const [submitWeekendWork] = useSubmitWeekendWorkMutation();
+  const [approveWeekendWork] = useApproveWeekendWorkMutation();
+  const [rejectWeekendWork] = useRejectWeekendWorkMutation();
   const [logoutApi] = useLogoutMutation();
 
   const showToast = (title: string, description?: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -298,16 +308,39 @@ export default function App() {
   };
 
   // --- Weekend Work ---
-  const handleRequestWeekendWork = (req: Omit<WeekendWorkRequest, 'id'>) => {
-    showToast('Info', 'Weekend work API pending', 'info');
+  const handleRequestWeekendWork = async (req: Omit<WeekendWorkRequest, 'id'>) => {
+    try {
+      const assignment = myProjectAssignments.find(a => String(a.project_id) === req.projectId);
+      const assignmentId = assignment ? assignment.id : Number(req.projectId); // fallback
+      
+      await submitWeekendWork({
+        project_assignment_id: assignmentId,
+        work_date: req.workDate,
+        planned_hours: req.plannedHours,
+        reason: req.deliverableObjective,
+      }).unwrap();
+      showToast('Success', 'Weekend work request submitted successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to submit weekend work request', 'error');
+    }
   };
 
-  const handleApproveWeekendWork = (id: string) => {
-    showToast('Info', 'Weekend work API pending', 'info');
+  const handleApproveWeekendWork = async (id: string) => {
+    try {
+      await approveWeekendWork({ id }).unwrap();
+      showToast('Success', 'Weekend work approved', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to approve weekend work', 'error');
+    }
   };
 
-  const handleRejectWeekendWork = (id: string, comment?: string) => {
-    showToast('Info', 'Weekend work API pending', 'info');
+  const handleRejectWeekendWork = async (id: string, comment?: string) => {
+    try {
+      await rejectWeekendWork({ id, rejection_reason: comment }).unwrap();
+      showToast('Success', 'Weekend work rejected', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to reject weekend work', 'error');
+    }
   };
 
   // --- Projects / PM / AC ---
@@ -602,6 +635,7 @@ export default function App() {
                   currentUser={currentUser}
                   projects={projects}
                   weekendRequests={weekendRequests}
+                  holidays={holidays || []}
                   onRequestWeekendWork={handleRequestWeekendWork}
                   onShowToast={showToast}
                 />

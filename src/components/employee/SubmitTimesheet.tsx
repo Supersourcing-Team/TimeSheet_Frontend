@@ -6,13 +6,10 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
-  Calendar,
   AlertCircle,
   Save,
   Send,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
   Info,
   FileText,
   Loader2,
@@ -29,7 +26,7 @@ interface SubmitTimesheetProps {
 
 interface FormRow {
   projectId: string;
-  category: TimesheetEntry['category'];
+  date: string;
   billableHours: number;
   nonBillableHours: number;
   billableDescription: string;
@@ -44,12 +41,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   onShowToast,
 }) => {
   const today = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState(today);
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const [rows, setRows] = useState<FormRow[]>([
     {
       projectId: projects[0]?.id || '',
-      category: 'Development',
+      date: today,
       billableHours: 0,
       nonBillableHours: 0,
       billableDescription: '',
@@ -59,22 +55,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
 
-  const categories: TimesheetEntry['category'][] = [
-    'Development',
-    'Design',
-    'Meeting',
-    'Code Review',
-    'Testing',
-    'Documentation',
-    'DevOps',
-  ];
-
   const handleAddRow = () => {
     setRows([
       ...rows,
       {
         projectId: assignedProjects[0]?.id || projects[0]?.id || '',
-        category: 'Development',
+        date: today,
         billableHours: 2.0,
         nonBillableHours: 0,
         billableDescription: '',
@@ -145,7 +131,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
       payloads.push({
         project_assignment_id: assignmentForProject.id,
-        timesheet_date: selectedDate,
+        timesheet_date: row.date,
         billable_hours: Number(row.billableHours),
         billable_work_summary: row.billableDescription || undefined,
         non_billable_hours: Number(row.nonBillableHours),
@@ -162,14 +148,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       await createTimesheets(payloads).unwrap();
       onShowToast(
         'Timesheet Submitted!',
-        `Submitted ${grandTotal} hours for ${selectedDate}`,
+        `Submitted ${grandTotal} hours.`,
         'success'
       );
       // Reset form after successful submit
       setRows([
         {
           projectId: projects[0]?.id || '',
-          category: 'Development',
+          date: today,
           billableHours: 0,
           nonBillableHours: 0,
           billableDescription: '',
@@ -197,44 +183,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
           </p>
         </div>
 
-        {/* Date Selector Controls */}
-        <div className="flex items-center gap-2 bg-white/10 p-2 rounded-xl border border-white/20 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() - 1);
-              setSelectedDate(d.toISOString().split('T')[0]);
-            }}
-            className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors cursor-pointer"
-            title="Previous Day"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
 
-          <div className="flex items-center gap-2 px-2 text-xs font-bold text-white">
-            <Calendar className="w-4 h-4 text-blue-300" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent font-black text-white focus:outline-none cursor-pointer"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() + 1);
-              setSelectedDate(d.toISOString().split('T')[0]);
-            }}
-            className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors cursor-pointer"
-            title="Next Day"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
 
       {/* Target Progress & Summary Bar */}
@@ -326,24 +275,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   </select>
                 </div>
 
-                {/* Category Dropdown */}
+                {/* Date Input */}
                 <div className="md:col-span-3 space-y-1">
                   <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                    Category
+                    Date
                   </label>
-                  <select
-                    value={row.category}
-                    onChange={(e) =>
-                      handleRowChange(idx, 'category', e.target.value as TimesheetEntry['category'])
-                    }
+                  <input
+                    type="date"
+                    value={row.date}
+                    onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 {/* Billable Hours */}
@@ -406,7 +348,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     value={row.billableDescription}
                     onChange={(e) => handleRowChange(idx, 'billableDescription', e.target.value)}
                     placeholder="E.g. Built API endpoint, fixed payment bug, wrote design specs..."
@@ -423,7 +365,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     value={row.nonBillableDescription}
                     onChange={(e) => handleRowChange(idx, 'nonBillableDescription', e.target.value)}
                     placeholder="E.g. Daily standup meeting, local docker debugging, JIRA updates..."

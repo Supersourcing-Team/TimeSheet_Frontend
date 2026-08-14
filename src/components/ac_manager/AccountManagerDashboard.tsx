@@ -44,6 +44,8 @@ interface AccountManagerDashboardProps {
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+import { useGetProjectFinancialsQuery } from '../../store/api/dataApi';
+
 export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = ({
   currentUser,
   projects,
@@ -72,6 +74,8 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
   const [newToolCost, setNewToolCost] = useState(15000);
   const [newToolUsersCount, setNewToolUsersCount] = useState(5);
 
+  const { data: analyticsData, isLoading } = useGetProjectFinancialsQuery();
+
   const safeProjects = projects || [];
   const safeTimesheets = timesheets || [];
   const safeAllUsers = allUsers || [];
@@ -86,32 +90,14 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
     return formatINR(amount);
   };
 
-  // Aggregates
-  const totalBudget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+  // Aggregates from Backend
+  const totalBudget = analyticsData?.total_budget || 0;
+  const totalRevenue = analyticsData?.total_revenue || 0;
+  const totalCost = analyticsData?.total_cost || 0;
+  const totalProfit = analyticsData?.total_profit || 0;
+  const activeProjectsCount = analyticsData?.active_projects_count || 0;
   
-  // Calculate revenue & expenses based on approved timesheets or realistic fallback for portfolio view
-  const approvedTimesheets = safeTimesheets.filter((t) => t.status === 'approved');
-  
-  const totalRevenue = approvedTimesheets.length > 0
-    ? approvedTimesheets.reduce((sum, t) => {
-        const prj = safeProjects.find((p) => p.id === t.projectId);
-        const rate = prj ? prj.hourlyRate : 3500;
-        return sum + (t.billableHours || 0) * rate;
-      }, 0)
-    : 158000000; // ₹15.8 Cr baseline
-
-  const totalCost = approvedTimesheets.length > 0
-    ? approvedTimesheets.reduce((sum, t) => {
-        const u = safeAllUsers.find((usr) => usr.id === t.userId);
-        const rate = u ? u.hourlyRate : 1800;
-        return sum + (t.hours || 0) * rate;
-      }, 0) + 12000000
-    : 82000000; // ₹8.2 Cr baseline
-
-  const totalProfit = totalRevenue - totalCost;
-  const activeProjectsCount = safeProjects.filter((p) => p.status === 'active').length || 36;
-
-  // Filtered projects for snapshot table
+  // Keep using local active filter for snapshot table
   const filteredSnapshotProjects = safeProjects.filter((p) => {
     if (snapshotFilter === 'active' && p.status !== 'active') return false;
     if (snapshotFilter === 'completed' && p.status !== 'completed') return false;
@@ -233,7 +219,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-500">Total Project Budget</p>
-                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">₹12.5 Cr</p>
+                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalBudget)}</p>
               </div>
             </div>
 
@@ -249,7 +235,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-500">Total Project Cost</p>
-                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">₹8.2 Cr</p>
+                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalCost)}</p>
               </div>
             </div>
 
@@ -265,7 +251,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-500">Total Revenue</p>
-                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">₹15.8 Cr</p>
+                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalRevenue)}</p>
               </div>
             </div>
 
@@ -281,7 +267,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-500">Total Profit</p>
-                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">₹7.6 Cr</p>
+                <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalProfit)}</p>
               </div>
             </div>
 

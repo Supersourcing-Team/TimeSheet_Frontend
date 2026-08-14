@@ -379,8 +379,61 @@ export const dataApi = apiSlice.injectEndpoints({
     // -----------------------------------------------------------------------
     getWeekendRequests: builder.query<WeekendWorkRequest[], void>({
       query: () => '/weekend-work/me',
-      transformResponse: (res: any) => res.data?.items || res.data || [],
+      transformResponse: (res: any) => {
+        const items = res.data?.items || res.data || [];
+        return items.map((w: any) => ({
+          id: String(w.id),
+          userId: String(w.project_assignment?.user_id || ''),
+          userName: w.project_assignment?.user ? `${w.project_assignment.user.first_name} ${w.project_assignment.user.last_name}` : '',
+          userAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent((w.project_assignment?.user?.first_name || '') + ' ' + (w.project_assignment?.user?.last_name || ''))}&background=random`,
+          projectId: String(w.project_assignment?.project_id || ''),
+          projectName: w.project_assignment?.project?.project_name || '',
+          workDate: w.work_date,
+          plannedHours: w.planned_hours || 0,
+          deliverableObjective: w.reason,
+          status: w.status?.toLowerCase(),
+          requestedOn: w.created_at ? w.created_at.split('T')[0] : '',
+          reviewedBy: w.approver ? `${w.approver.first_name} ${w.approver.last_name}` : undefined,
+        }));
+      },
       providesTags: ['WeekendWork'],
+    }),
+    getPendingWeekendRequests: builder.query<WeekendWorkRequest[], void>({
+      query: () => '/weekend-work/pending',
+      transformResponse: (res: any) => {
+        const items = res.data?.items || res.data || [];
+        return items.map((w: any) => ({
+          id: String(w.id),
+          userId: String(w.project_assignment?.user_id || ''),
+          userName: w.project_assignment?.user ? `${w.project_assignment.user.first_name} ${w.project_assignment.user.last_name}` : '',
+          userAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent((w.project_assignment?.user?.first_name || '') + ' ' + (w.project_assignment?.user?.last_name || ''))}&background=random`,
+          projectId: String(w.project_assignment?.project_id || ''),
+          projectName: w.project_assignment?.project?.project_name || '',
+          workDate: w.work_date,
+          plannedHours: w.planned_hours || 0,
+          deliverableObjective: w.reason,
+          status: w.status?.toLowerCase(),
+          requestedOn: w.created_at ? w.created_at.split('T')[0] : '',
+          reviewedBy: w.approver ? `${w.approver.first_name} ${w.approver.last_name}` : undefined,
+        }));
+      },
+      providesTags: ['WeekendWork'],
+    }),
+    submitWeekendWork: builder.mutation<void, { project_assignment_id: number; work_date: string; reason: string }>({
+      query: (body) => ({ url: '/weekend-work', method: 'POST', body }),
+      invalidatesTags: ['WeekendWork'],
+    }),
+    approveWeekendWork: builder.mutation<void, { id: string }>({
+      query: ({ id }) => ({ url: `/weekend-work/${id}/approve`, method: 'PUT' }),
+      invalidatesTags: ['WeekendWork'],
+    }),
+    rejectWeekendWork: builder.mutation<void, { id: string; rejection_reason?: string }>({
+      query: ({ id, ...body }) => ({ url: `/weekend-work/${id}/reject`, method: 'PUT', body }),
+      invalidatesTags: ['WeekendWork'],
+    }),
+    cancelWeekendWork: builder.mutation<void, string>({
+      query: (id) => ({ url: `/weekend-work/${id}/cancel`, method: 'DELETE' }),
+      invalidatesTags: ['WeekendWork'],
     }),
 
     // -----------------------------------------------------------------------
@@ -546,6 +599,19 @@ export const dataApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['WorkingCalendar' as any],
     }),
+    // -----------------------------------------------------------------------
+    // Analytics
+    // -----------------------------------------------------------------------
+    getTeamUtilization: builder.query<any, void>({
+      query: () => '/analytics/team-utilization',
+      transformResponse: (res: any) => res.data || {},
+      providesTags: ['Timesheet', 'User'],
+    }),
+    getProjectFinancials: builder.query<any, void>({
+      query: () => '/analytics/project-financials',
+      transformResponse: (res: any) => res.data || {},
+      providesTags: ['Project', 'Timesheet'],
+    }),
   }),
 });
 
@@ -583,6 +649,11 @@ export const {
   useGetMyLeaveBalancesQuery,
   // Weekend
   useGetWeekendRequestsQuery,
+  useGetPendingWeekendRequestsQuery,
+  useSubmitWeekendWorkMutation,
+  useApproveWeekendWorkMutation,
+  useRejectWeekendWorkMutation,
+  useCancelWeekendWorkMutation,
   // Users
   useGetUsersQuery,
   useCreateUserMutation,
@@ -603,5 +674,7 @@ export const {
   useGetDashboardSummaryQuery,
   useGetWorkingCalendarQuery,
   useUpdateWorkingCalendarMutation,
+  useGetTeamUtilizationQuery,
+  useGetProjectFinancialsQuery,
 } = dataApi;
 

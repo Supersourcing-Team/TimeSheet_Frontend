@@ -38,7 +38,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]);
   const [isHalfDay, setIsHalfDay] = useState(false);
-  const [backupContact, setBackupContact] = useState('Sarah Chen (sarah.chen@workflow.io)');
+
   const [reason, setReason] = useState('Family vacation and travel.');
 
   // Calculate requested days
@@ -54,10 +54,26 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
 
   const daysRequested = calculateDays();
 
+  const userRequests = (leaveRequests || []).filter((r) => r.userId === currentUser.id);
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (daysRequested <= 0) {
       onShowToast('Invalid Dates', 'End date cannot be earlier than start date.', 'error');
+      return;
+    }
+
+    const hasOverlap = userRequests.some(req => {
+      if (req.status === 'rejected' || req.status === 'cancelled') return false;
+      const reqStart = new Date(req.startDate).getTime();
+      const reqEnd = new Date(req.endDate).getTime();
+      const newStart = new Date(startDate).getTime();
+      const newEnd = new Date(endDate).getTime();
+      return reqStart <= newEnd && reqEnd >= newStart;
+    });
+
+    if (hasOverlap) {
+      onShowToast('Duplicate Leave', 'You already have a leave request that overlaps with these dates.', 'error');
       return;
     }
 
@@ -70,7 +86,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
       endDate,
       daysCount: daysRequested,
       reason,
-      backupContact,
+
       isHalfDay,
       status: 'pending',
       appliedOn: new Date().toISOString().split('T')[0],
@@ -83,8 +99,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
     );
     setShowApplyModal(false);
   };
-
-  const userRequests = (leaveRequests || []).filter((r) => r.userId === currentUser.id);
 
   return (
     <div className="space-y-6">
@@ -241,7 +255,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                 <th className="py-3 px-3">Dates</th>
                 <th className="py-3 px-3">Total Days</th>
                 <th className="py-3 px-3">Reason</th>
-                <th className="py-3 px-3">Backup Contact</th>
+
                 <th className="py-3 px-3 text-center">Status</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
@@ -261,9 +275,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                   <td className="py-3.5 px-3 text-slate-300 max-w-xs truncate" title={req.reason}>
                     {req.reason}
                   </td>
-                  <td className="py-3.5 px-3 text-slate-400 truncate max-w-xs">
-                    {req.backupContact || 'N/A'}
-                  </td>
                   <td className="py-3.5 px-3 text-center whitespace-nowrap">
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
@@ -278,18 +289,30 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                     </span>
                   </td>
                   <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                    {req.status === 'pending' && (
-                      <button
-                        onClick={() => {
-                          onCancelLeave(req.id);
-                          onShowToast('Cancelled Request', 'Leave application withdrawn.', 'info');
-                        }}
-                        className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                        title="Cancel Request"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {req.reviewComment && (
+                        <button
+                          type="button"
+                          onClick={() => onShowToast('Manager Remark', req.reviewComment, 'info')}
+                          className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition-colors font-bold"
+                          title="View Remark"
+                        >
+                          Remark
+                        </button>
+                      )}
+                      {req.status === 'pending' && (
+                        <button
+                          onClick={() => {
+                            onCancelLeave(req.id);
+                            onShowToast('Cancelled Request', 'Leave application withdrawn.', 'info');
+                          }}
+                          className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                          title="Cancel Request"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -383,20 +406,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
               <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex justify-between items-center text-slate-200 font-bold">
                 <span>Calculated Working Days:</span>
                 <span className="text-emerald-400 text-sm">{daysRequested} Days</span>
-              </div>
-
-              {/* Backup Contact */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
-                  Backup Point of Contact
-                </label>
-                <input
-                  type="text"
-                  value={backupContact}
-                  onChange={(e) => setBackupContact(e.target.value)}
-                  placeholder="Team member covering your tasks..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
               </div>
 
               {/* Reason */}
