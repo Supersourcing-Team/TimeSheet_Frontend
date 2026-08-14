@@ -14,13 +14,7 @@ import {
   Briefcase,
   ArrowUpRight,
 } from 'lucide-react';
-
-interface PMTeamUtilizationProps {
-  currentUser: User;
-  projects: Project[];
-  allUsers: User[];
-  timesheets: TimesheetEntry[];
-}
+import { useGetTeamUtilizationQuery } from '../../store/api/dataApi';
 
 export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
   currentUser,
@@ -32,6 +26,8 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [utilizationCategory, setUtilizationCategory] = useState<'all' | 'high' | 'optimal' | 'low'>('all');
 
+  const { data: analyticsData, isLoading } = useGetTeamUtilizationQuery();
+
   // PM's projects
   const pmProjects = (projects || []).filter(
     (p) =>
@@ -39,70 +35,41 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
       currentUser?.role === 'admin' ||
       currentUser?.role === 'pm'
   );
-  const pmProjectIds = pmProjects.map((p) => p.id);
 
-  // Standard monthly baseline hours per employee (e.g., 160 hrs = 20 days * 8 hrs)
-  const BASELINE_EXPECTED_HOURS = 160;
-
-  // Compute team member metrics
-  const teamMemberMetrics = (allUsers || []).map((user) => {
-    // Filter timesheets for this user across PM's managed projects (or all projects if PM manages all)
-    const userTimesheets = (timesheets || []).filter((t) => {
-      const isUser = t.userId === user.id;
-      const isPmProject = pmProjectIds.length === 0 || pmProjectIds.includes(t.projectId);
-      const isSelectedProject = selectedProject === 'all' || t.projectId === selectedProject;
-      return isUser && isPmProject && isSelectedProject;
-    });
-
-    const totalLogged = userTimesheets.reduce((sum, t) => sum + t.hours, 0);
-    const billableHours = userTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
-    const nonBillableHours = userTimesheets.reduce((sum, t) => sum + (t.nonBillableHours || 0), 0);
-
-    const utilizationPct = Math.min(100, Math.round((billableHours / BASELINE_EXPECTED_HOURS) * 100));
-
-    // Find assigned PM projects
-    const assignedPmProjects = pmProjects.filter((p) =>
-      (p.assignedUserIds || []).includes(user.id)
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
+  }
 
-    let statusCategory: 'high' | 'optimal' | 'low' = 'optimal';
-    if (utilizationPct > 85) statusCategory = 'high';
-    else if (utilizationPct < 65) statusCategory = 'low';
-
-    return {
-      user,
-      totalLogged,
-      billableHours,
-      nonBillableHours,
-      utilizationPct,
-      assignedPmProjects,
-      statusCategory,
-    };
-  });
+  const teamMemberMetrics = analyticsData?.metrics || [];
 
   // Filtered list
-  const filteredMetrics = teamMemberMetrics.filter((m) => {
+  const filteredMetrics = teamMemberMetrics.filter((m: any) => {
     const matchesSearch =
-      m.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.user.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.user.department.toLowerCase().includes(searchTerm.toLowerCase());
+      m.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.user_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.user_department.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory =
-      utilizationCategory === 'all' || m.statusCategory === utilizationCategory;
+      utilizationCategory === 'all' || m.status_category === utilizationCategory;
+      
+    const matchesProject =
+      selectedProject === 'all' || m.assigned_pm_projects.some((p: any) => String(p.id) === selectedProject);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesProject;
   });
 
   // Aggregate stats
-  const totalBillable = teamMemberMetrics.reduce((sum, m) => sum + m.billableHours, 0);
-  const totalLoggedAll = teamMemberMetrics.reduce((sum, m) => sum + m.totalLogged, 0);
-  const avgUtilization = teamMemberMetrics.length > 0
-    ? Math.round(teamMemberMetrics.reduce((sum, m) => sum + m.utilizationPct, 0) / teamMemberMetrics.length)
-    : 0;
+  const totalBillable = analyticsData?.total_billable || 0;
+  const totalLoggedAll = analyticsData?.total_logged_all || 0;
+  const avgUtilization = analyticsData?.avg_utilization || 0;
 
-  const highCount = teamMemberMetrics.filter((m) => m.statusCategory === 'high').length;
-  const optimalCount = teamMemberMetrics.filter((m) => m.statusCategory === 'optimal').length;
-  const lowCount = teamMemberMetrics.filter((m) => m.statusCategory === 'low').length;
+  const highCount = analyticsData?.high_count || 0;
+  const optimalCount = analyticsData?.optimal_count || 0;
+  const lowCount = analyticsData?.low_count || 0;
 
   return (
     <div className="space-y-6 text-slate-900 font-sans">
@@ -225,35 +192,35 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
 
       {/* Utilization Table / Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredMetrics.map(({ user, totalLogged, billableHours, nonBillableHours, utilizationPct, assignedPmProjects, statusCategory }) => (
+        {filteredMetrics.map(({ user_id, user_name, user_avatar, user_title, user_department, total_logged, billable_hours, non_billable_hours, utilization_pct, assigned_pm_projects, status_category }) => (
           <div
-            key={user.id}
+            key={user_id}
             className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 hover:border-blue-300 transition-all flex flex-col justify-between"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
-                    src={user.avatar}
-                    alt={user.name}
+                    src={user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user_name)}&background=random`}
+                    alt={user_name}
                     className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/20 shrink-0"
                   />
                   <div className="min-w-0">
-                    <h3 className="font-extrabold text-slate-900 text-sm truncate">{user.name}</h3>
-                    <p className="text-xs text-blue-600 font-semibold truncate">{user.title}</p>
+                    <h3 className="font-extrabold text-slate-900 text-sm truncate">{user_name}</h3>
+                    <p className="text-xs text-blue-600 font-semibold truncate">{user_title}</p>
                   </div>
                 </div>
 
                 <span
                   className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                    statusCategory === 'high'
+                    status_category === 'high'
                       ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                      : statusCategory === 'optimal'
+                      : status_category === 'optimal'
                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                       : 'bg-blue-100 text-blue-800 border border-blue-200'
                   }`}
                 >
-                  {utilizationPct}% Util
+                  {utilization_pct}% Util
                 </span>
               </div>
 
@@ -261,18 +228,18 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] font-bold text-slate-700">
                   <span>Utilization Target (160h Baseline):</span>
-                  <span>{billableHours}h Billable</span>
+                  <span>{billable_hours}h Billable</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
                   <div
                     className={`h-2.5 rounded-full transition-all ${
-                      statusCategory === 'high'
+                      status_category === 'high'
                         ? 'bg-amber-500'
-                        : statusCategory === 'optimal'
+                        : status_category === 'optimal'
                         ? 'bg-emerald-500'
                         : 'bg-blue-500'
                     }`}
-                    style={{ width: `${utilizationPct}%` }}
+                    style={{ width: `${utilization_pct}%` }}
                   />
                 </div>
               </div>
@@ -281,28 +248,28 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
               <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Total</span>
-                  <span className="font-extrabold text-slate-900">{totalLogged}h</span>
+                  <span className="font-extrabold text-slate-900">{total_logged}h</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-emerald-600 block">Billable</span>
-                  <span className="font-extrabold text-emerald-700">{billableHours}h</span>
+                  <span className="font-extrabold text-emerald-700">{billable_hours}h</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block">Non-Bill</span>
-                  <span className="font-extrabold text-slate-700">{nonBillableHours}h</span>
+                  <span className="font-extrabold text-slate-700">{non_billable_hours}h</span>
                 </div>
               </div>
 
               {/* Assigned Projects */}
               <div className="space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-500">
-                  Assigned PM Projects ({assignedPmProjects.length})
+                  Assigned PM Projects ({assigned_pm_projects.length})
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  {assignedPmProjects.length === 0 ? (
+                  {assigned_pm_projects.length === 0 ? (
                     <span className="text-[11px] text-slate-400 italic">No assigned projects</span>
                   ) : (
-                    assignedPmProjects.map((p) => (
+                    assigned_pm_projects.map((p: any) => (
                       <span
                         key={p.id}
                         className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded font-bold text-[10px]"
@@ -316,9 +283,9 @@ export const PMTeamUtilization: React.FC<PMTeamUtilizationProps> = ({
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Department: {user.department}</span>
+              <span>Department: {user_department}</span>
               <span className="font-bold text-slate-800">
-                {Math.round((billableHours / (totalLogged || 1)) * 100)}% Billable Efficiency
+                {Math.round((billable_hours / (total_logged || 1)) * 100)}% Billable Efficiency
               </span>
             </div>
           </div>

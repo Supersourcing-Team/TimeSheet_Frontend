@@ -110,15 +110,13 @@ export interface TimesheetEntry {
   projectId: string;
   projectName: string;
   date: string; // YYYY-MM-DD
-  hours: number;
   billableHours: number;
   nonBillableHours: number;
   description: string; // Combined summary or main task
   billableDescription?: string; // Separate description for billable work
   nonBillableDescription?: string; // Separate description for non-billable work
   category: 'Development' | 'Design' | 'Meeting' | 'Code Review' | 'Testing' | 'Documentation' | 'DevOps';
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
-  rejectionReason?: string;
+  status: 'submitted';
   submittedAt?: string;
 }
 

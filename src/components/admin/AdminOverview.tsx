@@ -28,7 +28,6 @@ interface AdminOverviewProps {
   leaveRequests: LeaveRequest[];
   activities: ActivityLog[];
   onNavigateTab: (tab: AdminTab) => void;
-  onApproveTimesheet: (id: string) => void;
   onApproveLeave: (id: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -40,7 +39,6 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   leaveRequests,
   activities,
   onNavigateTab,
-  onApproveTimesheet,
   onApproveLeave,
   onShowToast,
 }) => {
@@ -63,11 +61,13 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   }
 
   // Map API data to component variables
-  const activeUsersCount = users.filter((u) => u.status === 'active').length;
-  const onLeaveUsersCount = users.filter((u) => u.status === 'on_leave').length || 0;
+  const adminOverview = dashboardData?.admin_overview || {};
+  const activeUsersCount = adminOverview.active_users_count ?? 0;
+  const onLeaveUsersCount = adminOverview.on_leave_users_count ?? 0;
   
-  const pendingLeaves = dashboardData?.recent_leaves?.filter((l: any) => l.status.toLowerCase() === 'pending') || [];
-  const activeProjectsCount = dashboardData?.role_overview?.active_org_projects || 0;
+  const pendingLeaves = safeLeaveRequests.filter((l) => l.status.toLowerCase() === 'pending');
+  const pendingLeavesCount = adminOverview.pending_leaves_count ?? pendingLeaves.length;
+  const activeProjectsCount = adminOverview.active_projects_count ?? safeProjects.length;
   
   const nextHoliday = dashboardData?.upcoming_holiday;
 
@@ -159,7 +159,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             Pending Leave
           </p>
           <h3 className="text-2xl font-black text-slate-900 mt-1">
-            {pendingLeaves.length}
+            {pendingLeavesCount}
           </h3>
         </button>
 
@@ -500,7 +500,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
             <h3 className="text-sm font-extrabold text-slate-900">Pending Leave</h3>
             <span className="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
-              {pendingLeaves.length > 0 ? pendingLeaves.length : 12} Total
+              {pendingLeavesCount > 0 ? pendingLeavesCount : 12} Total
             </span>
           </div>
 

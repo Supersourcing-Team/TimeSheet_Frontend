@@ -1,31 +1,32 @@
 import React, { useState } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
+import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation } from '../../store/api/dataApi';
 import {
   Clock,
   Plus,
   Trash2,
   CheckCircle2,
-  Calendar,
   AlertCircle,
   Save,
   Send,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
   Info,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
 interface SubmitTimesheetProps {
   currentUser: User;
   projects: Project[];
+  /** Project assignments for the current user — needed to resolve project_assignment_id */
+  projectAssignments?: ProjectAssignment[];
   onSubmitTimesheet: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 interface FormRow {
   projectId: string;
-  category: TimesheetEntry['category'];
+  date: string;
   billableHours: number;
   nonBillableHours: number;
   billableDescription: string;
@@ -35,47 +36,31 @@ interface FormRow {
 export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   currentUser,
   projects,
+  projectAssignments = [],
   onSubmitTimesheet,
   onShowToast,
 }) => {
-  const [selectedDate, setSelectedDate] = useState('2025-08-04');
+  const today = new Date().toISOString().split('T')[0];
+  const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const [rows, setRows] = useState<FormRow[]>([
     {
       projectId: projects[0]?.id || '',
-      category: 'Development',
-      billableHours: 6.0,
-      nonBillableHours: 1.5,
-      billableDescription: 'Implemented UPI auth token refresh endpoints and written API unit tests.',
-      nonBillableDescription: 'Attended daily team standup and reviewed Jira board tickets with PM.',
-    },
-    {
-      projectId: projects[1]?.id || projects[0]?.id || '',
-      category: 'Meeting',
-      billableHours: 1.5,
-      nonBillableHours: 0.5,
-      billableDescription: 'Client technical sync regarding generative AI document summarization.',
-      nonBillableDescription: 'Internal team alignment on environment setup.',
+      date: today,
+      billableHours: 0,
+      nonBillableHours: 0,
+      billableDescription: '',
+      nonBillableDescription: '',
     },
   ]);
 
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
-
-  const categories: TimesheetEntry['category'][] = [
-    'Development',
-    'Design',
-    'Meeting',
-    'Code Review',
-    'Testing',
-    'Documentation',
-    'DevOps',
-  ];
 
   const handleAddRow = () => {
     setRows([
       ...rows,
       {
         projectId: assignedProjects[0]?.id || projects[0]?.id || '',
-        category: 'Development',
+        date: today,
         billableHours: 2.0,
         nonBillableHours: 0,
         billableDescription: '',
@@ -107,48 +92,80 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const grandTotal = totalBillable + totalNonBillable;
   const targetDayHours = 8.0;
 
-  const handleSubmit = (isDraft: boolean) => {
-    if (grandTotal === 0) {
-      onShowToast('Validation Error', 'Please log at least some hours before submitting.', 'error');
+  const handleSubmit = async () => {
+    if (grandTotal < 8) {
+      onShowToast('Validation Error', 'You must log a minimum of 8 hours per day.', 'error');
+      return;
+    }
+    if (grandTotal > 24) {
+      onShowToast('Validation Error', 'You cannot log more than 24 hours in a single day.', 'error');
       return;
     }
 
-    const newEntries: Omit<TimesheetEntry, 'id'>[] = rows.map((row) => {
-      const proj = projects.find((p) => p.id === row.projectId);
-      const combinedDesc = [
+    // Build backend payloads — one per row
+    const payloads: TimesheetCreatePayload[] = [];
+    for (const row of rows) {
+      const totalHours = Number(row.billableHours || 0) + Number(row.nonBillableHours || 0);
+      if (totalHours === 0) continue;
+
+      // Resolve project_assignment_id from the user's assignments
+      const assignmentForProject = projectAssignments.find(
+        (a) => String(a.project_id) === String(row.projectId)
+      );
+
+      if (!assignmentForProject) {
+        onShowToast(
+          'Assignment Missing',
+          `You are not assigned to the selected project. Please contact your Project Manager.`,
+          'error'
+        );
+        return;
+      }
+
+      const combinedWorkSummary = [
         row.billableDescription ? `[Billable] ${row.billableDescription}` : '',
         row.nonBillableDescription ? `[Non-Billable] ${row.nonBillableDescription}` : '',
       ]
         .filter(Boolean)
-        .join(' | ');
+        .join(' | ') || 'Routine project work';
 
-      return {
-        userId: currentUser.id,
-        userName: currentUser.name,
-        userAvatar: currentUser.avatar,
-        projectId: row.projectId,
-        projectName: proj?.name || 'General Project',
-        date: selectedDate,
-        hours: Number(row.billableHours || 0) + Number(row.nonBillableHours || 0),
-        billableHours: Number(row.billableHours || 0),
-        nonBillableHours: Number(row.nonBillableHours || 0),
-        description: combinedDesc || 'Routine project work',
-        billableDescription: row.billableDescription || 'General billable tasks',
-        nonBillableDescription: row.nonBillableDescription || 'General non-billable work',
-        category: row.category,
-        status: isDraft ? 'draft' : 'pending',
-        submittedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      };
-    });
+      payloads.push({
+        project_assignment_id: assignmentForProject.id,
+        timesheet_date: row.date,
+        billable_hours: Number(row.billableHours),
+        billable_work_summary: row.billableDescription || undefined,
+        non_billable_hours: Number(row.nonBillableHours),
+        non_billable_work_summary: row.nonBillableDescription || undefined,
+      });
+    }
 
-    onSubmitTimesheet(newEntries);
-    onShowToast(
-      isDraft ? 'Draft Saved' : 'Timesheet Submitted!',
-      isDraft
-        ? `Saved ${grandTotal} hours as draft for ${selectedDate}`
-        : `Submitted ${grandTotal} hours for manager approval on ${selectedDate}`,
-      'success'
-    );
+    if (payloads.length === 0) {
+      onShowToast('Validation Error', 'No valid timesheet rows to submit.', 'error');
+      return;
+    }
+
+    try {
+      await createTimesheets(payloads).unwrap();
+      onShowToast(
+        'Timesheet Submitted!',
+        `Submitted ${grandTotal} hours.`,
+        'success'
+      );
+      // Reset form after successful submit
+      setRows([
+        {
+          projectId: projects[0]?.id || '',
+          date: today,
+          billableHours: 0,
+          nonBillableHours: 0,
+          billableDescription: '',
+          nonBillableDescription: '',
+        },
+      ]);
+    } catch (e: any) {
+      const msg = e?.data?.detail || e?.data?.message || 'Failed to submit timesheets';
+      onShowToast('Error', msg, 'error');
+    }
   };
 
   return (
@@ -166,44 +183,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
           </p>
         </div>
 
-        {/* Date Selector Controls */}
-        <div className="flex items-center gap-2 bg-white/10 p-2 rounded-xl border border-white/20 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() - 1);
-              setSelectedDate(d.toISOString().split('T')[0]);
-            }}
-            className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors cursor-pointer"
-            title="Previous Day"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
 
-          <div className="flex items-center gap-2 px-2 text-xs font-bold text-white">
-            <Calendar className="w-4 h-4 text-blue-300" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent font-black text-white focus:outline-none cursor-pointer"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() + 1);
-              setSelectedDate(d.toISOString().split('T')[0]);
-            }}
-            className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors cursor-pointer"
-            title="Next Day"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
 
       {/* Target Progress & Summary Bar */}
@@ -295,24 +275,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   </select>
                 </div>
 
-                {/* Category Dropdown */}
+                {/* Date Input */}
                 <div className="md:col-span-3 space-y-1">
                   <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                    Category
+                    Date
                   </label>
-                  <select
-                    value={row.category}
-                    onChange={(e) =>
-                      handleRowChange(idx, 'category', e.target.value as TimesheetEntry['category'])
-                    }
+                  <input
+                    type="date"
+                    value={row.date}
+                    onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 {/* Billable Hours */}
@@ -375,7 +348,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     value={row.billableDescription}
                     onChange={(e) => handleRowChange(idx, 'billableDescription', e.target.value)}
                     placeholder="E.g. Built API endpoint, fixed payment bug, wrote design specs..."
@@ -392,7 +365,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     value={row.nonBillableDescription}
                     onChange={(e) => handleRowChange(idx, 'nonBillableDescription', e.target.value)}
                     placeholder="E.g. Daily standup meeting, local docker debugging, JIRA updates..."
@@ -418,19 +391,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => handleSubmit(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+              disabled={isSubmitting}
+              onClick={() => handleSubmit()}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Save className="w-4 h-4 text-slate-500" />
-              <span>Save Draft</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSubmit(false)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01]"
-            >
-              <Send className="w-4 h-4" />
-              <span>Submit Timesheet</span>
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span>{isSubmitting ? 'Submitting...' : 'Submit Timesheet'}</span>
             </button>
           </div>
         </div>

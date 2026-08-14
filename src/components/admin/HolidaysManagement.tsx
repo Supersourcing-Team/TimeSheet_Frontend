@@ -47,8 +47,9 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   const [editName, setEditName] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editType, setEditType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
-  const [editDescription, setEditDescription] = useState('');
   const [editis_mandatory, setEditis_mandatory] = useState(true);
+  const [editDescription, setEditDescription] = useState('');
+
 
   const filteredHolidays = (holidays || []).filter((h) => {
     if (filterType !== 'all' && h.type !== filterType) return false;
@@ -303,7 +304,8 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                       </div>
                     </td>
                   </tr>
-                )))}
+                ))
+              )}
               </tbody>
             </table>
           </div>

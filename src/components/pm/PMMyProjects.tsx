@@ -28,9 +28,11 @@ interface PMMyProjectsProps {
   currentUser: User;
   projects: Project[];
   allUsers: User[];
+  clients: { id: number; name: string }[];
   timesheets: TimesheetEntry[];
   onAddProject: (project: Omit<Project, 'id'>) => void;
   onUpdateProject: (updatedProject: Project) => void;
+  onCreateClient: (name: string) => void;
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
   onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
@@ -42,9 +44,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   currentUser,
   projects = [],
   allUsers = [],
+  clients = [],
   timesheets = [],
   onAddProject,
   onUpdateProject,
+  onCreateClient,
   onAssignUserToProject,
   onRemoveUserFromProject,
   onAddToolToProject,
@@ -65,14 +69,13 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   // New Project Form
   const [newProject, setNewProject] = useState({
     name: '',
-    code: '',
     client: '',
     status: 'active' as const,
     budget: 2500000,
     hourlyRate: 2000,
     allocatedHours: 1000,
     startDate: new Date().toISOString().split('T')[0],
-    endDate: '2025-12-31',
+    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     description: '',
   });
 
@@ -117,14 +120,14 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProject.name || !newProject.code || !newProject.client) {
+    if (!newProject.name || !newProject.client) {
       onShowToast('Validation Error', 'Please fill in all required fields.', 'error');
       return;
     }
 
     onAddProject({
       name: newProject.name,
-      code: newProject.code.toUpperCase(),
+      code: '',
       client: newProject.client,
       accountManagerName: 'Rajesh Sharma',
       pmName: currentUser.name,
@@ -146,14 +149,13 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     setShowCreateModal(false);
     setNewProject({
       name: '',
-      code: '',
       client: '',
       status: 'active',
       budget: 2500000,
       hourlyRate: 2000,
       allocatedHours: 1000,
       startDate: new Date().toISOString().split('T')[0],
-      endDate: '2025-12-31',
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       description: '',
     });
   };
@@ -312,8 +314,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
-                    {proj.code}
+                  <span className="text-[11px] font-black font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 opacity-0">
                   </span>
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
@@ -385,9 +386,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold font-mono text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded">
-                    {selectedProject.code}
-                  </span>
+
                   <span className="text-xs uppercase font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                     {selectedProject.status}
                   </span>
@@ -715,28 +714,27 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Project Code *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. ERP-2025"
-                  value={newProject.code}
-                  onChange={(e) => setNewProject({ ...newProject, code: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Client Name *</label>
-                <input
-                  type="text"
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Client Name *</label>
+                  <button type="button" onClick={() => {
+                    const name = prompt("Enter new client name:");
+                    if (name) onCreateClient(name);
+                  }} className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1"><Plus className="w-3 h-3" /> New Client</button>
+                </div>
+                <select
                   required
-                  placeholder="e.g. Tata Digital Ltd"
                   value={newProject.client}
                   onChange={(e) => setNewProject({ ...newProject, client: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="" disabled>Select a client</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">
@@ -789,6 +787,16 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   type="date"
                   value={newProject.startDate}
                   onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">End Date</label>
+                <input
+                  type="date"
+                  value={newProject.endDate}
+                  onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
                 />
               </div>

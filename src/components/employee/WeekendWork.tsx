@@ -16,6 +16,7 @@ interface WeekendWorkProps {
   currentUser: User;
   projects: Project[];
   weekendRequests: WeekendWorkRequest[];
+  holidays: any[]; // Or import HolidayItem
   onRequestWeekendWork: (request: Omit<WeekendWorkRequest, 'id'>) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -24,6 +25,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   currentUser,
   projects,
   weekendRequests,
+  holidays,
   onRequestWeekendWork,
   onShowToast,
 }) => {
@@ -45,12 +47,15 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
     e.preventDefault();
 
     // Check if weekend
-    const dateObj = new Date(workDate);
+    const [year, month, dayStr] = workDate.split('-');
+    const dateObj = new Date(Number(year), Number(month) - 1, Number(dayStr));
     const day = dateObj.getDay(); // 0 = Sun, 6 = Sat
-    if (day !== 0 && day !== 6) {
+    const isHoliday = holidays.some((h) => h.date === workDate);
+
+    if (day !== 0 && day !== 6 && !isHoliday) {
       onShowToast(
         'Date Validation Error',
-        'Selected date is a weekday. Please pick a Saturday or Sunday.',
+        'Selected date is a weekday and not a holiday. Please pick a weekend or a holiday.',
         'error'
       );
       return;

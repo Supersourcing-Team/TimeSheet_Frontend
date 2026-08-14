@@ -101,7 +101,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
     const rows = filteredTimesheets
       .map(
         (t) =>
-          `"${t.id}","${t.date}","${t.projectName}","${t.category}",${t.hours},${t.billableHours},"${t.status}","${(
+          `"${t.id}","${t.date}","${t.projectName}","${t.category}",${t.billableHours + t.nonBillableHours},${t.billableHours},"${t.status}","${(
             t.billableDescription || t.description
           ).replace(/"/g, '""')}","${(t.nonBillableDescription || '').replace(/"/g, '""')}"`
       )
@@ -123,7 +123,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
     setEditingEntry(entry);
     setEditProjectId(entry.projectId);
     setEditDate(entry.date);
-    setEditHours(entry.hours);
+    setEditHours(entry.billableHours + entry.nonBillableHours);
     setEditBillableHours(entry.billableHours);
     setEditCategory(entry.category || 'Development');
     setEditBillableDesc(entry.billableDescription || entry.description || '');
@@ -142,14 +142,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
       projectId: editProjectId,
       projectName: projectName,
       date: editDate,
-      hours: Number(editHours),
       billableHours: Number(editBillableHours),
       nonBillableHours: Math.max(0, Number(editHours) - Number(editBillableHours)),
       category: editCategory,
       description: editBillableDesc || 'Updated work log',
       billableDescription: editBillableDesc,
       nonBillableDescription: editNonBillableDesc,
-      status: editingEntry.status === 'rejected' ? 'pending' : editingEntry.status,
+      status: 'submitted',
     };
 
     if (onUpdateTimesheet) {
@@ -185,14 +184,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
       projectId: addProjectId,
       projectName: projectName,
       date: addingForDate,
-      hours: Number(addHours),
       billableHours: Number(addBillableHours),
       nonBillableHours: Math.max(0, Number(addHours) - Number(addBillableHours)),
       category: addCategory,
       description: addBillableDesc || 'Daily work log',
       billableDescription: addBillableDesc,
       nonBillableDescription: addNonBillableDesc,
-      status: 'pending',
+      status: 'submitted',
       submittedAt: new Date().toISOString(),
     };
 
@@ -296,7 +294,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               }
 
               const dayEntries = userTimesheets.filter((t) => t.date === dateStr);
-              const dayTotalHours = dayEntries.reduce((acc, curr) => acc + curr.hours, 0);
+              const dayTotalHours = dayEntries.reduce((acc, curr) => acc + (curr.billableHours + curr.nonBillableHours), 0);
 
               const dateObj = new Date(dateStr);
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
@@ -340,7 +338,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-100 flex items-center justify-between"
                       >
                         <span className="truncate">{e.projectName}</span>
-                        <span className="font-extrabold shrink-0 ml-1">{e.hours}h</span>
+                        <span className="font-extrabold shrink-0 ml-1">{e.billableHours + e.nonBillableHours}h</span>
                       </div>
                     ))}
                     {dayEntries.length > 2 && (
@@ -393,11 +391,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
               className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
             >
-              <option value="all">All Approval Statuses</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending Approval</option>
-              <option value="draft">Draft</option>
-              <option value="rejected">Rejected</option>
+              <option value="submitted">Submitted</option>
             </select>
 
             <div className="text-right flex items-center justify-end text-xs text-slate-500 font-bold">
@@ -431,19 +425,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       {ts.nonBillableDescription || 'N/A'}
                     </td>
                     <td className="py-3.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                      {ts.hours}h <span className="text-emerald-600 font-semibold">({ts.billableHours}h billable)</span>
+                      {ts.billableHours + ts.nonBillableHours}h <span className="text-emerald-600 font-semibold">({ts.billableHours}h billable)</span>
                     </td>
                     <td className="py-3.5 px-3 text-center">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                          ts.status === 'approved'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : ts.status === 'pending'
-                            ? 'bg-amber-100 text-amber-800'
-                            : ts.status === 'rejected'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-emerald-100 text-emerald-800"
                       >
                         {ts.status}
                       </span>
@@ -491,7 +477,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <p className="text-xs text-slate-500">
                   Total Logged:{' '}
                   <span className="font-extrabold text-blue-600">
-                    {modalEntries.reduce((sum, e) => sum + e.hours, 0)} Hours
+                    {modalEntries.reduce((sum, e) => sum + (e.billableHours + e.nonBillableHours), 0)} Hours
                   </span>
                 </p>
               </div>
@@ -530,7 +516,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-blue-600">{entry.projectName}</span>
                       <span className="font-extrabold text-slate-900">
-                        {entry.hours}h ({entry.billableHours}h billable)
+                        {entry.billableHours + entry.nonBillableHours}h ({entry.billableHours}h billable)
                       </span>
                     </div>
 
