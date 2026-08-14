@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { User, UserRole } from '../types';
-import { INITIAL_USERS } from '../data/initialData';
 import { useLoginWithGoogleMutation } from '../store/api/authApi';
 import { setCredentials, setUser } from '../store/slices/authSlice';
 import {
@@ -12,8 +11,7 @@ import {
   Clock,
   AlertCircle,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
+  Zap,
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -21,13 +19,6 @@ export const LoginPage: React.FC = () => {
   const [loginWithGoogle, { isLoading: isGoogleSigningIn }] = useLoginWithGoogleMutation();
   const [authError, setAuthError] = useState<string | null>(null);
   const initializedRef = useRef(false);
-
-  const registeredAccounts = [
-    { role: 'admin' as UserRole, title: 'Admin', email: 'balram6604@gmail.com', icon: <ShieldCheck className="w-4 h-4 text-purple-600" />, badgeColor: 'bg-purple-50 text-purple-700 border-purple-200' },
-    { role: 'pm' as UserRole, title: 'Project Manager', email: 'balramprajapati3263@gmail.com', icon: <Briefcase className="w-4 h-4 text-indigo-600" />, badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-    { role: 'ac_manager' as UserRole, title: 'Account Manager', email: 'balram@supersourcing.com', icon: <Building2 className="w-4 h-4 text-sky-600" />, badgeColor: 'bg-sky-50 text-sky-700 border-sky-200' },
-    { role: 'employee' as UserRole, title: 'Employee', email: 'balram.btech@gmail.com', icon: <Users className="w-4 h-4 text-blue-600" />, badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-  ];
 
   const handleCredentialResponse = async (response: { credential?: string }) => {
     if (!response.credential) return;
@@ -72,138 +63,188 @@ export const LoginPage: React.FC = () => {
     }
   }, []);
 
-  const handleGoogleSSOClick = () => {
-    setAuthError(null);
-    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            const reason = notification.getNotDisplayedReason() || notification.getSkippedReason();
-            if (reason === 'opt_out_or_error' || reason === 'origin_mismatch') {
-              setAuthError(`Google SSO Origin Warning: Ensure ${window.location.origin} is added under 'Authorized JavaScript Origins' in Google Cloud Console for Client ID 146072997584-and6rpntvi6fi6gvvthkp8c37spr6snn.apps.googleusercontent.com.`);
-            }
-          }
-        });
-      } catch {
-        setAuthError('Google Identity SDK failed to prompt.');
-      }
-    } else {
-      setAuthError('Google Identity SDK initializing... Please click the official Google button above.');
-    }
-  };
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 sm:p-6 font-sans selection:bg-blue-600 selection:text-white">
-      <div className="w-full max-w-md space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 font-semibold text-xs shadow-xs">
-            <Clock className="w-3.5 h-3.5 text-blue-600" />
-            <span>Chronos Workspace Portal</span>
+    <div className="min-h-screen bg-[#f8fafe] flex items-center justify-center p-4 sm:p-8 font-sans selection:bg-blue-600 selection:text-white relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+      
+      <div className="max-w-[1200px] w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center relative z-10">
+        
+        {/* Left Column - Branding and Features (Hidden on smaller screens) */}
+        <div className="hidden lg:flex flex-col">
+          {/* Logo / Brand */}
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 border border-blue-50">
+              <Clock className="w-6 h-6" />
+            </div>
+            <span className="text-xl font-bold text-slate-800">
+              <span className="text-blue-600">Chronos</span> Workspace
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Single Sign-On Access
+
+          <h1 className="text-5xl font-extrabold text-slate-900 leading-[1.15] mb-6">
+            Welcome to <br />
+            <span className="text-blue-600">Chronos Workspace</span>
           </h1>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Log in with your corporate Google identity to access timesheets and project management.
+          <p className="text-slate-500 text-lg mb-12 max-w-md leading-relaxed">
+            Your all-in-one solution for timesheet management, team collaboration, and productivity tracking.
           </p>
-        </div>
 
-        {/* Auth Error Banner */}
-        {authError && (
-          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2 shadow-xs">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-            <span className="leading-snug">{authError}</span>
-          </div>
-        )}
-
-        {/* Clean Login Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
-          <div className="space-y-4 text-center">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Google SSO Authentication
-            </h2>
-
-            {/* Official Google Button Container */}
-            <div className="flex justify-center min-h-[44px]">
-              <div id="google-sso-btn-container"></div>
-            </div>
-
-            {/* Fallback Custom Google Button */}
-            <button
-              type="button"
-              onClick={handleGoogleSSOClick}
-              disabled={isGoogleSigningIn}
-              className="w-full py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-3 transition-all hover:border-slate-400 active:scale-[0.99]"
-            >
-              {isGoogleSigningIn ? (
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-              )}
-              <span>{isGoogleSigningIn ? 'Connecting to Google...' : 'Sign in with Google SSO'}</span>
-            </button>
-          </div>
-
-          {/* Registered Database Accounts Section */}
-          <div className="border-t border-slate-100 pt-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-blue-600" />
-                <span>Authorized DB Accounts</span>
-              </span>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                PostgreSQL Synced
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {registeredAccounts.map((acc) => (
-                <div
-                  key={acc.email}
-                  className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 flex items-center justify-between text-xs transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="p-1 rounded-lg bg-white border border-slate-200 shadow-2xs">
-                      {acc.icon}
-                    </div>
-                    <div className="truncate">
-                      <div className="font-semibold text-slate-800 truncate">{acc.email}</div>
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${acc.badgeColor}`}>
-                    {acc.title}
-                  </span>
+          {/* Dashboard Illustration */}
+          <div className="relative bg-white/60 backdrop-blur-md border border-white p-6 rounded-2xl shadow-xl shadow-blue-900/5 mb-12 max-w-lg">
+             <div className="flex gap-2 mb-6">
+                <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+             </div>
+             <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                   <div className="text-[10px] text-slate-400 mb-1">Total Hours</div>
+                   <div className="text-xl font-bold text-slate-800 flex items-baseline gap-1">120h <span className="text-[10px] text-emerald-500">↑ 12%</span></div>
                 </div>
-              ))}
-            </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                   <div className="text-[10px] text-slate-400 mb-1">Projects</div>
+                   <div className="text-xl font-bold text-slate-800">08</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                   <div>
+                     <div className="text-[10px] text-slate-400 mb-1">Team Members</div>
+                     <div className="text-xl font-bold text-slate-800">24</div>
+                   </div>
+                   <Users className="w-4 h-4 text-blue-200" />
+                </div>
+             </div>
+             <div className="flex gap-4">
+                <div className="flex-1 bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-28 flex flex-col justify-between">
+                   <div className="text-[10px] text-slate-400">Timesheet Overview</div>
+                   <div className="w-full h-12 relative flex items-end">
+                      <svg className="w-full h-full text-blue-500" viewBox="0 0 100 40" preserveAspectRatio="none">
+                         <path d="M0 30 Q 20 10, 40 25 T 80 15 T 100 5 L 100 40 L 0 40 Z" fill="currentColor" fillOpacity="0.1" />
+                         <path d="M0 30 Q 20 10, 40 25 T 80 15 T 100 5" fill="none" stroke="currentColor" strokeWidth="2" />
+                         <circle cx="0" cy="30" r="2" fill="currentColor" />
+                         <circle cx="40" cy="25" r="2" fill="currentColor" />
+                         <circle cx="80" cy="15" r="2" fill="currentColor" />
+                         <circle cx="100" cy="5" r="2" fill="currentColor" />
+                      </svg>
+                   </div>
+                </div>
+                <div className="w-1/3 bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3">
+                   <div className="text-[10px] text-slate-400">Recent Activity</div>
+                   <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-400 shrink-0"></div><div className="flex-1 h-1.5 bg-slate-100 rounded-full"></div></div>
+                   <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div><div className="flex-1 h-1.5 bg-slate-100 rounded-full"></div></div>
+                   <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></div><div className="flex-1 h-1.5 bg-slate-100 rounded-full"></div></div>
+                </div>
+             </div>
           </div>
 
-
+          {/* Features */}
+          <div className="flex gap-8">
+             <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 shrink-0">
+                   <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                   <div className="text-sm font-bold text-slate-800">Secure & Reliable</div>
+                   <div className="text-xs text-slate-500 mt-0.5">Enterprise-grade security</div>
+                </div>
+             </div>
+             <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 shrink-0">
+                   <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                   <div className="text-sm font-bold text-slate-800">Smart & Efficient</div>
+                   <div className="text-xs text-slate-500 mt-0.5">Automate workflows</div>
+                </div>
+             </div>
+             <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-purple-50 text-purple-600 rounded-full border border-purple-100 shrink-0">
+                   <Users className="w-5 h-5" />
+                </div>
+                <div>
+                   <div className="text-sm font-bold text-slate-800">Team Collaboration</div>
+                   <div className="text-xs text-slate-500 mt-0.5">Built for all sizes</div>
+                </div>
+             </div>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center text-[11px] text-slate-400">
-          © 2026 Chronos Workspace • FastAPI & PostgreSQL Auth Ready
+        {/* Right Column - Auth Card */}
+        <div className="w-full max-w-md mx-auto lg:max-w-none lg:mx-0 lg:ml-auto">
+          {/* Mobile brand header (shown only on mobile) */}
+          <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
+             <div className="w-8 h-8 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 border border-blue-50">
+                <Clock className="w-5 h-5" />
+             </div>
+             <span className="text-xl font-bold text-slate-800">
+                <span className="text-blue-600">Chronos</span> Workspace
+             </span>
+          </div>
+
+          <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 border border-slate-100 relative">
+             {/* Decorative small circles behind card, simulated with absolute positioned elements */}
+             <div className="absolute top-10 right-10 w-2 h-2 bg-blue-100 rounded-full"></div>
+             <div className="absolute top-20 left-8 w-1.5 h-1.5 bg-purple-100 rounded-full"></div>
+             
+             <div className="flex justify-center mb-8 relative">
+                <div className="w-20 h-20 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.15)] relative">
+                   <Clock className="w-8 h-8 text-blue-600" />
+                </div>
+             </div>
+             
+             <h2 className="text-3xl font-bold text-center text-slate-900 mb-3 tracking-tight">Sign in to your account</h2>
+             <p className="text-center text-slate-500 text-sm mb-10 px-4">
+                Access your workspace securely using your corporate Google account.
+             </p>
+
+             {/* Auth Error Banner */}
+             {authError && (
+               <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2">
+                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                 <span className="leading-relaxed">{authError}</span>
+               </div>
+             )}
+
+             <div className="flex flex-col items-center space-y-4 relative z-10 min-h-[56px]">
+                {isGoogleSigningIn ? (
+                  <div className="w-full h-14 rounded-xl border border-slate-200 bg-white flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-slate-600 font-medium text-[15px]">Connecting...</span>
+                  </div>
+                ) : (
+                  <div id="google-sso-btn-container" className="flex justify-center w-full"></div>
+                )}
+             </div>
+
+             <div className="mt-10 relative">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                   <div className="w-full border-t border-slate-100"></div>
+                </div>
+                <div className="relative flex justify-center">
+                   <span className="bg-white px-3 text-slate-300">
+                      <ShieldCheck className="w-4 h-4" />
+                   </span>
+                </div>
+             </div>
+             
+             <p className="mt-4 text-center text-xs text-slate-400">
+                Secure authentication powered by Google
+             </p>
+          </div>
+          
+          {/* Footer - Mobile Only */}
+          <div className="mt-12 text-center text-xs text-slate-400 lg:hidden">
+             © 2026 Chronos Workspace. All rights reserved.
+          </div>
         </div>
+      </div>
+      
+      {/* Footer - Desktop */}
+      <div className="absolute bottom-6 w-full text-center text-xs text-slate-400 hidden lg:block">
+         © 2026 Chronos Workspace. All rights reserved.
       </div>
     </div>
   );
