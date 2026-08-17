@@ -251,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-rose-200"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Switch Role / Logout</span>
+                  <span>Logout</span>
                 </button>
               </div>
             </div>

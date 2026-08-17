@@ -31,7 +31,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
 }) => {
   const safeProjects = projects || [];
   const [projectId, setProjectId] = useState(safeProjects[0]?.id || '');
-  const [workDate, setWorkDate] = useState('2025-08-09'); // Saturday
+  const [workDate, setWorkDate] = useState(new Date().toISOString().split('T')[0]);
   const [plannedHours, setPlannedHours] = useState(6.0);
   const [objective, setObjective] = useState(
     'Deploy Zero-Downtime database migration script for Sprint 14 release.'

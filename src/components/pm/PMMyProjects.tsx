@@ -600,7 +600,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                             <th className="py-2.5 px-3">Category</th>
                             <th className="py-2.5 px-3">Monthly Cost</th>
                             <th className="py-2.5 px-3">Allocation Date</th>
-                            <th className="py-2.5 px-3">Deallocation Date</th>
                             <th className="py-2.5 px-3">Status</th>
                             <th className="py-2.5 px-3 text-right">Actions</th>
                           </tr>

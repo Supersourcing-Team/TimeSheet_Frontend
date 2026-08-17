@@ -6,10 +6,11 @@ import {
   useGetUsersQuery,
   useGetProjectsQuery,
   useGetTimesheetsQuery,
+  useGetManagedTimesheetsQuery,
   useGetLeaveRequestsQuery,
   useGetMyLeaveRequestsQuery,
   useGetWeekendRequestsQuery,
-  useGetPendingWeekendRequestsQuery,
+  useGetManagedWeekendRequestsQuery,
   useSubmitWeekendWorkMutation,
   useApproveWeekendWorkMutation,
   useRejectWeekendWorkMutation,
@@ -33,6 +34,8 @@ import {
   useGetMyProjectAssignmentsQuery,
   useGetWorkingCalendarQuery,
   useUpdateWorkingCalendarMutation,
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
   useGetClientsQuery,
   useCreateClientMutation,
   useCreateProjectMutation,
@@ -40,11 +43,13 @@ import {
   useDeleteProjectMutation,
   useAssignUserToProjectMutation,
   useRemoveUserFromProjectMutation,
+  useCreateToolMutation,
   useAllocateToolMutation,
   useDeallocateToolMutation,
 } from './store/api/dataApi';
 import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
 import { setCredentials } from './store/slices/authSlice';
+import { apiSlice } from './store/apiSlice';
 
 import {
   User,
@@ -110,18 +115,54 @@ export default function App() {
     skip: !!currentUser, // don't fetch if we already have the user in state
   });
 
+  // Initialize URL Sync variables
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const urlPortal = searchParams.get('portal');
+  const urlTab = searchParams.get('tab');
+
   // If user profile is successfully fetched, set the credentials
   React.useEffect(() => {
     if (userProfile && !currentUser) {
       dispatch(setCredentials({ user: userProfile }));
+      // Restore portal mode if explicitly provided in the URL and valid
+      if (urlPortal && ['employee', 'pm', 'ac_manager', 'admin'].includes(urlPortal)) {
+        setTimeout(() => dispatch(setPortalMode(urlPortal as ActivePortalMode)), 0);
+      }
     }
-  }, [userProfile, currentUser, dispatch]);
+  }, [userProfile, currentUser, dispatch, urlPortal]);
 
-  // Local UI State
-  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>('my_dashboard');
-  const [activePmTab, setActivePmTab] = useState<PMTab>('pm_dashboard');
-  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>('ac_dashboard');
-  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('admin_overview');
+  // Local UI State initialized from URL
+  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>(
+    () => (urlPortal === 'employee' && urlTab ? urlTab : 'my_dashboard') as EmployeeTab
+  );
+  const [activePmTab, setActivePmTab] = useState<PMTab>(
+    () => (urlPortal === 'pm' && urlTab ? urlTab : 'pm_dashboard') as PMTab
+  );
+  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>(
+    () => (urlPortal === 'ac_manager' && urlTab ? urlTab : 'ac_dashboard') as ACManagerTab
+  );
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>(
+    () => (urlPortal === 'admin' && urlTab ? urlTab : 'admin_overview') as AdminTab
+  );
+
+  // Sync state changes to URL
+  React.useEffect(() => {
+    if (currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      params.set('portal', portalMode);
+      if (portalMode === 'employee') params.set('tab', activeEmployeeTab);
+      else if (portalMode === 'pm') params.set('tab', activePmTab);
+      else if (portalMode === 'ac_manager') params.set('tab', activeAcTab);
+      else if (portalMode === 'admin') params.set('tab', activeAdminTab);
+      
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState(null, '', newUrl);
+    } else {
+      // Clear URL parameters when logged out
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [currentUser, portalMode, activeEmployeeTab, activePmTab, activeAcTab, activeAdminTab]);
+
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // RTK Queries (Skipped if not logged in)
@@ -132,15 +173,24 @@ export default function App() {
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
   const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || !isPm });
-  const { data: timesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
+  const { data: myTimesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
+  const { data: managedTimesheets = [] } = useGetManagedTimesheetsQuery(undefined, { skip: skip || !isPm });
   
+  const timesheets = React.useMemo(() => {
+    const map = new Map<string, TimesheetEntry>();
+    myTimesheets.forEach(t => map.set(t.id, t));
+    if (isPm) {
+      managedTimesheets.forEach(t => map.set(t.id, t));
+    }
+    return Array.from(map.values());
+  }, [myTimesheets, managedTimesheets, isPm]);
   // Admins need all leave requests; others just need theirs
   const { data: allLeaveRequests = [] } = useGetLeaveRequestsQuery(undefined, { skip: skip || !isAdmin });
   const { data: myLeaveRequests = [] } = useGetMyLeaveRequestsQuery(undefined, { skip: skip || isAdmin });
   const leaveRequests = isAdmin ? allLeaveRequests : myLeaveRequests;
 
   const { data: myWeekendRequests = [] } = useGetWeekendRequestsQuery(undefined, { skip });
-  const { data: pendingWeekendRequests = [] } = useGetPendingWeekendRequestsQuery(undefined, { skip: skip || (!isPm && !isAdmin) });
+  const { data: pendingWeekendRequests = [] } = useGetManagedWeekendRequestsQuery(undefined, { skip: skip || (!isPm && !isAdmin) });
   const weekendRequests = isPm || isAdmin ? pendingWeekendRequests : myWeekendRequests;
   const { data: holidays = [] } = useGetHolidaysQuery(undefined, { skip });
   const { data: myProjectAssignments = [] } = useGetMyProjectAssignmentsQuery(undefined, { skip });
@@ -148,13 +198,15 @@ export default function App() {
   const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip });
 
   const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip });
+  const { data: fetchedSettings } = useGetSettingsQuery(undefined, { skip });
   
   const [createProjectMutation] = useCreateProjectMutation();
   const [updateProjectMutation] = useUpdateProjectMutation();
   const [deleteProjectMutation] = useDeleteProjectMutation();
   const [assignUserMutation] = useAssignUserToProjectMutation();
   const [removeUserMutation] = useRemoveUserFromProjectMutation();
-  const [createToolMutation] = useAllocateToolMutation(); // we'll use allocate directly since FE says "add tool"
+  const [createTool] = useCreateToolMutation();
+  const [allocateTool] = useAllocateToolMutation();
   const [removeToolMutation] = useDeallocateToolMutation();
   // Fallbacks for data not yet wired up
   const leaveBalance = fetchedLeaveBalance || {
@@ -169,10 +221,11 @@ export default function App() {
   };
   const workingCalendar = fetchedWorkingCalendar || INITIAL_WORKING_CALENDAR;
   const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
-  const [settings] = useState(INITIAL_SETTINGS);
+  const settings = fetchedSettings || INITIAL_SETTINGS;
 
   // RTK Mutations
   const [updateWorkingCalendar] = useUpdateWorkingCalendarMutation();
+  const [updateSettingsMutation] = useUpdateSettingsMutation();
   const [createTimesheets] = useCreateTimesheetsMutation();
   const [updateTimesheetApi] = useUpdateTimesheetMutation();
   const [deleteTimesheetApi] = useDeleteTimesheetMutation();
@@ -214,6 +267,7 @@ export default function App() {
     } catch (e) {
       console.error('Logout API failed:', e);
     } finally {
+      dispatch(apiSlice.util.resetApiState());
       dispatch(logout());
     }
   };
@@ -407,29 +461,20 @@ export default function App() {
 
   const handleRemoveUserFromProject = async (projectId: string, userId: string) => {
     try {
-      // The API takes the project_assignment_id, but the frontend currently only passes projectId and userId.
-      // For now, this is a bit tricky since we don't have assignmentId directly here.
-      // But we can find it if we look it up in projects data.
-      const project = projects.find(p => p.id === projectId);
-      // Wait, we need the assignment ID. 
-      // Actually, we'll need backend to accept DELETE /project-assignments?project_id=X&user_id=Y or we just skip this stub logic update.
-      // But wait! RTK query is already written as: url: `/project-assignments/${assignmentId}`
-      // Let's assume the frontend will pass assignmentId in `userId` parameter for now, or we find it.
-      // To prevent breaking, let's keep it as stub for a sec or use a workaround.
-      // Let's pass the assignment ID.
-      showToast('Info', 'Remove user pending (requires assignment ID lookup)', 'info');
+      await removeUserMutation({ projectId, userId }).unwrap();
+      showToast('Success', 'User removed from project successfully', 'success');
     } catch (e: any) {
-      showToast('Error', 'Failed to remove user', 'error');
+      showToast('Error', e?.data?.message || 'Failed to remove user', 'error');
     }
   };
 
   const handleAddToolToProject = async (projectId: string, tool: Omit<import('./types').ProjectTool, 'id'>) => {
     try {
-      // Need to create tool first then allocate. For now, assume tool is created and we allocate.
-      // Or just stub it for now if createTool is not fully wired.
-      showToast('Info', 'Add tool pending (requires tool creation flow)', 'info');
+      const newTool = await createTool({ name: tool.name, category: tool.category, cost_per_month: tool.monthlyCost }).unwrap();
+      await allocateTool({ tool_id: newTool.id, project_id: Number(projectId), allocation_date: tool.allocationDate }).unwrap();
+      showToast('Success', 'Tool added and allocated to project', 'success');
     } catch (e: any) {
-      showToast('Error', 'Failed to add tool', 'error');
+      showToast('Error', e?.data?.message || 'Failed to add tool', 'error');
     }
   };
 
@@ -531,15 +576,20 @@ export default function App() {
   const pendingLeavesCount = (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
   const pendingWeekendCount = (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
 
+  if (isAuthLoading && !currentUser) {
+    return (
+      <div className="min-h-screen bg-[#f8fafe] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-medium animate-pulse">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative">
-        {isAuthLoading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-white shadow-md rounded-full border border-blue-100 animate-pulse">
-             <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="text-xs font-bold text-blue-600">Checking existing session...</p>
-          </div>
-        )}
         <LoginPage />
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
       </div>
@@ -806,7 +856,14 @@ export default function App() {
               {activeAdminTab === 'admin_settings' && (
                 <SettingsManagement
                   settings={settings}
-                  onUpdateSettings={() => { showToast('Info', 'API pending', 'info'); }}
+                  onUpdateSettings={async (newSettings) => {
+                    try {
+                      await updateSettingsMutation(newSettings).unwrap();
+                      showToast('Success', 'Settings updated successfully', 'success');
+                    } catch (e: any) {
+                      showToast('Error', e?.data?.message || 'Failed to update settings', 'error');
+                    }
+                  }}
                   onShowToast={showToast}
                 />
               )}
