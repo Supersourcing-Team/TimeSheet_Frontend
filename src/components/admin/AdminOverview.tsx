@@ -64,11 +64,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   const adminOverview = dashboardData?.admin_overview || {};
   const activeUsersCount = adminOverview.active_users_count ?? 0;
   const onLeaveUsersCount = adminOverview.on_leave_users_count ?? 0;
-  
+
   const pendingLeaves = safeLeaveRequests.filter((l) => l.status.toLowerCase() === 'pending');
   const pendingLeavesCount = adminOverview.pending_leaves_count ?? pendingLeaves.length;
   const activeProjectsCount = adminOverview.active_projects_count ?? safeProjects.length;
-  
+
   const nextHoliday = dashboardData?.upcoming_holiday;
 
   // Department distribution calculation for pie/doughnut chart
@@ -103,7 +103,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard Overview</h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Welcome back, here's what's happening today across Chronos Enterprise.
+            Welcome back, here's what's happening today across SuperTime Enterprise.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <span>New Entry</span>
           </button>
           <button
-            onClick={() => onShowToast('Export Started', 'Exporting Chronos dashboard summary report (CSV)...', 'info')}
+            onClick={() => onShowToast('Export Started', 'Exporting SuperTime dashboard summary report (CSV)...', 'info')}
             className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
           >
             <Download className="w-4 h-4 text-slate-500" />
@@ -464,13 +464,12 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                       <td className="py-3.5 px-4 text-slate-600 font-medium">{user.title}</td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            user.status === 'active'
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${user.status === 'active'
                               ? 'bg-emerald-100 text-emerald-800'
                               : user.status === 'on_leave'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}
                         >
                           {user.status.replace('_', ' ')}
                         </span>

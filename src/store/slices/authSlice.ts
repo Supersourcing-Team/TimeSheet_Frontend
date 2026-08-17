@@ -26,7 +26,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.portalMode = 'employee';
-      localStorage.removeItem('chronos_current_user'); // cleanup old localstorage
+      localStorage.removeItem('SuperTime_current_user'); // cleanup old localstorage
     },
     setPortalMode: (state, action: PayloadAction<ActivePortalMode>) => {
       state.portalMode = action.payload;
