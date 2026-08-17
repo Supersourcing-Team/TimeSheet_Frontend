@@ -600,6 +600,45 @@ export const dataApi = apiSlice.injectEndpoints({
       invalidatesTags: ['WorkingCalendar' as any],
     }),
     // -----------------------------------------------------------------------
+    // Settings
+    // -----------------------------------------------------------------------
+    getSettings: builder.query<import('../../types').SystemSettingsConfig, void>({
+      query: () => '/settings',
+      transformResponse: (res: any) => {
+        const data = res.data || res;
+        return {
+          orgName: data.org_name,
+          orgRegId: data.org_reg_id,
+          contactEmail: data.contact_email,
+          companyLogoUrl: data.company_logo_url,
+          timeZone: data.time_zone,
+          emailNotifications: data.email_notifications,
+          timesheetApprovalReminders: data.timesheet_approval_reminders,
+          leaveRequestAlerts: data.leave_request_alerts,
+          primaryColor: data.primary_color,
+        };
+      },
+      providesTags: ['Settings' as any],
+    }),
+    updateSettings: builder.mutation<import('../../types').SystemSettingsConfig, import('../../types').SystemSettingsConfig>({
+      query: (body) => ({
+        url: '/settings',
+        method: 'PUT',
+        body: {
+          org_name: body.orgName,
+          org_reg_id: body.orgRegId,
+          contact_email: body.contactEmail,
+          company_logo_url: body.companyLogoUrl,
+          time_zone: body.timeZone,
+          email_notifications: body.emailNotifications,
+          timesheet_approval_reminders: body.timesheetApprovalReminders,
+          leave_request_alerts: body.leaveRequestAlerts,
+          primary_color: body.primaryColor,
+        },
+      }),
+      invalidatesTags: ['Settings' as any],
+    }),
+    // -----------------------------------------------------------------------
     // Analytics
     // -----------------------------------------------------------------------
     getTeamUtilization: builder.query<any, void>({
@@ -674,6 +713,8 @@ export const {
   useGetDashboardSummaryQuery,
   useGetWorkingCalendarQuery,
   useUpdateWorkingCalendarMutation,
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
   useGetTeamUtilizationQuery,
   useGetProjectFinancialsQuery,
 } = dataApi;

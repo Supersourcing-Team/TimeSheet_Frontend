@@ -33,6 +33,8 @@ import {
   useGetMyProjectAssignmentsQuery,
   useGetWorkingCalendarQuery,
   useUpdateWorkingCalendarMutation,
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
   useGetClientsQuery,
   useCreateClientMutation,
   useCreateProjectMutation,
@@ -185,6 +187,7 @@ export default function App() {
   const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip });
 
   const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip });
+  const { data: fetchedSettings } = useGetSettingsQuery(undefined, { skip });
   
   const [createProjectMutation] = useCreateProjectMutation();
   const [updateProjectMutation] = useUpdateProjectMutation();
@@ -206,10 +209,11 @@ export default function App() {
   };
   const workingCalendar = fetchedWorkingCalendar || INITIAL_WORKING_CALENDAR;
   const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
-  const [settings] = useState(INITIAL_SETTINGS);
+  const settings = fetchedSettings || INITIAL_SETTINGS;
 
   // RTK Mutations
   const [updateWorkingCalendar] = useUpdateWorkingCalendarMutation();
+  const [updateSettingsMutation] = useUpdateSettingsMutation();
   const [createTimesheets] = useCreateTimesheetsMutation();
   const [updateTimesheetApi] = useUpdateTimesheetMutation();
   const [deleteTimesheetApi] = useDeleteTimesheetMutation();
@@ -849,7 +853,14 @@ export default function App() {
               {activeAdminTab === 'admin_settings' && (
                 <SettingsManagement
                   settings={settings}
-                  onUpdateSettings={() => { showToast('Info', 'API pending', 'info'); }}
+                  onUpdateSettings={async (newSettings) => {
+                    try {
+                      await updateSettingsMutation(newSettings).unwrap();
+                      showToast('Success', 'Settings updated successfully', 'success');
+                    } catch (e: any) {
+                      showToast('Error', e?.data?.message || 'Failed to update settings', 'error');
+                    }
+                  }}
                   onShowToast={showToast}
                 />
               )}
