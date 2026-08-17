@@ -37,23 +37,26 @@ export interface TimesheetCreatePayload {
 // Helper: map a single raw backend timesheet => frontend TimesheetEntry
 // ---------------------------------------------------------------------------
 function mapBackendTimesheetToFrontend(t: any): TimesheetEntry {
+  const billable = t.billable_hours ?? 0;
+  const nonBillable = t.non_billable_hours ?? 0;
+  
   return {
     id: String(t.id),
     userId: String(t.user_id),
-    userName: '',
-    userAvatar: '',
+    userName: t.user_name || 'Unknown User',
+    userAvatar: t.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.user_name || 'User')}&background=random`,
     projectId: String(t.project_assignment?.project_id ?? ''),
-    projectName: '',
+    projectName: t.project_name || 'Unknown Project',
     date: t.timesheet_date,
-    billableHours: t.billable_hours ?? 0,
-    nonBillableHours: t.non_billable_hours ?? 0,
+    hours: billable + nonBillable,
+    billableHours: billable,
+    nonBillableHours: nonBillable,
     description: [
       t.billable_work_summary ? `[Billable] ${t.billable_work_summary}` : '',
       t.non_billable_work_summary ? `[Non-Billable] ${t.non_billable_work_summary}` : ''
     ].filter(Boolean).join(' | '),
     billableDescription: t.billable_work_summary ?? '',
     nonBillableDescription: t.non_billable_work_summary ?? '',
-    category: 'Development' as TimesheetEntry['category'],
     status: (t.status ?? 'submitted') as TimesheetEntry['status'],
     submittedAt: t.created_at ?? '',
   };
@@ -153,7 +156,14 @@ export const dataApi = apiSlice.injectEndpoints({
           startDate: p.start_date || '',
           endDate: p.end_date || '',
           assignedUserIds: p.assigned_user_ids?.map(String) || [],
-          tools: p.tools?.map((t: any) => ({ id: String(t.id), allocatedHours: t.allocated_hours })) || [],
+          tools: p.tools?.map((t: any) => ({ 
+            id: String(t.id), 
+            allocationId: String(t.allocation_id),
+            name: t.name || '', 
+            category: t.category || '', 
+            monthlyCost: t.monthly_cost || 0,
+            allocatedHours: t.allocated_hours || 0 
+          })) || [],
         }));
       },
       providesTags: ['Project'],
@@ -186,23 +196,24 @@ export const dataApi = apiSlice.injectEndpoints({
       query: (body) => ({ url: '/project-assignments', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
-    removeUserFromProject: builder.mutation<void, string>({
-      query: (assignmentId) => ({ url: `/project-assignments/${assignmentId}`, method: 'DELETE' }),
+    removeUserFromProject: builder.mutation<void, { projectId: string; userId: string }>({
+      query: ({ projectId, userId }) => ({ url: `/project-assignments/project/${projectId}/user/${userId}`, method: 'DELETE' }),
       invalidatesTags: ['Project'],
     }),
 
     // -----------------------------------------------------------------------
     // Tools
     // -----------------------------------------------------------------------
-    createTool: builder.mutation<any, { name: string; description?: string }>({
+    createTool: builder.mutation<any, { name: string; category: string; cost_per_month: number }>({
       query: (body) => ({ url: '/tools', method: 'POST', body }),
+      transformResponse: (res: any) => res.data || res,
     }),
-    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; allocated_hours?: number }>({
+    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; allocation_date: string }>({
       query: (body) => ({ url: '/tool-allocations', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
     deallocateTool: builder.mutation<void, string>({
-      query: (allocationId) => ({ url: `/tool-allocations/${allocationId}`, method: 'DELETE' }),
+      query: (allocationId) => ({ url: `/tool-allocations/${allocationId}/deallocate`, method: 'PUT' }),
       invalidatesTags: ['Project'],
     }),
 
@@ -211,6 +222,15 @@ export const dataApi = apiSlice.injectEndpoints({
     // -----------------------------------------------------------------------
     getTimesheets: builder.query<TimesheetEntry[], void>({
       query: () => '/timesheets/me',
+      transformResponse: (res: any) => {
+        const items: any[] = res.data?.items || res.data || [];
+        return items.map(mapBackendTimesheetToFrontend);
+      },
+      providesTags: ['Timesheet'],
+    }),
+
+    getManagedTimesheets: builder.query<TimesheetEntry[], void>({
+      query: () => '/timesheets/managed',
       transformResponse: (res: any) => {
         const items: any[] = res.data?.items || res.data || [];
         return items.map(mapBackendTimesheetToFrontend);
@@ -384,10 +404,10 @@ export const dataApi = apiSlice.injectEndpoints({
         return items.map((w: any) => ({
           id: String(w.id),
           userId: String(w.project_assignment?.user_id || ''),
-          userName: w.project_assignment?.user ? `${w.project_assignment.user.first_name} ${w.project_assignment.user.last_name}` : '',
-          userAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent((w.project_assignment?.user?.first_name || '') + ' ' + (w.project_assignment?.user?.last_name || ''))}&background=random`,
+          userName: w.user_name || '',
+          userAvatar: w.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(w.user_name || 'User')}&background=random`,
           projectId: String(w.project_assignment?.project_id || ''),
-          projectName: w.project_assignment?.project?.project_name || '',
+          projectName: w.project_name || '',
           workDate: w.work_date,
           plannedHours: w.planned_hours || 0,
           deliverableObjective: w.reason,
@@ -398,17 +418,17 @@ export const dataApi = apiSlice.injectEndpoints({
       },
       providesTags: ['WeekendWork'],
     }),
-    getPendingWeekendRequests: builder.query<WeekendWorkRequest[], void>({
-      query: () => '/weekend-work/pending',
+    getManagedWeekendRequests: builder.query<WeekendWorkRequest[], void>({
+      query: () => '/weekend-work/managed',
       transformResponse: (res: any) => {
         const items = res.data?.items || res.data || [];
         return items.map((w: any) => ({
           id: String(w.id),
           userId: String(w.project_assignment?.user_id || ''),
-          userName: w.project_assignment?.user ? `${w.project_assignment.user.first_name} ${w.project_assignment.user.last_name}` : '',
-          userAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent((w.project_assignment?.user?.first_name || '') + ' ' + (w.project_assignment?.user?.last_name || ''))}&background=random`,
+          userName: w.user_name || '',
+          userAvatar: w.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(w.user_name || 'User')}&background=random`,
           projectId: String(w.project_assignment?.project_id || ''),
-          projectName: w.project_assignment?.project?.project_name || '',
+          projectName: w.project_name || '',
           workDate: w.work_date,
           plannedHours: w.planned_hours || 0,
           deliverableObjective: w.reason,
@@ -419,7 +439,7 @@ export const dataApi = apiSlice.injectEndpoints({
       },
       providesTags: ['WeekendWork'],
     }),
-    submitWeekendWork: builder.mutation<void, { project_assignment_id: number; work_date: string; reason: string }>({
+    submitWeekendWork: builder.mutation<void, { project_assignment_id: number; work_date: string; planned_hours: number; reason: string }>({
       query: (body) => ({ url: '/weekend-work', method: 'POST', body }),
       invalidatesTags: ['WeekendWork'],
     }),
@@ -673,6 +693,7 @@ export const {
   useDeallocateToolMutation,
   // Timesheets
   useGetTimesheetsQuery,
+  useGetManagedTimesheetsQuery,
   useCreateTimesheetMutation,
   useCreateTimesheetsMutation,
   useUpdateTimesheetMutation,
@@ -688,7 +709,7 @@ export const {
   useGetMyLeaveBalancesQuery,
   // Weekend
   useGetWeekendRequestsQuery,
-  useGetPendingWeekendRequestsQuery,
+  useGetManagedWeekendRequestsQuery,
   useSubmitWeekendWorkMutation,
   useApproveWeekendWorkMutation,
   useRejectWeekendWorkMutation,

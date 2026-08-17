@@ -104,6 +104,14 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
     const targetProject = pmProjects.find((p) => p.id === toolProjectId);
     if (!targetProject) return;
 
+    const isAlreadyAllocated = (targetProject.tools || []).some(
+      (t) => t.name.toLowerCase() === toolName.toLowerCase()
+    );
+    if (isAlreadyAllocated) {
+      onShowToast('Already Allocated', `${toolName} is already allocated to ${targetProject.name}.`, 'info');
+      return;
+    }
+
     const toolPayload: Omit<ProjectTool, 'id'> = {
       name: toolName,
       category: toolCategory,
@@ -130,6 +138,8 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
 
   // Filtered list of users
   const filteredUsers = (allUsers || []).filter((u) => {
+    if (u.role !== 'employee') return false;
+
     const matchesSearch =
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -374,7 +384,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                   <th className="py-3 px-4">Category</th>
                   <th className="py-3 px-4">Monthly Cost</th>
                   <th className="py-3 px-4">Allocation Date</th>
-                  <th className="py-3 px-4">Deallocation Date</th>
+                  {/* <th className="py-3 px-4">Deallocation Date</th> */}
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -404,9 +414,9 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
                         {tool.allocationDate || '2025-01-10'}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
+                      {/* <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
                         {tool.deallocationDate || 'N/A'}
-                      </td>
+                      </td> */}
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
                           {tool.status || 'Active'}
@@ -414,7 +424,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <button
-                          onClick={() => handleRemoveTool(tool.projectId, tool.id, tool.name)}
+                          onClick={() => handleRemoveTool(tool.projectId, tool.allocationId, tool.name)}
                           className="px-3 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold text-xs border border-rose-200"
                         >
                           Deallocate
