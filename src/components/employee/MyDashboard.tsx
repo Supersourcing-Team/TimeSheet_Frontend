@@ -49,7 +49,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   return (
     <div className="space-y-6 text-slate-800">
       {/* Top Banner / Hero Greeting */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-900/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-semibold border border-white/20 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-blue-200" />
@@ -253,7 +253,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
                     </td>
                     <td className="py-3 px-3 text-slate-700">
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
-                        {ts.category}
+                        {ts.category || 'Development'}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-slate-800 max-w-xs truncate" title={ts.billableDescription || ts.description}>
@@ -325,11 +325,6 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
 
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-2">
-                  <img
-                    src={focusProject?.pmAvatar}
-                    alt={focusProject?.pmName}
-                    className="w-6 h-6 rounded-full object-cover ring-2 ring-blue-500/20"
-                  />
                   <span className="text-xs text-slate-700 font-bold">
                     PM: {focusProject?.pmName}
                   </span>

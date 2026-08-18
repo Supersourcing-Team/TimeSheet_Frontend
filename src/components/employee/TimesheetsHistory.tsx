@@ -62,9 +62,28 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   const [addBillableDesc, setAddBillableDesc] = useState<string>('');
   const [addNonBillableDesc, setAddNonBillableDesc] = useState<string>('');
 
-  // Month navigation for Calendar (Aug 2025)
-  const [currentYear] = useState(2025);
-  const [currentMonth] = useState(7); // 0-indexed, 7 = August
+  // Month navigation for Calendar
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-indexed
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
 
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
 
@@ -78,7 +97,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const formattedDay = d < 10 ? `0${d}` : `${d}`;
-    const dateStr = `${currentYear}-08-${formattedDay}`;
+    const formattedMonth = currentMonth + 1 < 10 ? `0${currentMonth + 1}` : `${currentMonth + 1}`;
+    const dateStr = `${currentYear}-${formattedMonth}-${formattedDay}`;
     calendarDays.push(dateStr);
   }
 
@@ -259,8 +279,26 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
       {/* CALENDAR VIEW */}
       {viewMode === 'calendar' && (
         <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-            <h3 className="text-base font-extrabold text-slate-900">August 2025</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="text-base font-extrabold text-slate-900 min-w-[140px] text-center">
+                {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h3>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
             <div className="flex items-center gap-4 text-xs">
               <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -298,20 +336,25 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
               const dateObj = new Date(dateStr);
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+              const todayStr = new Date().toISOString().split('T')[0];
+              const isFutureDate = dateStr > todayStr;
 
               return (
                 <button
                   type="button"
                   key={dateStr}
-                  onClick={() => setSelectedDateModal(dateStr)}
-                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-md cursor-pointer ${
-                    isWeekend
-                      ? 'bg-slate-50 border-slate-200/60 opacity-60'
+                  onClick={() => !isFutureDate && setSelectedDateModal(dateStr)}
+                  disabled={isFutureDate}
+                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                    isFutureDate
+                      ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
+                      : isWeekend
+                      ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                       : dayTotalHours >= 8
-                      ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500'
+                      ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                       : dayTotalHours > 0
-                      ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500'
-                      : 'bg-white border-slate-200 hover:border-blue-400'
+                      ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                      : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -346,7 +389,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         +{dayEntries.length - 2} more
                       </div>
                     )}
-                    {dayEntries.length === 0 && !isWeekend && (
+                    {dayEntries.length === 0 && !isWeekend && !isFutureDate && (
                       <span className="text-[10px] text-slate-400 italic">Click to log</span>
                     )}
                   </div>
@@ -641,14 +684,15 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
                   <label className="block text-slate-700 font-bold mb-1">Category</label>
                   <select
                     value={editCategory}
@@ -665,7 +709,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   </select>
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-slate-700 font-bold mb-1">Total Hours</label>
                   <input
                     type="number"
@@ -679,8 +723,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Billable Hours</label>
+                <div className="col-span-1">
+                  <label className="block text-slate-700 font-bold mb-1">Billable (h)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -690,6 +734,16 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     onChange={(e) => setEditBillableHours(Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
+                  />
+                </div>
+
+                <div className="col-span-1">
+                  <label className="block text-slate-700 font-bold mb-1">Non-Bill (h)</label>
+                  <input
+                    type="number"
+                    value={Math.max(0, editHours - editBillableHours)}
+                    className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-3 py-2 font-bold cursor-not-allowed"
+                    readOnly
                   />
                 </div>
               </div>
@@ -782,8 +836,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
                   <label className="block text-slate-700 font-bold mb-1">Category</label>
                   <select
                     value={addCategory}
@@ -800,7 +854,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   </select>
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-slate-700 font-bold mb-1">Total Hours</label>
                   <input
                     type="number"
@@ -814,8 +868,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Billable Hours</label>
+                <div className="col-span-1">
+                  <label className="block text-slate-700 font-bold mb-1">Billable (h)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -825,6 +879,16 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     onChange={(e) => setAddBillableHours(Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
+                  />
+                </div>
+
+                <div className="col-span-1">
+                  <label className="block text-slate-700 font-bold mb-1">Non-Bill (h)</label>
+                  <input
+                    type="number"
+                    value={Math.max(0, addHours - addBillableHours)}
+                    className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-3 py-2 font-bold cursor-not-allowed"
+                    readOnly
                   />
                 </div>
               </div>

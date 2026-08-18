@@ -267,7 +267,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    {projects.map((p) => (
+                    {assignedProjects.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} ({p.code})
                       </option>
@@ -284,6 +284,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     type="date"
                     value={row.date}
                     onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
