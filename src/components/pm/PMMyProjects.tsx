@@ -300,8 +300,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         {filteredProjects.map((proj) => {
           const assignedCount = (proj.assignedUserIds || []).length;
           const toolsCount = (proj.tools || []).length;
+          
+          const calculatedLoggedHours = timesheets
+            .filter((ts) => ts.projectId === proj.id)
+            .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            
+          const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
+
           const rawProgressPct = proj.allocatedHours > 0
-            ? Math.round((proj.loggedHours / proj.allocatedHours) * 100)
+            ? Math.round((actualLoggedHours / proj.allocatedHours) * 100)
             : 0;
           const displayPct = Math.min(100, rawProgressPct);
           const isOverAllocated = rawProgressPct > 100;
@@ -351,7 +358,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   <div className="flex justify-between text-xs font-semibold text-slate-700">
                     <span>Logged Hours:</span>
                     <span className={isOverAllocated ? 'text-rose-600 font-bold' : ''}>
-                      {proj.loggedHours} / {proj.allocatedHours} hrs ({rawProgressPct}%)
+                      {actualLoggedHours} / {proj.allocatedHours} hrs ({rawProgressPct}%)
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
@@ -362,7 +369,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   </div>
                   {isOverAllocated && (
                     <p className="text-[10px] text-rose-600 font-medium flex items-center gap-1 mt-1">
-                      <AlertCircle className="w-3 h-3" /> Over allocated by {proj.loggedHours - proj.allocatedHours} hrs
+                      <AlertCircle className="w-3 h-3" /> Over allocated by {actualLoggedHours - proj.allocatedHours} hrs
                     </p>
                   )}
                 </div>
