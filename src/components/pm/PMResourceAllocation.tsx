@@ -215,7 +215,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
             }`}
         >
           <Users className="w-4 h-4" />
-          <span>Employee Assignment ({allUsers.length})</span>
+          <span>Employee Assignment ({allUsers.filter(u => u.role === 'employee').length})</span>
         </button>
 
         <button
@@ -268,15 +268,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
       {/* SECTION 1: EMPLOYEE ASSIGNMENT VIEW */}
       {activeSubTab === 'employees' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 text-xs text-blue-900 flex items-start gap-3">
-            <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-extrabold text-blue-950">Multi-Project Allocation Rules</p>
-              <p className="text-blue-800 mt-0.5 leading-relaxed">
-                Employees can be assigned to multiple projects concurrently. Assigning an employee to a project gives them full access to all project-allocated tools and enables them to log timesheets against that project.
-              </p>
-            </div>
-          </div>
+          
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredUsers.map((user) => {

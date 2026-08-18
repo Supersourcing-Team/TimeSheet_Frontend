@@ -300,9 +300,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         {filteredProjects.map((proj) => {
           const assignedCount = (proj.assignedUserIds || []).length;
           const toolsCount = (proj.tools || []).length;
-          const progressPct = proj.allocatedHours > 0
-            ? Math.min(100, Math.round((proj.loggedHours / proj.allocatedHours) * 100))
+          const rawProgressPct = proj.allocatedHours > 0
+            ? Math.round((proj.loggedHours / proj.allocatedHours) * 100)
             : 0;
+          const displayPct = Math.min(100, rawProgressPct);
+          const isOverAllocated = rawProgressPct > 100;
+          const progressColor = isOverAllocated ? 'bg-rose-500' : rawProgressPct >= 80 ? 'bg-amber-500' : 'bg-blue-600';
 
           return (
             <div
@@ -347,14 +350,21 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <div className="space-y-1.5 pt-2">
                   <div className="flex justify-between text-xs font-semibold text-slate-700">
                     <span>Logged Hours:</span>
-                    <span>{proj.loggedHours} / {proj.allocatedHours} hrs ({progressPct}%)</span>
+                    <span className={isOverAllocated ? 'text-rose-600 font-bold' : ''}>
+                      {proj.loggedHours} / {proj.allocatedHours} hrs ({rawProgressPct}%)
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
                     <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${progressPct}%` }}
+                      className={`${progressColor} h-2 rounded-full transition-all duration-500`}
+                      style={{ width: `${displayPct}%` }}
                     />
                   </div>
+                  {isOverAllocated && (
+                    <p className="text-[10px] text-rose-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3 h-3" /> Over allocated by {proj.loggedHours - proj.allocatedHours} hrs
+                    </p>
+                  )}
                 </div>
               </div>
 
