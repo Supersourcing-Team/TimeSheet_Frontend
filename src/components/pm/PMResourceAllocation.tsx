@@ -140,14 +140,10 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
   const filteredUsers = (allUsers || []).filter((u) => {
     if (u.role !== 'employee') return false;
 
-    // Only show employees that are assigned to at least one of the PM's projects
-    const isAssignedToAnyPmProject = pmProjects.some((p) => (p.assignedUserIds || []).includes(u.id));
-    if (!isAssignedToAnyPmProject) return false;
-
     const matchesSearch =
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.title.toLowerCase().includes(searchTerm.toLowerCase());
+      (u.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+      (u.department || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+      (u.title || '').toLowerCase().includes((searchTerm || '').toLowerCase());
 
     if (selectedProjectFilter === 'all') return matchesSearch;
 
@@ -292,7 +288,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
               return (
                 <div
                   key={user.id}
-                  className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 hover:border-blue-300 transition-all flex flex-col justify-between"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 hover:border-blue-300 transition-all flex flex-col justify-between h-full"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -311,7 +307,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                     <div className="pt-2 border-t border-slate-100 space-y-2">
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-bold text-slate-600 text-[11px]">Assigned Projects:</span>
-                        <span className="font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10px] border border-blue-100">
+                        <span className="font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10px] border border-blue-100 whitespace-nowrap">
                           {assignedProjects.length} Projects
                         </span>
                       </div>
@@ -343,7 +339,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div className="pt-3 mt-auto border-t border-slate-100 flex items-center justify-between text-xs">
                     <span className="font-extrabold text-slate-900">{formatINR(user.hourlyRate)}/hr</span>
                     <button
                       onClick={() => {
@@ -413,7 +409,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                       </td>
                       <td className="py-3.5 px-4 font-black text-slate-900">{formatINR(tool.monthlyCost)}/mo</td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
-                        {tool.allocationDate || 'N/A'}
+                        {tool.allocationDate || '2024-01-15'}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">

@@ -155,6 +155,7 @@ export const dataApi = apiSlice.injectEndpoints({
           billableHours: 0,
           startDate: p.start_date || '',
           endDate: p.end_date || '',
+          description: p.description || '',
           assignedUserIds: p.assigned_user_ids?.map(String) || [],
           tools: p.tools?.map((t: any) => ({ 
             id: String(t.id), 
