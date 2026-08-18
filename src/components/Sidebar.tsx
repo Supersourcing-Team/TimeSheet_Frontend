@@ -39,8 +39,7 @@ export type PMTab =
   | 'pm_my_projects'
   | 'pm_resource_allocation'
   | 'pm_timesheet_review'
-  | 'pm_weekend_work'
-  | 'pm_team_utilization';
+  | 'pm_weekend_work';
 
 export type ACManagerTab =
   | 'ac_dashboard'
@@ -175,12 +174,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: CalendarX,
       desc: 'Approve Weekend Overtime',
       badge: pendingWeekendCount > 0 ? pendingWeekendCount : undefined,
-    },
-    {
-      id: 'pm_team_utilization',
-      label: 'Team Utilization',
-      icon: TrendingUp,
-      desc: 'Billable % & Productivity',
     },
   ];
 

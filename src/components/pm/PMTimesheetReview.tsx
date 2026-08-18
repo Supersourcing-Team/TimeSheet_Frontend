@@ -258,7 +258,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
 
 
                     {/* Work Summary */}
-                    <td 
+                    <td
                       className="py-3.5 px-4 max-w-sm cursor-pointer group"
                       onClick={() => setViewingDesc({ billable: ts.billableDescription || ts.description, nonBillable: ts.nonBillableDescription })}
                     >
@@ -311,7 +311,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
                 <span className="absolute top-7 right-7 text-lg font-bold">×</span>
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Billable Summary</h4>

@@ -83,7 +83,6 @@ import { PMMyProjects } from './components/pm/PMMyProjects';
 import { PMResourceAllocation } from './components/pm/PMResourceAllocation';
 import { PMTimesheetReview } from './components/pm/PMTimesheetReview';
 import { PMWeekendWorkRequests } from './components/pm/PMWeekendWorkRequests';
-import { PMTeamUtilization } from './components/pm/PMTeamUtilization';
 
 import { AccountManagerDashboard } from './components/ac_manager/AccountManagerDashboard';
 
@@ -422,6 +421,8 @@ export default function App() {
         project_name: newProj.name,
         description: newProj.description,
         budget: newProj.budget,
+        hourly_rate: newProj.hourlyRate,
+        allocated_hours: newProj.allocatedHours,
         start_date: newProj.startDate,
         end_date: newProj.endDate,
       }).unwrap();
@@ -438,6 +439,8 @@ export default function App() {
         project_name: updatedProj.name,
         status: updatedProj.status,
         budget: updatedProj.budget,
+        hourly_rate: updatedProj.hourlyRate,
+        allocated_hours: updatedProj.allocatedHours,
         start_date: updatedProj.startDate,
         end_date: updatedProj.endDate,
       }).unwrap();
@@ -756,15 +759,6 @@ export default function App() {
                   onApproveWeekendWork={handleApproveWeekendWork}
                   onRejectWeekendWork={handleRejectWeekendWork}
                   onShowToast={showToast}
-                />
-              )}
-
-              {activePmTab === 'pm_team_utilization' && (
-                <PMTeamUtilization
-                  currentUser={currentUser}
-                  projects={projects}
-                  allUsers={users}
-                  timesheets={timesheets}
                 />
               )}
             </>

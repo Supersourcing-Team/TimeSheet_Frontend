@@ -51,7 +51,10 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
   // All team members assigned to PM's projects
   const assignedTeamUserIds = Array.from(new Set(pmProjects.flatMap((p) => p.assignedUserIds || [])));
-  const totalTeamMembersCount = assignedTeamUserIds.length;
+  const totalTeamMembersCount = assignedTeamUserIds.filter(id => {
+    const user = safeAllUsers.find(u => u.id === id);
+    return user?.role === 'employee';
+  }).length;
 
   // Pending Weekend Work Requests for PM's projects
   const pendingWeekendRequests = safeWeekendRequests.filter(
@@ -80,16 +83,18 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   const totalBillableForUtilization = pmTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
   const avgUtilization = totalLoggedForUtilization > 0
     ? Math.min(100, Math.round((totalBillableForUtilization / totalLoggedForUtilization) * 100))
-    : 85;
+    : 0;
 
   // Recent 5 timesheet submissions
   const recentTimesheets = [...pmTimesheets].reverse().slice(0, 5);
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
+    <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
+      <div className="p-8 rounded-3xl bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-white shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-white/10">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
+        <div className="space-y-2 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
             <Sparkles className="w-3.5 h-3.5 text-blue-300" />
             <span>Project Execution & Resource Management Hub</span>
@@ -100,17 +105,17 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10">
           <button
             onClick={() => onNavigateTab('pm_resource_allocation')}
-            className="px-4 py-2 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-bold text-xs shadow-xs transition-all flex items-center gap-1.5"
+            className="px-5 py-2.5 rounded-2xl bg-white/90 backdrop-blur-md text-blue-900 hover:bg-white font-bold text-xs shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
           >
             <Users className="w-4 h-4 text-blue-700" />
             <span>Resource Allocation</span>
           </button>
           <button
             onClick={() => onNavigateTab('pm_timesheet_review')}
-            className="px-4 py-2 rounded-xl bg-blue-700/80 hover:bg-blue-700 text-white font-bold text-xs border border-blue-500/40 transition-all flex items-center gap-1.5"
+            className="px-5 py-2.5 rounded-2xl bg-blue-600/80 backdrop-blur-md hover:bg-blue-600 text-white font-bold text-xs border border-blue-400/30 hover:border-blue-400/50 shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
           >
             <CheckSquare className="w-4 h-4 text-blue-200" />
             <span>Review Timesheets</span>
@@ -118,12 +123,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid - 6 Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {/* Active Projects */}
         <div
           onClick={() => onNavigateTab('pm_my_projects')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-blue-400 transition-all cursor-pointer group"
+          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -138,7 +142,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Total Team Members */}
         <div
           onClick={() => onNavigateTab('pm_resource_allocation')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-blue-400 transition-all cursor-pointer group"
+          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-indigo-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -153,7 +157,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Pending Weekend Requests */}
         <div
           onClick={() => onNavigateTab('pm_weekend_work')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-amber-400 transition-all cursor-pointer group"
+          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-amber-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">
@@ -168,7 +172,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* This Week's Billable Hours */}
         <div
           onClick={() => onNavigateTab('pm_timesheet_review')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-emerald-400 transition-all cursor-pointer group"
+          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-emerald-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
@@ -183,7 +187,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Today's Logged Hours */}
         <div
           onClick={() => onNavigateTab('pm_timesheet_review')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-blue-400 transition-all cursor-pointer group"
+          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -194,29 +198,14 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           <div className="text-2xl font-black text-slate-900">{todayLoggedHours}h</div>
           <p className="text-[11px] text-slate-500 font-medium truncate">Submitted today</p>
         </div>
-
-        {/* Average Team Utilization */}
-        <div
-          onClick={() => onNavigateTab('pm_team_utilization')}
-          className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1.5 hover:border-purple-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">
-              Avg Utilization
-            </span>
-            <TrendingUp className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl font-black text-purple-900">{avgUtilization}%</div>
-          <p className="text-[11px] text-purple-700 font-medium truncate">Billable ratio</p>
-        </div>
       </div>
 
       {/* Main Grid: Projects Overview & Recent Timesheet Submissions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols): Project Progress Overview */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="p-7 rounded-3xl bg-white/60 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <div>
                 <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-blue-600" />
@@ -248,7 +237,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                 return (
                   <div
                     key={proj.id}
-                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 hover:border-blue-300 transition-all"
+                    className="p-5 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] space-y-3.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-blue-200/60 transition-all duration-300"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-extrabold font-mono text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded">
@@ -294,8 +283,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-600 font-medium">
-                      <div className="flex items-center gap-3">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-medium">
+                      <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1">
                           <Users className="w-3.5 h-3.5 text-slate-400" />
                           <span className="font-bold text-slate-800">{assignedCount} Members</span>
@@ -319,8 +308,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
         {/* Right Column (1 col): Recent Timesheet Submissions (Review-Only) */}
         <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="p-7 rounded-3xl bg-white/60 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <div>
                 <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <CheckSquare className="w-4 h-4 text-blue-600" />
@@ -346,7 +335,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                 {recentTimesheets.map((ts) => (
                   <div
                     key={ts.id}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5"
+                    className="p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] space-y-2 hover:shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-all duration-300"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

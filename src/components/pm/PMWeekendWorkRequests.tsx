@@ -105,11 +105,10 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <button
           onClick={() => setStatusFilter('pending')}
-          className={`p-4 rounded-2xl border text-left transition-all ${
-            statusFilter === 'pending'
+          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'pending'
               ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-400/20'
               : 'bg-white border-slate-200 hover:border-amber-300'
-          }`}
+            }`}
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">
             Pending Review
@@ -120,11 +119,10 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
 
         <button
           onClick={() => setStatusFilter('approved')}
-          className={`p-4 rounded-2xl border text-left transition-all ${
-            statusFilter === 'approved'
+          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'approved'
               ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-400/20'
               : 'bg-white border-slate-200 hover:border-emerald-300'
-          }`}
+            }`}
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
             Approved Requests
@@ -135,11 +133,10 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
 
         <button
           onClick={() => setStatusFilter('rejected')}
-          className={`p-4 rounded-2xl border text-left transition-all ${
-            statusFilter === 'rejected'
+          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'rejected'
               ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-400/20'
               : 'bg-white border-slate-200 hover:border-rose-300'
-          }`}
+            }`}
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-rose-800">
             Rejected Requests
@@ -208,13 +205,12 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
                     </div>
 
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black capitalize ${
-                        req.status === 'pending'
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black capitalize ${req.status === 'pending'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200'
                           : req.status === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-rose-100 text-rose-800 border border-rose-200'
+                        }`}
                     >
                       {req.status}
                     </span>
