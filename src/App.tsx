@@ -421,6 +421,8 @@ export default function App() {
         project_name: newProj.name,
         description: newProj.description,
         budget: newProj.budget,
+        hourly_rate: newProj.hourlyRate,
+        allocated_hours: newProj.allocatedHours,
         start_date: newProj.startDate,
         end_date: newProj.endDate,
       }).unwrap();
@@ -437,6 +439,8 @@ export default function App() {
         project_name: updatedProj.name,
         status: updatedProj.status,
         budget: updatedProj.budget,
+        hourly_rate: updatedProj.hourlyRate,
+        allocated_hours: updatedProj.allocatedHours,
         start_date: updatedProj.startDate,
         end_date: updatedProj.endDate,
       }).unwrap();

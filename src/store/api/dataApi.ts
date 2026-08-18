@@ -149,8 +149,8 @@ export const dataApi = apiSlice.injectEndpoints({
           pmAvatar: '',
           status: (p.status?.toLowerCase() || 'planning') as Project['status'],
           budget: p.budget || 0,
-          hourlyRate: 0,
-          allocatedHours: 0,
+          hourlyRate: p.hourly_rate || 0,
+          allocatedHours: p.allocated_hours || 0,
           loggedHours: 0,
           billableHours: 0,
           startDate: p.start_date || '',
@@ -172,6 +172,7 @@ export const dataApi = apiSlice.injectEndpoints({
     createProject: builder.mutation<any, {
       client_id: number; project_manager_id: number; project_name: string;
       description?: string; budget?: number; start_date?: string; end_date?: string;
+      hourly_rate?: number; allocated_hours?: number;
     }>({
       query: (body) => ({ url: '/projects', method: 'POST', body }),
       invalidatesTags: ['Project'],
