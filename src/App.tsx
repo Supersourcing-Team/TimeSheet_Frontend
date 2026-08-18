@@ -83,7 +83,6 @@ import { PMMyProjects } from './components/pm/PMMyProjects';
 import { PMResourceAllocation } from './components/pm/PMResourceAllocation';
 import { PMTimesheetReview } from './components/pm/PMTimesheetReview';
 import { PMWeekendWorkRequests } from './components/pm/PMWeekendWorkRequests';
-import { PMTeamUtilization } from './components/pm/PMTeamUtilization';
 
 import { AccountManagerDashboard } from './components/ac_manager/AccountManagerDashboard';
 
@@ -756,15 +755,6 @@ export default function App() {
                   onApproveWeekendWork={handleApproveWeekendWork}
                   onRejectWeekendWork={handleRejectWeekendWork}
                   onShowToast={showToast}
-                />
-              )}
-
-              {activePmTab === 'pm_team_utilization' && (
-                <PMTeamUtilization
-                  currentUser={currentUser}
-                  projects={projects}
-                  allUsers={users}
-                  timesheets={timesheets}
                 />
               )}
             </>

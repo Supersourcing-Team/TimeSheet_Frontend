@@ -71,9 +71,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     name: '',
     client: '',
     status: 'active' as const,
-    budget: 2500000,
-    hourlyRate: 2000,
-    allocatedHours: 1000,
+    budget: 0,
+    hourlyRate: 0,
+    allocatedHours: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     description: '',
@@ -92,7 +92,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   }>({
     name: '',
     category: 'AI',
-    monthlyCost: 15000,
+    monthlyCost: 0,
     allocationDate: new Date().toISOString().split('T')[0],
     status: 'active',
   });
@@ -127,9 +127,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
     onAddProject({
       name: newProject.name,
-      code: '',
+      code: 'PRJ-' + Math.floor(1000 + Math.random() * 9000),
       client: newProject.client,
-      accountManagerName: 'Rajesh Sharma',
+      accountManagerName: '',
       pmName: currentUser.name,
       pmAvatar: currentUser.avatar,
       status: newProject.status,
@@ -151,9 +151,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       name: '',
       client: '',
       status: 'active',
-      budget: 2500000,
-      hourlyRate: 2000,
-      allocatedHours: 1000,
+      budget: 0,
+      hourlyRate: 0,
+      allocatedHours: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       description: '',
@@ -219,7 +219,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     setNewTool({
       name: '',
       category: 'AI',
-      monthlyCost: 15000,
+      monthlyCost: 0,
       allocationDate: new Date().toISOString().split('T')[0],
       status: 'active',
     });
@@ -242,22 +242,23 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   };
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
+    <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Top Header & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div>
-          <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-blue-600" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10">
+          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+            <Briefcase className="w-6 h-6 text-blue-600" />
             <span>My Projects Management</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
+          <p className="text-xs text-slate-500 mt-2 font-medium max-w-xl leading-relaxed">
             Manage active projects, assign team members, allocate project tools & services, and review project timesheets.
           </p>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 self-start md:self-auto"
+          className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 relative z-10 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Create New Project</span>
@@ -265,15 +266,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/70 backdrop-blur-xl p-5 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.03)] relative z-10">
+        <div className="relative w-full sm:w-96">
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search project name, code, client..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all"
           />
         </div>
 
@@ -283,7 +284,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all cursor-pointer"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -310,7 +311,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 setSelectedProject(proj);
                 setActiveTab('details');
               }}
-              className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+              className="p-6 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:border-blue-300/50 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -380,8 +381,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
       {/* PROJECT DETAILED MODAL / DRAWER */}
       {selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <div className="w-full max-w-4xl bg-white/95 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden font-sans">
             {/* Modal Header */}
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <div className="space-y-1">
@@ -408,7 +409,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </button>
                 <button
                   onClick={() => setSelectedProject(null)}
-                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                  className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -615,7 +616,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                               </td>
                               <td className="py-3 px-3 font-extrabold text-slate-800">{formatINR(t.monthlyCost)}/mo</td>
                               <td className="py-3 px-3 text-slate-600 font-mono text-[11px]">
-                                {t.allocationDate || '2025-01-15'}
+                                {t.allocationDate || 'N/A'}
                               </td>
                               <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
                                 {t.deallocationDate || 'N/A'}
@@ -684,12 +685,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
       {/* CREATE PROJECT MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
           <form
             onSubmit={handleCreateSubmit}
-            className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
+            className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <h3 className="text-base font-black text-slate-900">Create New Project</h3>
               <button
                 type="button"
@@ -833,12 +834,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
       {/* EDIT PROJECT DETAILS MODAL */}
       {showEditModal && editFormData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
           <form
             onSubmit={handleEditSubmit}
-            className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
+            className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <h3 className="text-base font-black text-slate-900">Edit Project Details</h3>
               <button
                 type="button"
@@ -927,9 +928,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
       {/* ASSIGN EMPLOYEE MODAL */}
       {showAssignModal && selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <h3 className="text-base font-black text-slate-900">Assign Employee to {selectedProject.name}</h3>
               <button
                 type="button"
@@ -949,6 +950,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               >
                 <option value="">-- Select an employee --</option>
                 {allUsers
+                  .filter((u) => u.role === 'employee')
                   .filter((u) => !(selectedProject.assignedUserIds || []).includes(u.id))
                   .map((u) => (
                     <option key={u.id} value={u.id}>
@@ -981,12 +983,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
       {/* ALLOCATE TOOL MODAL */}
       {showAddToolModal && selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
           <form
             onSubmit={handleAddToolSubmit}
-            className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
+            className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
               <h3 className="text-base font-black text-slate-900">Allocate Tool/Service to Project</h3>
               <button
                 type="button"
