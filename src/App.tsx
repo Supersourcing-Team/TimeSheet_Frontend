@@ -163,6 +163,7 @@ export default function App() {
   }, [currentUser, portalMode, activeEmployeeTab, activePmTab, activeAcTab, activeAdminTab]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
 
   // RTK Queries (Skipped if not logged in)
   const skip = !currentUser;
@@ -648,6 +649,9 @@ export default function App() {
                   projects={projects}
                   projectAssignments={myProjectAssignments}
                   onSubmitTimesheet={handleTimesheetSubmit}
+                  onUpdateTimesheet={handleUpdateTimesheet}
+                  editingEntry={editingTimesheet}
+                  onClearEditing={() => setEditingTimesheet(null)}
                   onShowToast={showToast}
                 />
               )}
@@ -660,6 +664,10 @@ export default function App() {
                   onDeleteTimesheet={handleDeleteTimesheet}
                   onUpdateTimesheet={handleUpdateTimesheet}
                   onSubmitTimesheets={handleTimesheetSubmit}
+                  onEditRequest={(entry) => {
+                    setEditingTimesheet(entry);
+                    setActiveEmployeeTab('submit_timesheet');
+                  }}
                   onShowToast={showToast}
                 />
               )}

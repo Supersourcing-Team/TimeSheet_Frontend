@@ -22,8 +22,9 @@ interface TimesheetsHistoryProps {
   currentUser: User;
   timesheets: TimesheetEntry[];
   projects: Project[];
-  onDeleteTimesheet: (id: string) => void;
+  onDeleteTimesheet?: (id: string) => void;
   onUpdateTimesheet?: (entry: TimesheetEntry) => void;
+  onEditRequest?: (entry: TimesheetEntry) => void;
   onSubmitTimesheets?: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -34,6 +35,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   projects,
   onDeleteTimesheet,
   onUpdateTimesheet,
+  onEditRequest,
   onSubmitTimesheets,
   onShowToast,
 }) => {
@@ -43,14 +45,6 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Edit modal states
-  const [editingEntry, setEditingEntry] = useState<TimesheetEntry | null>(null);
-  const [editProjectId, setEditProjectId] = useState<string>('');
-  const [editDate, setEditDate] = useState<string>('');
-  const [editHours, setEditHours] = useState<number>(8);
-  const [editBillableHours, setEditBillableHours] = useState<number>(8);
-  const [editCategory, setEditCategory] = useState<TimesheetEntry['category']>('Development');
-  const [editBillableDesc, setEditBillableDesc] = useState<string>('');
   const [editNonBillableDesc, setEditNonBillableDesc] = useState<string>('');
 
   // Add for date modal states
@@ -140,42 +134,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
     : [];
 
   const handleStartEdit = (entry: TimesheetEntry) => {
-    setEditingEntry(entry);
-    setEditProjectId(entry.projectId);
-    setEditDate(entry.date);
-    setEditHours(entry.billableHours + entry.nonBillableHours);
-    setEditBillableHours(entry.billableHours);
-    setEditCategory(entry.category || 'Development');
-    setEditBillableDesc(entry.billableDescription || entry.description || '');
-    setEditNonBillableDesc(entry.nonBillableDescription || '');
-  };
-
-  const handleSaveEditedEntry = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEntry) return;
-
-    const targetProject = (projects || []).find((p) => p.id === editProjectId);
-    const projectName = targetProject ? targetProject.name : editingEntry.projectName;
-
-    const updated: TimesheetEntry = {
-      ...editingEntry,
-      projectId: editProjectId,
-      projectName: projectName,
-      date: editDate,
-      billableHours: Number(editBillableHours),
-      nonBillableHours: Math.max(0, Number(editHours) - Number(editBillableHours)),
-      category: editCategory,
-      description: editBillableDesc || 'Updated work log',
-      billableDescription: editBillableDesc,
-      nonBillableDescription: editNonBillableDesc,
-      status: 'submitted',
-    };
-
-    if (onUpdateTimesheet) {
-      onUpdateTimesheet(updated);
+    if (onEditRequest) {
+      onEditRequest(entry);
     }
-    onShowToast('Timesheet Updated', `Changes saved for ${projectName} on ${editDate}`, 'success');
-    setEditingEntry(null);
   };
 
   const handleStartAddForDate = (dateStr: string) => {
@@ -637,163 +598,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
         </div>
       )}
 
-      {/* EDIT TIMESHEET MODAL */}
-      {editingEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <Edit3 className="w-4 h-4 text-blue-600" />
-                  <span>Edit Timesheet Entry</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Update your daily logged work hours and descriptions.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingEntry(null)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <form onSubmit={handleSaveEditedEntry} className="space-y-4 text-xs font-medium">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Project</label>
-                  <select
-                    value={editProjectId}
-                    onChange={(e) => setEditProjectId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  >
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Log Date</label>
-                  <input
-                    type="date"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-1">
-                  <label className="block text-slate-700 font-bold mb-1">Category</label>
-                  <select
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value as any)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="Development">Development</option>
-                    <option value="Design">Design</option>
-                    <option value="Meeting">Meeting</option>
-                    <option value="Code Review">Code Review</option>
-                    <option value="Testing">Testing</option>
-                    <option value="Documentation">Documentation</option>
-                    <option value="DevOps">DevOps</option>
-                  </select>
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-slate-700 font-bold mb-1">Total Hours</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="24"
-                    value={editHours}
-                    onChange={(e) => setEditHours(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-slate-700 font-bold mb-1">Billable (h)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    max={editHours}
-                    value={editBillableHours}
-                    onChange={(e) => setEditBillableHours(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="block text-slate-700 font-bold mb-1">Non-Bill (h)</label>
-                  <input
-                    type="number"
-                    value={Math.max(0, editHours - editBillableHours)}
-                    className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-3 py-2 font-bold cursor-not-allowed"
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Billable Work Description <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={editBillableDesc}
-                  onChange={(e) => setEditBillableDesc(e.target.value)}
-                  placeholder="Describe billable deliverables completed..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Non-Billable Work Description (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={editNonBillableDesc}
-                  onChange={(e) => setEditNonBillableDesc(e.target.value)}
-                  placeholder="e.g. Internal syncs, administrative setup..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setEditingEntry(null)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 font-extrabold rounded-xl shadow-md shadow-blue-600/20 cursor-pointer"
-                >
-                  Update & Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ADD TIMESHEET FOR CLICKED DATE MODAL */}
       {addingForDate && (

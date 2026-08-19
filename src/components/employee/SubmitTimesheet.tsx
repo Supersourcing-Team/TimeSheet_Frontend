@@ -20,6 +20,9 @@ interface SubmitTimesheetProps {
   projects: Project[];
   /** Project assignments for the current user — needed to resolve project_assignment_id */
   projectAssignments?: ProjectAssignment[];
+  onUpdateTimesheet?: (entry: TimesheetEntry) => void;
+  editingEntry?: TimesheetEntry | null;
+  onClearEditing?: () => void;
   onSubmitTimesheet: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -38,20 +41,33 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   projects,
   projectAssignments = [],
   onSubmitTimesheet,
+  onUpdateTimesheet,
+  editingEntry,
+  onClearEditing,
   onShowToast,
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
-  const [rows, setRows] = useState<FormRow[]>([
-    {
+  const [rows, setRows] = useState<FormRow[]>(() => {
+    if (editingEntry) {
+      return [{
+        projectId: editingEntry.projectId,
+        date: editingEntry.date,
+        billableHours: editingEntry.billableHours,
+        nonBillableHours: editingEntry.nonBillableHours,
+        billableDescription: editingEntry.billableDescription || editingEntry.description || '',
+        nonBillableDescription: editingEntry.nonBillableDescription || '',
+      }];
+    }
+    return [{
       projectId: projects[0]?.id || '',
       date: today,
       billableHours: 0,
       nonBillableHours: 0,
       billableDescription: '',
       nonBillableDescription: '',
-    },
-  ]);
+    }];
+  });
 
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
 
@@ -99,6 +115,31 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     }
     if (grandTotal > 24) {
       onShowToast('Validation Error', 'You cannot log more than 24 hours in a single day.', 'error');
+      return;
+    }
+
+    if (editingEntry && onUpdateTimesheet) {
+      const row = rows[0];
+      const targetProject = projects.find((p) => p.id === row.projectId);
+      const updated: TimesheetEntry = {
+        ...editingEntry,
+        projectId: row.projectId,
+        projectName: targetProject ? targetProject.name : editingEntry.projectName,
+        date: row.date,
+        billableHours: Number(row.billableHours),
+        nonBillableHours: Number(row.nonBillableHours),
+        category: editingEntry.category || 'Development',
+        description: row.billableDescription || 'Updated work log',
+        billableDescription: row.billableDescription,
+        nonBillableDescription: row.nonBillableDescription,
+      };
+
+      try {
+        onUpdateTimesheet(updated);
+        if (onClearEditing) onClearEditing();
+      } catch (err: any) {
+        onShowToast('Error', 'Failed to update timesheet', 'error');
+      }
       return;
     }
 
@@ -177,13 +218,15 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-blue-300" />
             <span>Daily Work Logging & Overtime Accounting</span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight">Submit Daily Timesheet</h2>
+          <h2 className="text-2xl font-black tracking-tight">
+            {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
+          </h2>
           <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
-            Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.
+            {editingEntry 
+              ? 'Update your daily logged work hours and descriptions. Minimum 8 hours total.'
+              : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
           </p>
         </div>
-
-
       </div>
 
       {/* Target Progress & Summary Bar */}
@@ -380,14 +423,27 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
         {/* Submit / Draft Action Buttons */}
         <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleAddRow}
-            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-bold"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Additional Task Row</span>
-          </button>
+          {!editingEntry ? (
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-bold"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Additional Task Row</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (onClearEditing) onClearEditing();
+                onShowToast('Edit Cancelled', 'Returned to new submission mode', 'info');
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold cursor-pointer"
+            >
+              Cancel Edit
+            </button>
+          )}
 
           <div className="flex items-center gap-3">
             <button
@@ -397,7 +453,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Timesheet'}</span>
+              <span>{isSubmitting ? 'Saving...' : (editingEntry ? 'Update & Save' : 'Submit Timesheet')}</span>
             </button>
           </div>
         </div>
