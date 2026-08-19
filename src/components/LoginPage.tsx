@@ -139,37 +139,6 @@ export const LoginPage: React.FC = () => {
                      </div>
                   </div>
                </div>
-
-               {/* Features */}
-               <div className="flex gap-8">
-                  <div className="flex items-start gap-3">
-                     <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 shrink-0">
-                        <ShieldCheck className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <div className="text-sm font-bold text-slate-800">Secure & Reliable</div>
-                        <div className="text-xs text-slate-500 mt-0.5">Enterprise-grade security</div>
-                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                     <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 shrink-0">
-                        <Zap className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <div className="text-sm font-bold text-slate-800">Smart & Efficient</div>
-                        <div className="text-xs text-slate-500 mt-0.5">Automate workflows</div>
-                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                     <div className="p-2.5 bg-purple-50 text-purple-600 rounded-full border border-purple-100 shrink-0">
-                        <Users className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <div className="text-sm font-bold text-slate-800">Team Collaboration</div>
-                        <div className="text-xs text-slate-500 mt-0.5">Built for all sizes</div>
-                     </div>
-                  </div>
-               </div>
             </div>
 
             {/* Right Column - Auth Card */}

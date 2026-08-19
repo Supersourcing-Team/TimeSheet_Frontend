@@ -91,14 +91,12 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Header Banner */}
-      <div className="p-8 rounded-3xl bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-white shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-white/10">
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
-            <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-            <span>Project Execution & Resource Management Hub</span>
-          </div>
+          
           <h1 className="text-2xl font-black tracking-tight">Project Manager Portal</h1>
           <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
             Welcome back, <span className="font-bold text-white">{currentUser.name}</span>. Track active sprint delivery, review employee timesheet logs, manage team allocations, and approve weekend overtime requests.

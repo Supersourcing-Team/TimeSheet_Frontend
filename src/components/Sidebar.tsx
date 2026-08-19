@@ -343,9 +343,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : portalMode === 'pm' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
-              PM Portal • Timesheet Management
-            </div>
+           
             {pmNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePmTab === item.id;
