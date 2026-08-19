@@ -38,14 +38,38 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   onNavigateTab,
 }) => {
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
-  const totalLoggedHoursThisWeek = userTimesheets.reduce((acc, curr) => acc + curr.hours, 0);
+
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+
+  const dayOfWeek = todayDate.getDay();
+  const diffToMonday = todayDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  const mondayThisWeek = new Date(todayDate.getFullYear(), todayDate.getMonth(), diffToMonday);
+  const fridayThisWeek = new Date(mondayThisWeek.getFullYear(), mondayThisWeek.getMonth(), mondayThisWeek.getDate() + 4);
+
+  // Using simple YYYY-MM-DD local format
+  const formatYMD = (d: Date) => {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  };
+
+  const startOfWeek = formatYMD(mondayThisWeek);
+  const endOfWeek = formatYMD(fridayThisWeek);
+
+  const currentWeekTimesheets = userTimesheets.filter((t) => t.date >= startOfWeek && t.date <= endOfWeek);
+
+  const totalLoggedHoursThisWeek = currentWeekTimesheets.reduce(
+    (acc, curr) => acc + ((curr as any).hours || (curr.billableHours + curr.nonBillableHours) || 0),
+    0
+  );
   const targetWeeklyHours = 40;
   const completionPercentage = Math.min(
     100,
     Math.round((totalLoggedHoursThisWeek / targetWeeklyHours) * 100)
   );
 
-  const billableThisWeek = userTimesheets.reduce((acc, curr) => acc + curr.billableHours, 0);
+  const billableThisWeek = currentWeekTimesheets.reduce((acc, curr) => acc + curr.billableHours, 0);
   const focusProject = (projects || []).find((p) => p.assignedUserIds?.includes(currentUser.id)) || projects[0];
 
   const today = new Date();

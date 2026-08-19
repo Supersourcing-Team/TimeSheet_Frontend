@@ -39,6 +39,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   onSubmitTimesheets,
   onShowToast,
 }) => {
+  const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
+
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [selectedDateModal, setSelectedDateModal] = useState<string | null>(null);
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
@@ -140,8 +142,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   const handleStartAddForDate = (dateStr: string) => {
-    const userProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
-    const defaultProjId = userProjects[0]?.id || (projects && projects[0]?.id) || '';
+    const defaultProjId = assignedProjects[0]?.id || (projects && projects[0]?.id) || '';
     setAddingForDate(dateStr);
     setAddProjectId(defaultProjId);
     setAddHours(8);
@@ -383,7 +384,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
             >
               <option value="all">All Projects</option>
-              {projects.map((p) => (
+              {assignedProjects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
