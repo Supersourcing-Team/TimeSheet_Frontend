@@ -499,48 +499,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Quick Action & Footer Links */}
       <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
-        <button
-          type="button"
-          onClick={() => onQuickAddTimesheet && onQuickAddTimesheet()}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Add New Timesheet</span>
-        </button>
+        
 
-        <div className="pt-1 border-t border-slate-200 flex flex-col gap-0.5">
-          <button
-            type="button"
-            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 transition-colors"
-          >
-            <HelpCircle className="w-4 h-4 text-slate-400" />
-            <span>Support</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectAdminTab('admin_settings')}
-            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 transition-colors"
-          >
-            <Settings className="w-4 h-4 text-slate-400" />
-            <span>Settings</span>
-          </button>
-        </div>
-
-        {/* System Status Widget */}
-        <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs">
-          <div className="flex items-center justify-between font-bold text-slate-800">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Timesheet Engine</span>
-            </span>
-            <span className="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-bold border border-blue-100">
-              INR ₹ Active
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium">
-            Standard Target: <span className="text-blue-600 font-bold">40.0 hrs/wk</span>
-          </p>
-        </div>
       </div>
     </aside>
   );

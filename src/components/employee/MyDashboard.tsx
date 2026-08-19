@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, TimesheetEntry, Project, LeaveBalance, LeaveRequest } from '../../types';
+import { User, TimesheetEntry, Project, LeaveBalance, LeaveRequest, HolidayItem } from '../../types';
 import {
   Clock,
   Calendar,
@@ -24,6 +24,7 @@ interface MyDashboardProps {
   projects: Project[];
   leaveBalance: LeaveBalance;
   leaveRequests: LeaveRequest[];
+  holidays: HolidayItem[];
   onNavigateTab: (tab: EmployeeTab) => void;
 }
 
@@ -33,6 +34,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   projects = [],
   leaveBalance,
   leaveRequests = [],
+  holidays = [],
   onNavigateTab,
 }) => {
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
@@ -45,6 +47,20 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
 
   const billableThisWeek = userTimesheets.reduce((acc, curr) => acc + curr.billableHours, 0);
   const focusProject = (projects || []).find((p) => p.assignedUserIds?.includes(currentUser.id)) || projects[0];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingHolidays = (holidays || [])
+    .filter(h => new Date(h.date) >= today)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  const nextHoliday = upcomingHolidays[0];
+  let remainingDays = 0;
+  if (nextHoliday) {
+    const holidayDate = new Date(nextHoliday.date);
+    remainingDays = Math.ceil((holidayDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+  }
 
   return (
     <div className="space-y-6 text-slate-800">
@@ -202,12 +218,16 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
             </div>
           </div>
           <div className="mt-2">
-            <div className="text-lg font-extrabold text-slate-900">Independence Day / Holiday</div>
-            <p className="text-xs text-blue-600 mt-0.5 font-bold">Friday, Aug 15, 2025</p>
-            <p className="text-[11px] text-slate-500 mt-1">Paid Company Holiday • Long Weekend</p>
+            <div className="text-lg font-extrabold text-slate-900">{nextHoliday ? nextHoliday.name : 'No Upcoming Holidays'}</div>
+            <p className="text-xs text-blue-600 mt-0.5 font-bold">
+              {nextHoliday ? new Date(nextHoliday.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {nextHoliday ? `${nextHoliday.type} Holiday${nextHoliday.description ? ` • ${nextHoliday.description}` : ''}` : '-'}
+            </p>
           </div>
           <div className="mt-3 text-[11px] text-slate-500 font-semibold">
-            11 days remaining
+            {nextHoliday ? `${remainingDays} days remaining` : ''}
           </div>
         </div>
       </div>

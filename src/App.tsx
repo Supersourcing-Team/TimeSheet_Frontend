@@ -639,6 +639,7 @@ export default function App() {
                   projects={projects}
                   leaveBalance={leaveBalance}
                   leaveRequests={leaveRequests}
+                  holidays={holidays || []}
                   onNavigateTab={(tab) => setActiveEmployeeTab(tab)}
                 />
               )}
