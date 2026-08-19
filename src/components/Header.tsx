@@ -61,21 +61,21 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-slate-200 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-xs">
       {/* Left Branding */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
-          C
+      <div className="flex items-center gap-3 ">
+        <div className="flex items-center justify-center  w-10 h-10 rounded-2xl  bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
+        <span className=" text-2xl tracking-tight text-white-900 mb-1">
+              𝖊𝖇
+            </span>
         </div>
         <div>
           <div className="flex items-center gap-2">
             <span className="font-black text-lg tracking-tight text-slate-900">
               SuperTime
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-blue-50 text-blue-700 border border-blue-200 uppercase">
-              ENTERPRISE
-            </span>
+           
           </div>
           <p className="text-[11px] text-slate-500 font-semibold hidden sm:block">
-            Timesheet & Resource Governance • INR (₹)
+            Timesheet & Resource Governance
           </p>
         </div>
       </div>

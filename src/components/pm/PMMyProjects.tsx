@@ -244,14 +244,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Top Header & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/70 backdrop-blur-xl p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+           <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-            <Briefcase className="w-6 h-6 text-blue-600" />
+          <h1 className="text-2xl font-black text-white-900 flex items-center gap-3">
+           
             <span>My Projects Management</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-2 font-medium max-w-xl leading-relaxed">
+          <p className="text-xs text-white-500 mt-2 font-medium max-w-xl leading-relaxed">
             Manage active projects, assign team members, allocate project tools & services, and review project timesheets.
           </p>
         </div>

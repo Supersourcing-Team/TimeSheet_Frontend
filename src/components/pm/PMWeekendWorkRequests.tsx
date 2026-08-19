@@ -83,10 +83,7 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
       {/* Header Banner */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
-            <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-            <span>Overtime & Deliverable Governance</span>
-          </div>
+          
           <h1 className="text-2xl font-black tracking-tight">Weekend Work Approvals</h1>
           <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
             Review and approve weekend overtime requests submitted by team members. Pre-approvals ensure proper overtime accounting, sprint capacity planning, and deliverable tracking.
