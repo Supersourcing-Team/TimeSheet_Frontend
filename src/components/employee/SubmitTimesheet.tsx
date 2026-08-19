@@ -214,15 +214,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       {/* Header Bar */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
-            <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-            <span>Daily Work Logging & Overtime Accounting</span>
-          </div>
           <h2 className="text-2xl font-black tracking-tight">
             {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
           </h2>
           <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
-            {editingEntry 
+            {editingEntry
               ? 'Update your daily logged work hours and descriptions. Minimum 8 hours total.'
               : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
           </p>
@@ -238,9 +234,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <span className="text-slate-300 mx-2">•</span>
             <span>Logged Today:</span>
             <span
-              className={`font-black font-mono px-2 py-0.5 rounded ${
-                grandTotal >= targetDayHours ? 'text-emerald-700 bg-emerald-50' : 'text-blue-700 bg-blue-50'
-              }`}
+              className={`font-black font-mono px-2 py-0.5 rounded ${grandTotal >= targetDayHours ? 'text-emerald-700 bg-emerald-50' : 'text-blue-700 bg-blue-50'
+                }`}
             >
               {grandTotal.toFixed(1)} Hours
             </span>
@@ -259,9 +254,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         {/* Progress Bar */}
         <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div
-            className={`h-2.5 rounded-full transition-all duration-500 ${
-              grandTotal >= targetDayHours ? 'bg-emerald-500' : 'bg-blue-600'
-            }`}
+            className={`h-2.5 rounded-full transition-all duration-500 ${grandTotal >= targetDayHours ? 'bg-emerald-500' : 'bg-blue-600'
+              }`}
             style={{ width: `${Math.min(100, (grandTotal / targetDayHours) * 100)}%` }}
           />
         </div>

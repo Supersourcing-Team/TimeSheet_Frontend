@@ -188,10 +188,6 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
       {/* Header & View Mode Switcher */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
-            <Clock className="w-3.5 h-3.5 text-blue-300" />
-            <span>Timesheet History & Calendar Logs</span>
-          </div>
           <h2 className="text-2xl font-black tracking-tight">Timesheet History</h2>
           <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
             Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
@@ -204,11 +200,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'calendar'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'calendar'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-blue-200 hover:text-white'
-              }`}
+                }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
               <span>Calendar View</span>
@@ -216,11 +211,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'list'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'list'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-blue-200 hover:text-white'
-              }`}
+                }`}
             >
               <ListFilter className="w-3.5 h-3.5" />
               <span>List View</span>
@@ -307,17 +301,16 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   key={dateStr}
                   onClick={() => !isFutureDate && setSelectedDateModal(dateStr)}
                   disabled={isFutureDate}
-                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                    isFutureDate
+                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${isFutureDate
                       ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
                       : isWeekend
-                      ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                      : dayTotalHours >= 8
-                      ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                      : dayTotalHours > 0
-                      ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                      : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                  }`}
+                        ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : dayTotalHours >= 8
+                          ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          : dayTotalHours > 0
+                            ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                            : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                    }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <span className="text-xs font-extrabold text-slate-900">
@@ -325,11 +318,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     </span>
                     {dayTotalHours > 0 && (
                       <span
-                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                          dayTotalHours >= 8
+                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${dayTotalHours >= 8
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
-                        }`}
+                          }`}
                       >
                         {dayTotalHours}h
                       </span>

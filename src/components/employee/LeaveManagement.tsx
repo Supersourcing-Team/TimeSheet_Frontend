@@ -106,7 +106,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
       <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Palmtree className="w-5 h-5 text-emerald-400" />
             <span>Leave Management & Balances</span>
           </h2>
           <p className="text-xs text-slate-300 mt-1">
@@ -131,9 +130,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Annual Leave
             </span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <Palmtree className="w-4 h-4" />
-            </div>
+
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
             {leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}{' '}
@@ -143,11 +140,10 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <div
               className="bg-emerald-500 h-1.5 rounded-full"
               style={{
-                width: `${
-                  ((leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed) /
-                    leaveBalance.annualLeaveTotal) *
+                width: `${((leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed) /
+                  leaveBalance.annualLeaveTotal) *
                   100
-                }%`,
+                  }%`,
               }}
             />
           </div>
@@ -159,9 +155,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Sick Leave
             </span>
-            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400">
-              <HeartPulse className="w-4 h-4" />
-            </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
             {leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed}{' '}
@@ -171,11 +164,10 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <div
               className="bg-rose-500 h-1.5 rounded-full"
               style={{
-                width: `${
-                  ((leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed) /
-                    leaveBalance.sickLeaveTotal) *
+                width: `${((leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed) /
+                  leaveBalance.sickLeaveTotal) *
                   100
-                }%`,
+                  }%`,
               }}
             />
           </div>
@@ -187,9 +179,6 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Parental Leave
             </span>
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-              <Baby className="w-4 h-4" />
-            </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
             {leaveBalance.parentalLeaveTotal - leaveBalance.parentalLeaveUsed}{' '}
@@ -199,11 +188,10 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <div
               className="bg-purple-500 h-1.5 rounded-full"
               style={{
-                width: `${
-                  ((leaveBalance.parentalLeaveTotal - leaveBalance.parentalLeaveUsed) /
-                    leaveBalance.parentalLeaveTotal) *
+                width: `${((leaveBalance.parentalLeaveTotal - leaveBalance.parentalLeaveUsed) /
+                  leaveBalance.parentalLeaveTotal) *
                   100
-                }%`,
+                  }%`,
               }}
             />
           </div>
@@ -215,9 +203,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Compensatory Off
             </span>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-              <Sparkles className="w-4 h-4" />
-            </div>
+
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
             {leaveBalance.compOffTotal - leaveBalance.compOffUsed}{' '}
@@ -227,11 +213,10 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <div
               className="bg-amber-500 h-1.5 rounded-full"
               style={{
-                width: `${
-                  ((leaveBalance.compOffTotal - leaveBalance.compOffUsed) /
-                    leaveBalance.compOffTotal) *
+                width: `${((leaveBalance.compOffTotal - leaveBalance.compOffUsed) /
+                  leaveBalance.compOffTotal) *
                   100
-                }%`,
+                  }%`,
               }}
             />
           </div>
@@ -277,13 +262,12 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                   </td>
                   <td className="py-3.5 px-3 text-center whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                        req.status === 'approved'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : req.status === 'pending'
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${req.status === 'approved'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : req.status === 'pending'
                           ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                           : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                      }`}
+                        }`}
                     >
                       {req.status}
                     </span>

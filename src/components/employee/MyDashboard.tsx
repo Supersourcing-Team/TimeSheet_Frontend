@@ -78,7 +78,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   const upcomingHolidays = (holidays || [])
     .filter(h => new Date(h.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
+
   const nextHoliday = upcomingHolidays[0];
   let remainingDays = 0;
   if (nextHoliday) {
@@ -91,12 +91,8 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
       {/* Top Banner / Hero Greeting */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-semibold border border-white/20 mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-            <span>Aug 4, 2025 • Q3 Sprint 12</span>
-          </div>
           <h1 className="text-2xl lg:text-3xl font-black tracking-tight">
-            Welcome back, {currentUser.name}! 👋
+            Welcome back, {currentUser.name}
           </h1>
           <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
             You have logged <span className="font-extrabold text-white">{totalLoggedHoursThisWeek} hours</span> out of your {targetWeeklyHours}h weekly goal. All timesheet entries are synchronized.
@@ -308,13 +304,12 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          ts.status === 'approved'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : ts.status === 'pending'
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${ts.status === 'approved'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : ts.status === 'pending'
                             ? 'bg-amber-100 text-amber-800'
                             : 'bg-rose-100 text-rose-800'
-                        }`}
+                          }`}
                       >
                         {ts.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
                         <span className="capitalize">{ts.status}</span>
@@ -410,13 +405,12 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                      req.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : req.status === 'pending'
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${req.status === 'approved'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : req.status === 'pending'
                         ? 'bg-amber-100 text-amber-800'
                         : 'bg-rose-100 text-rose-800'
-                    }`}
+                      }`}
                   >
                     {req.status}
                   </span>

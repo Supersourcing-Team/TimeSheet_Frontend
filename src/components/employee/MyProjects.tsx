@@ -35,7 +35,6 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
       <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <FolderKanban className="w-5 h-5 text-indigo-400" />
             <span>My Assigned Projects</span>
           </h2>
           <p className="text-xs text-slate-300 mt-1">
@@ -66,13 +65,12 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                     {project.code}
                   </span>
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                      project.status === 'active'
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${project.status === 'active'
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : project.status === 'completed'
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    }`}
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }`}
                   >
                     {project.status}
                   </span>
