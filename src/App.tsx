@@ -98,8 +98,6 @@ const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTy
 LeaveTypesManagement.displayName = 'LeaveTypesManagement';
 const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
 WorkingCalendar.displayName = 'WorkingCalendar';
-const SettingsManagement = React.lazy(() => import('./components/admin/SettingsManagement').then(m => ({ default: m.SettingsManagement })));
-SettingsManagement.displayName = 'SettingsManagement';
 
 // Initial mocks for things not yet in backend API endpoints
 import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
@@ -886,21 +884,6 @@ export default function App() {
                         showToast('Success', 'Working calendar updated', 'success');
                       } catch (e: any) {
                         showToast('Error', e?.data?.message || 'Failed to update working calendar', 'error');
-                      }
-                    }}
-                    onShowToast={showToast}
-                  />
-                )}
-
-                {activeAdminTab === 'admin_settings' && (
-                  <SettingsManagement
-                    settings={settings}
-                    onUpdateSettings={async (newSettings) => {
-                      try {
-                        await updateSettingsMutation(newSettings).unwrap();
-                        showToast('Success', 'Settings updated successfully', 'success');
-                      } catch (e: any) {
-                        showToast('Error', e?.data?.message || 'Failed to update settings', 'error');
                       }
                     }}
                     onShowToast={showToast}

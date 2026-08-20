@@ -54,8 +54,7 @@ export type AdminTab =
   | 'admin_leave_approvals'
   | 'admin_holidays'
   | 'admin_leave_types'
-  | 'admin_working_calendar'
-  | 'admin_settings';
+  | 'admin_working_calendar';
 
 interface SidebarProps {
   portalMode: ActivePortalMode;
@@ -258,12 +257,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Working Calendar',
       icon: CalendarDays,
       desc: 'Standard Working Hours & Days',
-    },
-    {
-      id: 'admin_settings',
-      label: 'Settings',
-      icon: Settings,
-      desc: 'System Configuration & Branding',
     },
   ];
 
