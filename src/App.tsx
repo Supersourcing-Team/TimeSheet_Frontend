@@ -322,7 +322,7 @@ export default function App() {
     try {
       // Map frontend type to leave_type_id dynamically using the fetched leaveTypes
       const matchedType = leaveTypes.find(lt => lt.name.toLowerCase() === req.type.toLowerCase());
-      const leaveTypeId = matchedType ? matchedType.id : 3; // Fallback to 3 if not found
+      const leaveTypeId = matchedType ? Number(matchedType.id) : 3; // Fallback to 3 if not found
 
       await createLeaveRequest({
         leave_type_id: leaveTypeId,
