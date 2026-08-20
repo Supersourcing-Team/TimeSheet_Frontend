@@ -26,6 +26,7 @@ interface TimesheetsHistoryProps {
   onUpdateTimesheet?: (entry: TimesheetEntry) => void;
   onEditRequest?: (entry: TimesheetEntry) => void;
   onSubmitTimesheets?: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
+  onNavigateToSubmit?: (date: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -37,6 +38,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   onUpdateTimesheet,
   onEditRequest,
   onSubmitTimesheets,
+  onNavigateToSubmit,
   onShowToast,
 }) => {
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
@@ -201,8 +203,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               type="button"
               onClick={() => setViewMode('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'calendar'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-blue-200 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-blue-200 hover:text-white'
                 }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
@@ -212,8 +214,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               type="button"
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'list'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-blue-200 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-blue-200 hover:text-white'
                 }`}
             >
               <ListFilter className="w-3.5 h-3.5" />
@@ -299,17 +301,24 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <button
                   type="button"
                   key={dateStr}
-                  onClick={() => !isFutureDate && setSelectedDateModal(dateStr)}
+                  onClick={() => {
+                    if (isFutureDate) return;
+                    if (dayEntries.length === 0 && onNavigateToSubmit) {
+                      onNavigateToSubmit(dateStr);
+                    } else {
+                      setSelectedDateModal(dateStr);
+                    }
+                  }}
                   disabled={isFutureDate}
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${isFutureDate
-                      ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
-                      : isWeekend
-                        ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                        : dayTotalHours >= 8
-                          ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                          : dayTotalHours > 0
-                            ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                            : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                    ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
+                    : isWeekend
+                      ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                      : dayTotalHours >= 8
+                        ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : dayTotalHours > 0
+                          ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                     }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -319,8 +328,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     {dayTotalHours > 0 && (
                       <span
                         className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${dayTotalHours >= 8
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
                           }`}
                       >
                         {dayTotalHours}h
@@ -496,7 +505,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     onClick={() => {
                       const dateToLog = selectedDateModal;
                       setSelectedDateModal(null);
-                      if (dateToLog) handleStartAddForDate(dateToLog);
+                      if (dateToLog) {
+                        if (onNavigateToSubmit) {
+                          onNavigateToSubmit(dateToLog);
+                        } else {
+                          handleStartAddForDate(dateToLog);
+                        }
+                      }
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 shadow-xs cursor-pointer"
                   >
@@ -571,7 +586,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   onClick={() => {
                     const dateToLog = selectedDateModal;
                     setSelectedDateModal(null);
-                    handleStartAddForDate(dateToLog);
+                    if (dateToLog) {
+                      if (onNavigateToSubmit) {
+                        onNavigateToSubmit(dateToLog);
+                      } else {
+                        handleStartAddForDate(dateToLog);
+                      }
+                    }
                   }}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors cursor-pointer"
                 >
