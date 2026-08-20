@@ -267,8 +267,10 @@ export default function App() {
     } catch (e) {
       console.error('Logout API failed:', e);
     } finally {
-      dispatch(apiSlice.util.resetApiState());
       dispatch(logout());
+      setTimeout(() => {
+        dispatch(apiSlice.util.resetApiState());
+      }, 50);
     }
   };
 
