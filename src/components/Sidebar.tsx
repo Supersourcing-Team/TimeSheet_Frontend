@@ -45,7 +45,6 @@ export type ACManagerTab =
   | 'ac_dashboard'
   | 'project_financials'
   | 'budget_vs_actual'
-  | 'employee_utilization'
   | 'tool_utilization'
   | 'ac_reports';
 
@@ -200,25 +199,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'budget_vs_actual',
       label: 'Budget vs Actual',
       icon: TrendingUp,
-      desc: 'Variance & Consumption Rates',
-    },
-    {
-      id: 'employee_utilization',
-      label: 'Employee Utilization',
-      icon: Users,
-      desc: 'Resource Capacity & Billables',
+      desc: 'Variance & Burn Rates',
     },
     {
       id: 'tool_utilization',
       label: 'Tool Utilization',
       icon: Wrench,
-      desc: 'Software Licenses & SaaS Costs',
+      desc: 'SaaS & Cloud Spend',
     },
     {
       id: 'ac_reports',
-      label: 'Reports',
-      icon: BarChart3,
-      desc: 'Financial Summary & Audit Exports',
+      label: 'Financial Reports',
+      icon: FileText,
+      desc: 'P&L, Billing Exports',
     },
   ];
 
