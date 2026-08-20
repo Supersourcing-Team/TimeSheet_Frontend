@@ -174,6 +174,35 @@ export interface ActivityLog {
   type: 'timesheet' | 'leave' | 'project' | 'user' | 'system';
 }
 
+export type NotificationType =
+  | 'timesheet_submitted'
+  | 'timesheet_approved'
+  | 'timesheet_rejected'
+  | 'leave_requested'
+  | 'leave_approved'
+  | 'leave_rejected'
+  | 'leave_cancelled'
+  | 'weekend_work_requested'
+  | 'weekend_work_approved'
+  | 'weekend_work_rejected'
+  | 'pending_approval';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  timestamp: string; // ISO datetime string
+  is_read: boolean;
+  related_id?: number;
+  related_entity?: 'timesheet' | 'leave_request' | 'weekend_work';
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unread_count: number;
+}
+
 export interface ToastMessage {
   id: string;
   title: string;

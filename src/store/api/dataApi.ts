@@ -8,6 +8,7 @@ import {
   User,
   HolidayItem,
   LeaveTypeConfig,
+  NotificationsResponse,
 } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -673,6 +674,16 @@ export const dataApi = apiSlice.injectEndpoints({
       transformResponse: (res: any) => res.data || {},
       providesTags: ['Project', 'Timesheet'],
     }),
+
+    // -----------------------------------------------------------------------
+    // Notifications
+    // -----------------------------------------------------------------------
+    getNotifications: builder.query<NotificationsResponse, void>({
+      query: () => '/notifications',
+      transformResponse: (res: any) => res.data || { notifications: [], unread_count: 0 },
+      // Invalidate whenever leave / weekend work data changes
+      providesTags: ['LeaveRequest', 'WeekendWork', 'Timesheet'],
+    }),
   }),
 });
 
@@ -740,5 +751,6 @@ export const {
   useUpdateSettingsMutation,
   useGetTeamUtilizationQuery,
   useGetProjectFinancialsQuery,
+  useGetNotificationsQuery,
 } = dataApi;
 
