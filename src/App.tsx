@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from './store';
 import { setPortalMode, logout } from './store/slices/authSlice';
@@ -109,12 +109,15 @@ export default function App() {
   const dispatch = useDispatch();
   const { user: currentUser, portalMode } = useSelector((state: RootState) => state.auth);
 
-  // Prevent useGetCurrentUserQuery from re-firing during logout
-  const isLoggingOutRef = useRef(false);
+  // Tracks whether the user just clicked logout.
+  // Must be useState (not useRef) so React can batch it with dispatch(logout())
+  // in a single render, preventing useGetCurrentUserQuery from re-firing.
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Attempt to restore session on load
+  // Attempt to restore session on load.
+  // Skip if we already have a user OR if we're in the middle of logging out.
   const { data: userProfile, isLoading: isAuthLoading } = useGetCurrentUserQuery(undefined, {
-    skip: !!currentUser || isLoggingOutRef.current, // don't fetch if we have a user, or are in the middle of logging out
+    skip: !!currentUser || isLoggingOut,
   });
 
   // Initialize URL Sync variables
@@ -265,24 +268,27 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleLogout = async () => {
-    // Set the guard flag immediately so useGetCurrentUserQuery won't re-fire
-    isLoggingOutRef.current = true;
-    try {
-      // Reset API cache first (synchronously) to prevent any in-flight queries
-      // from triggering re-fetches when currentUser becomes null
-      dispatch(apiSlice.util.resetApiState());
-      await logoutApi().unwrap();
-    } catch (e) {
-      console.error('Logout API failed:', e);
-    } finally {
-      // Clear user state — this triggers the !currentUser check and shows LoginPage
-      dispatch(logout());
-      // Release the guard after a short delay to allow the login page to mount
-      setTimeout(() => {
-        isLoggingOutRef.current = false;
-      }, 300);
-    }
+  const handleLogout = () => {
+    // React 18 batches all synchronous state updates in the same event handler
+    // into a single re-render. So setIsLoggingOut(true) + dispatch(logout())
+    // both take effect before the next render, meaning:
+    //   - skip: !!currentUser || isLoggingOut  →  skip: false || true  →  skip: true
+    // useGetCurrentUserQuery will NOT fire, isAuthLoading stays false,
+    // and the component jumps straight to <LoginPage /> in the same render.
+
+    // 1. Prevent getCurrentUser from re-firing (isLoggingOut batched with logout below).
+    setIsLoggingOut(true);
+
+    // 2. Clear user — component re-renders to <LoginPage /> immediately.
+    dispatch(logout());
+
+    // 3. Wipe the RTK-Query cache so stale data isn't shown on next login.
+    dispatch(apiSlice.util.resetApiState());
+
+    // 4. Tell the server to invalidate the session cookie — fire and forget.
+    logoutApi().catch(() => {
+      // Ignore server-side logout errors; the client is already logged out.
+    });
   };
 
   // --- Timesheet Handlers ---
