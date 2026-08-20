@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from './store';
 import { setPortalMode, logout } from './store/slices/authSlice';
@@ -109,9 +109,12 @@ export default function App() {
   const dispatch = useDispatch();
   const { user: currentUser, portalMode } = useSelector((state: RootState) => state.auth);
 
+  // Prevent useGetCurrentUserQuery from re-firing during logout
+  const isLoggingOutRef = useRef(false);
+
   // Attempt to restore session on load
   const { data: userProfile, isLoading: isAuthLoading } = useGetCurrentUserQuery(undefined, {
-    skip: !!currentUser, // don't fetch if we already have the user in state
+    skip: !!currentUser || isLoggingOutRef.current, // don't fetch if we have a user, or are in the middle of logging out
   });
 
   // Initialize URL Sync variables
@@ -153,7 +156,7 @@ export default function App() {
       else if (portalMode === 'pm') params.set('tab', activePmTab);
       else if (portalMode === 'ac_manager') params.set('tab', activeAcTab);
       else if (portalMode === 'admin') params.set('tab', activeAdminTab);
-      
+
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState(null, '', newUrl);
     } else {
@@ -164,18 +167,19 @@ export default function App() {
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
+  const [defaultSubmitDate, setDefaultSubmitDate] = useState<string | null>(null);
 
   // RTK Queries (Skipped if not logged in)
   const skip = !currentUser;
   const isAdmin = currentUser?.role === 'admin';
   const isPm = currentUser?.role === 'pm';
-  
+
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
   const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || !isPm });
   const { data: myTimesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
   const { data: managedTimesheets = [] } = useGetManagedTimesheetsQuery(undefined, { skip: skip || !isPm });
-  
+
   const timesheets = React.useMemo(() => {
     const map = new Map<string, TimesheetEntry>();
     myTimesheets.forEach(t => map.set(t.id, t));
@@ -199,7 +203,7 @@ export default function App() {
 
   const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip });
   const { data: fetchedSettings } = useGetSettingsQuery(undefined, { skip });
-  
+
   const [createProjectMutation] = useCreateProjectMutation();
   const [updateProjectMutation] = useUpdateProjectMutation();
   const [deleteProjectMutation] = useDeleteProjectMutation();
@@ -262,13 +266,22 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    // Set the guard flag immediately so useGetCurrentUserQuery won't re-fire
+    isLoggingOutRef.current = true;
     try {
+      // Reset API cache first (synchronously) to prevent any in-flight queries
+      // from triggering re-fetches when currentUser becomes null
+      dispatch(apiSlice.util.resetApiState());
       await logoutApi().unwrap();
     } catch (e) {
       console.error('Logout API failed:', e);
     } finally {
-      dispatch(apiSlice.util.resetApiState());
+      // Clear user state — this triggers the !currentUser check and shows LoginPage
       dispatch(logout());
+      // Release the guard after a short delay to allow the login page to mount
+      setTimeout(() => {
+        isLoggingOutRef.current = false;
+      }, 300);
     }
   };
 
@@ -320,7 +333,7 @@ export default function App() {
     try {
       // Map frontend type to leave_type_id dynamically using the fetched leaveTypes
       const matchedType = leaveTypes.find(lt => lt.name.toLowerCase() === req.type.toLowerCase());
-      const leaveTypeId = matchedType ? matchedType.id : 3; // Fallback to 3 if not found
+      const leaveTypeId = matchedType ? Number(matchedType.id) : 3; // Fallback to 3 if not found
 
       await createLeaveRequest({
         leave_type_id: leaveTypeId,
@@ -366,7 +379,7 @@ export default function App() {
     try {
       const assignment = myProjectAssignments.find(a => String(a.project_id) === req.projectId);
       const assignmentId = assignment ? assignment.id : Number(req.projectId); // fallback
-      
+
       await submitWeekendWork({
         project_assignment_id: assignmentId,
         work_date: req.workDate,
@@ -614,7 +627,13 @@ export default function App() {
         <Sidebar
           portalMode={portalMode}
           activeEmployeeTab={activeEmployeeTab}
-          onSelectEmployeeTab={(tab) => setActiveEmployeeTab(tab)}
+          onSelectEmployeeTab={(tab) => {
+            setActiveEmployeeTab(tab);
+            if (tab !== 'submit_timesheet') {
+              setEditingTimesheet(null);
+              setDefaultSubmitDate(null);
+            }
+          }}
           activePmTab={activePmTab}
           onSelectPmTab={(tab) => setActivePmTab(tab)}
           activeAcTab={activeAcTab}
@@ -640,7 +659,13 @@ export default function App() {
                   leaveBalance={leaveBalance}
                   leaveRequests={leaveRequests}
                   holidays={holidays || []}
-                  onNavigateTab={(tab) => setActiveEmployeeTab(tab)}
+                  onNavigateTab={(tab) => {
+                    setActiveEmployeeTab(tab);
+                    if (tab !== 'submit_timesheet') {
+                      setEditingTimesheet(null);
+                      setDefaultSubmitDate(null);
+                    }
+                  }}
                 />
               )}
 
@@ -652,6 +677,7 @@ export default function App() {
                   onSubmitTimesheet={handleTimesheetSubmit}
                   onUpdateTimesheet={handleUpdateTimesheet}
                   editingEntry={editingTimesheet}
+                  defaultDate={defaultSubmitDate}
                   onClearEditing={() => setEditingTimesheet(null)}
                   onShowToast={showToast}
                 />
@@ -667,6 +693,10 @@ export default function App() {
                   onSubmitTimesheets={handleTimesheetSubmit}
                   onEditRequest={(entry) => {
                     setEditingTimesheet(entry);
+                    setActiveEmployeeTab('submit_timesheet');
+                  }}
+                  onNavigateToSubmit={(date) => {
+                    setDefaultSubmitDate(date);
                     setActiveEmployeeTab('submit_timesheet');
                   }}
                   onShowToast={showToast}
@@ -791,85 +821,85 @@ export default function App() {
             <ErrorBoundary>
               <React.Suspense fallback={<div className="flex h-full items-center justify-center p-12 text-slate-400 font-medium animate-pulse">Loading admin module...</div>}>
                 {activeAdminTab === 'admin_overview' && (
-                <AdminOverview
-                  users={users}
-                  projects={projects}
-                  timesheets={timesheets}
-                  leaveRequests={leaveRequests}
-                  activities={activities}
-                  onNavigateTab={(tab) => setActiveAdminTab(tab)}
-                  onApproveLeave={handleApproveLeave}
-                  onShowToast={showToast}
-                />
-              )}
+                  <AdminOverview
+                    users={users}
+                    projects={projects}
+                    timesheets={timesheets}
+                    leaveRequests={leaveRequests}
+                    activities={activities}
+                    onNavigateTab={(tab) => setActiveAdminTab(tab)}
+                    onApproveLeave={handleApproveLeave}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'user_management' && (
-                <UserManagement
-                  currentUser={currentUser}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'user_management' && (
+                  <UserManagement
+                    currentUser={currentUser}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'admin_leave_approvals' && currentUser && (
-                <AdminLeaveApprovals
-                  currentUser={currentUser}
-                  users={users}
-                  leaveRequests={leaveRequests}
-                  onApproveLeave={handleApproveLeave}
-                  onRejectLeave={handleRejectLeave}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'admin_leave_approvals' && currentUser && (
+                  <AdminLeaveApprovals
+                    currentUser={currentUser}
+                    users={users}
+                    leaveRequests={leaveRequests}
+                    onApproveLeave={handleApproveLeave}
+                    onRejectLeave={handleRejectLeave}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'admin_holidays' && (
-                <HolidaysManagement
-                  holidays={holidays}
-                  onAddHoliday={handleAddHoliday}
-                  onUpdateHoliday={handleEditHoliday}
-                  onDeleteHoliday={handleDeleteHoliday}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'admin_holidays' && (
+                  <HolidaysManagement
+                    holidays={holidays}
+                    onAddHoliday={handleAddHoliday}
+                    onUpdateHoliday={handleEditHoliday}
+                    onDeleteHoliday={handleDeleteHoliday}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'admin_leave_types' && (
-                <LeaveTypesManagement
-                  leaveTypes={leaveTypes}
-                  onAddLeaveType={handleAddLeaveType}
-                  onUpdateLeaveType={handleEditLeaveType}
-                  onToggleLeaveTypeStatus={handleToggleLeaveTypeStatus}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'admin_leave_types' && (
+                  <LeaveTypesManagement
+                    leaveTypes={leaveTypes}
+                    onAddLeaveType={handleAddLeaveType}
+                    onUpdateLeaveType={handleEditLeaveType}
+                    onToggleLeaveTypeStatus={handleToggleLeaveTypeStatus}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'admin_working_calendar' && (
-                <WorkingCalendar
-                  config={workingCalendar}
-                  onUpdateConfig={async (newConfig) => {
-                    try {
-                      await updateWorkingCalendar(newConfig).unwrap();
-                      showToast('Success', 'Working calendar updated', 'success');
-                    } catch (e: any) {
-                      showToast('Error', e?.data?.message || 'Failed to update working calendar', 'error');
-                    }
-                  }}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'admin_working_calendar' && (
+                  <WorkingCalendar
+                    config={workingCalendar}
+                    onUpdateConfig={async (newConfig) => {
+                      try {
+                        await updateWorkingCalendar(newConfig).unwrap();
+                        showToast('Success', 'Working calendar updated', 'success');
+                      } catch (e: any) {
+                        showToast('Error', e?.data?.message || 'Failed to update working calendar', 'error');
+                      }
+                    }}
+                    onShowToast={showToast}
+                  />
+                )}
 
-              {activeAdminTab === 'admin_settings' && (
-                <SettingsManagement
-                  settings={settings}
-                  onUpdateSettings={async (newSettings) => {
-                    try {
-                      await updateSettingsMutation(newSettings).unwrap();
-                      showToast('Success', 'Settings updated successfully', 'success');
-                    } catch (e: any) {
-                      showToast('Error', e?.data?.message || 'Failed to update settings', 'error');
-                    }
-                  }}
-                  onShowToast={showToast}
-                />
-              )}
+                {activeAdminTab === 'admin_settings' && (
+                  <SettingsManagement
+                    settings={settings}
+                    onUpdateSettings={async (newSettings) => {
+                      try {
+                        await updateSettingsMutation(newSettings).unwrap();
+                        showToast('Success', 'Settings updated successfully', 'success');
+                      } catch (e: any) {
+                        showToast('Error', e?.data?.message || 'Failed to update settings', 'error');
+                      }
+                    }}
+                    onShowToast={showToast}
+                  />
+                )}
               </React.Suspense>
             </ErrorBoundary>
           )}

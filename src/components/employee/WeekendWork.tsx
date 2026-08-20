@@ -96,7 +96,6 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
         </div>
 
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-xs text-slate-200">
-          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
             <strong className="text-amber-300 font-extrabold">Enterprise Guideline:</strong> All weekend overtime requires PM pre-authorization 24 hours prior to work execution. Approved weekend hours are compensated at 1.5x overtime billing or eligible for compensatory off credits.
           </p>

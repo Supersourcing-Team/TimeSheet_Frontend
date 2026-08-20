@@ -22,6 +22,7 @@ interface SubmitTimesheetProps {
   projectAssignments?: ProjectAssignment[];
   onUpdateTimesheet?: (entry: TimesheetEntry) => void;
   editingEntry?: TimesheetEntry | null;
+  defaultDate?: string | null;
   onClearEditing?: () => void;
   onSubmitTimesheet: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -43,6 +44,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   onSubmitTimesheet,
   onUpdateTimesheet,
   editingEntry,
+  defaultDate,
   onClearEditing,
   onShowToast,
 }) => {
@@ -61,7 +63,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     }
     return [{
       projectId: projects[0]?.id || '',
-      date: today,
+      date: defaultDate || today,
       billableHours: 0,
       nonBillableHours: 0,
       billableDescription: '',
@@ -120,6 +122,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
     if (editingEntry && onUpdateTimesheet) {
       const row = rows[0];
+
+      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
+        onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
+        return;
+      }
+
+      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
+        onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
+        return;
+      }
+
       const targetProject = projects.find((p) => p.id === row.projectId);
       const updated: TimesheetEntry = {
         ...editingEntry,
@@ -163,6 +176,16 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         return;
       }
 
+      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
+        onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
+        return;
+      }
+
+      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
+        onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
+        return;
+      }
+
       const combinedWorkSummary = [
         row.billableDescription ? `[Billable] ${row.billableDescription}` : '',
         row.nonBillableDescription ? `[Non-Billable] ${row.nonBillableDescription}` : '',
@@ -196,7 +219,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       setRows([
         {
           projectId: projects[0]?.id || '',
-          date: today,
+          date: defaultDate || today,
           billableHours: 0,
           nonBillableHours: 0,
           billableDescription: '',
