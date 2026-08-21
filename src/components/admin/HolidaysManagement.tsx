@@ -38,7 +38,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
 
   // Form State
   const [name, setName] = useState('');
-  const [date, setDate] = useState('2025-08-15');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [type, setType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
   const [description, setDescription] = useState('');
   const [is_mandatory, setis_mandatory] = useState(true);

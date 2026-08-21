@@ -505,11 +505,31 @@ export const dataApi = apiSlice.injectEndpoints({
       providesTags: ['Holiday'],
     }),
     createHoliday: builder.mutation<HolidayItem, Omit<HolidayItem, 'id'>>({
-      query: (body) => ({ url: '/holidays', method: 'POST', body }),
+      query: (body) => ({ 
+        url: '/holidays', 
+        method: 'POST', 
+        body: {
+          name: body.name,
+          date: body.date,
+          type: body.type,
+          description: body.description,
+          is_mandatory: body.is_mandatory,
+        }
+      }),
       invalidatesTags: ['Holiday'],
     }),
     updateHoliday: builder.mutation<HolidayItem, Partial<HolidayItem> & { id: string }>({
-      query: ({ id, ...body }) => ({ url: `/holidays/${id}`, method: 'PUT', body }),
+      query: ({ id, ...body }) => ({ 
+        url: `/holidays/${id}`, 
+        method: 'PUT', 
+        body: {
+          name: body.name,
+          date: body.date,
+          type: body.type,
+          description: body.description,
+          is_mandatory: body.is_mandatory,
+        }
+      }),
       invalidatesTags: ['Holiday'],
     }),
     deleteHoliday: builder.mutation<void, string>({
