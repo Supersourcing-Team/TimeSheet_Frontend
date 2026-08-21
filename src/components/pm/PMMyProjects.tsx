@@ -388,9 +388,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   </span>
                 </div>
 
-                <span className="font-extrabold text-slate-900">
-                  {formatINR(proj.budget)}
-                </span>
+                {currentUser?.role === 'ac_manager' && (
+                  <span className="font-extrabold text-slate-900">
+                    {formatINR(proj.budget)}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -488,10 +490,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               {activeTab === 'details' && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Project Budget</span>
-                      <p className="text-lg font-black text-slate-900 mt-0.5">{formatINR(selectedProject.budget)}</p>
-                    </div>
+                    {currentUser?.role === 'ac_manager' && (
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Project Budget</span>
+                        <p className="text-lg font-black text-slate-900 mt-0.5">{formatINR(selectedProject.budget)}</p>
+                      </div>
+                    )}
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-500">Hourly Rate</span>
                       <p className="text-lg font-black text-blue-700 mt-0.5">{formatINR(selectedProject.hourlyRate)}/hr</p>
@@ -769,15 +773,17 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
-                <input
-                  type="number"
-                  value={newProject.budget}
-                  onChange={(e) => setNewProject({ ...newProject, budget: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {currentUser?.role === 'ac_manager' && (
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
+                  <input
+                    type="number"
+                    value={newProject.budget}
+                    onChange={(e) => setNewProject({ ...newProject, budget: Number(e.target.value) })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Hourly Rate (₹/hr)</label>
@@ -894,15 +900,17 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
-                <input
-                  type="number"
-                  value={editFormData.budget}
-                  onChange={(e) => setEditFormData({ ...editFormData, budget: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
-              </div>
+              {currentUser?.role === 'ac_manager' && (
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
+                  <input
+                    type="number"
+                    value={editFormData.budget}
+                    onChange={(e) => setEditFormData({ ...editFormData, budget: Number(e.target.value) })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Hourly Rate (₹/hr)</label>
