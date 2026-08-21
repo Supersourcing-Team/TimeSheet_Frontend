@@ -12,7 +12,7 @@ export interface User {
   role: UserRole;
   department: string;
   title: string;
-  status: 'active' | 'inactive' | 'on_leave' | 'resigned';
+  status: 'active' | 'inactive' | 'on_leave' | 'resigned' | 'pending';
   hourlyRate: number; // in INR ₹
   joinDate: string;
   allocatedProjectsCount: number;
