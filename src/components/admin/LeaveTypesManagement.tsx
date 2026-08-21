@@ -35,6 +35,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [daysPerYear, setDaysPerYear] = useState(12);
+  const [allocatedHours, setAllocatedHours] = useState<number | undefined>(undefined);
   const [isPaid, setIsPaid] = useState(true);
   const [description, setDescription] = useState('');
   const [requiresDocument, setRequiresDocument] = useState(false);
@@ -43,6 +44,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
   const [editDaysPerYear, setEditDaysPerYear] = useState(12);
+  const [editAllocatedHours, setEditAllocatedHours] = useState<number | undefined>(undefined);
   const [editIsPaid, setEditIsPaid] = useState(true);
   const [editDescription, setEditDescription] = useState('');
   const [editRequiresDocument, setEditRequiresDocument] = useState(false);
@@ -65,6 +67,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       name,
       code: code.toUpperCase(),
       daysPerYear,
+      allocatedHours,
       isPaid,
       status: 'active',
       description,
@@ -76,6 +79,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     setName('');
     setCode('');
     setDescription('');
+    setAllocatedHours(undefined);
   };
 
   const handleOpenEdit = (lt: LeaveTypeConfig) => {
@@ -83,6 +87,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     setEditName(lt.name);
     setEditCode(lt.code);
     setEditDaysPerYear(lt.daysPerYear);
+    setEditAllocatedHours(lt.allocatedHours);
     setEditIsPaid(lt.isPaid);
     setEditDescription(lt.description);
     setEditRequiresDocument(!!lt.requiresDocument);
@@ -97,6 +102,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       name: editName,
       code: editCode.toUpperCase(),
       daysPerYear: editDaysPerYear,
+      allocatedHours: editAllocatedHours,
       isPaid: editIsPaid,
       description: editDescription,
       requiresDocument: editRequiresDocument,
@@ -309,7 +315,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
                     Days / Year Allowance
@@ -320,6 +326,19 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                     onChange={(e) => setDaysPerYear(parseInt(e.target.value) || 0)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Allocated Hrs
+                  </label>
+                  <input
+                    type="number"
+                    value={allocatedHours || ''}
+                    onChange={(e) => setAllocatedHours(parseInt(e.target.value) || undefined)}
+                    placeholder="e.g. 48 (Optional)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -432,7 +451,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
                     Days / Year Allowance
@@ -443,6 +462,19 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                     onChange={(e) => setEditDaysPerYear(parseInt(e.target.value) || 0)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Allocated Hrs
+                  </label>
+                  <input
+                    type="number"
+                    value={editAllocatedHours || ''}
+                    onChange={(e) => setEditAllocatedHours(parseInt(e.target.value) || undefined)}
+                    placeholder="e.g. 48 (Optional)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 

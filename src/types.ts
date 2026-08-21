@@ -39,6 +39,7 @@ export interface LeaveTypeConfig {
   status: 'active' | 'inactive';
   description: string;
   requiresDocument?: boolean;
+  allocatedHours?: number;
 }
 
 export interface WorkingCalendarConfig {
