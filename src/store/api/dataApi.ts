@@ -704,6 +704,10 @@ export const dataApi = apiSlice.injectEndpoints({
       // Invalidate whenever leave / weekend work data changes
       providesTags: ['LeaveRequest', 'WeekendWork', 'Timesheet'],
     }),
+    clearNotifications: builder.mutation<void, void>({
+      query: () => ({ url: '/notifications/clear-all', method: 'DELETE' }),
+      invalidatesTags: ['LeaveRequest', 'WeekendWork', 'Timesheet'],
+    }),
   }),
 });
 
@@ -772,5 +776,6 @@ export const {
   useGetTeamUtilizationQuery,
   useGetProjectFinancialsQuery,
   useGetNotificationsQuery,
+  useClearNotificationsMutation,
 } = dataApi;
 

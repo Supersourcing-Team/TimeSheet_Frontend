@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { formatINR } from '../utils/formatters';
-import { useGetNotificationsQuery } from '../store/api/dataApi';
+import { useGetNotificationsQuery, useClearNotificationsMutation } from '../store/api/dataApi';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
@@ -119,6 +119,8 @@ export const Header: React.FC<HeaderProps> = ({
     skip: !isLoggedIn,
     pollingInterval: 60_000, // auto-refresh every 60 seconds
   });
+  
+  const [clearNotifications] = useClearNotificationsMutation();
 
   const rawNotifications = notifData?.notifications ?? [];
   // Merge server is_read with local session read state
@@ -165,6 +167,15 @@ export const Header: React.FC<HeaderProps> = ({
       rawNotifications.forEach((n) => updated.add(n.id));
       return updated;
     });
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await clearNotifications().unwrap();
+      setReadIds(new Set());
+    } catch (e) {
+      console.error('Failed to clear notifications', e);
+    }
   };
 
   return (
@@ -312,10 +323,17 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Footer */}
               {notifications.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/80">
-                  <p className="text-[10px] text-slate-400 text-center font-medium">
+                <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                  <p className="text-[10px] text-slate-400 font-medium">
                     Showing {notifications.length} recent notification{notifications.length !== 1 ? 's' : ''}
                   </p>
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded transition-colors"
+                  >
+                    Clear All
+                  </button>
                 </div>
               )}
             </div>
