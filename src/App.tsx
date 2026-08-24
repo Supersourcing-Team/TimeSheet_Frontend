@@ -720,6 +720,7 @@ export default function App() {
                   currentUser={currentUser}
                   leaveBalance={leaveBalance}
                   leaveRequests={leaveRequests}
+                  leaveTypes={leaveTypes}
                   onApplyLeave={handleApplyLeave}
                   onCancelLeave={handleCancelLeave}
                   onShowToast={showToast}

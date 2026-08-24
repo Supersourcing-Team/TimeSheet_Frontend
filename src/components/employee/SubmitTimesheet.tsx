@@ -318,7 +318,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             >
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                 {/* Project Dropdown */}
-                <div className="md:col-span-5 space-y-1">
+                <div className="md:col-span-4 space-y-1">
                   <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                     Project
                   </label>
@@ -368,7 +368,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 </div>
 
                 {/* Non-Billable Hours */}
-                <div className="md:col-span-1 space-y-1">
+                <div className="md:col-span-2 space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Non-Bill (h)
                   </label>
@@ -409,7 +409,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={4}
+                    rows={9}
                     value={row.billableDescription}
                     onChange={(e) => handleRowChange(idx, 'billableDescription', e.target.value)}
                     placeholder="E.g. Built API endpoint, fixed payment bug, wrote design specs..."
@@ -426,7 +426,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </span>
                   </label>
                   <textarea
-                    rows={4}
+                    rows={9}
                     value={row.nonBillableDescription}
                     onChange={(e) => handleRowChange(idx, 'nonBillableDescription', e.target.value)}
                     placeholder="E.g. Daily standup meeting, local docker debugging, JIRA updates..."
