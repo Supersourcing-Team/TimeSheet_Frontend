@@ -18,7 +18,7 @@ interface AccountManagerDashboardProps {
   timesheets: TimesheetEntry[];
   activeTab?: ACManagerTab;
   onNavigateTab?: (tab: ACManagerTab) => void;
-  onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => void;
+  onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => Promise<void> | void;
   onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -73,11 +73,10 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
     return sum + (profit > 0 ? profit : (p.budget || 0) * 0.35);
   }, 0);
 
-  const handleSaveBudget = (e: React.FormEvent) => {
+  const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
-    onUpdateProjectBudget(editingProject.id, editBudget, editRate);
-    onShowToast('Client Budget Updated', `Updated budget for ${editingProject.name} to ${formatINR(editBudget)}`, 'success');
+    await onUpdateProjectBudget(editingProject.id, editBudget, editRate);
     setEditingProject(null);
   };
 
