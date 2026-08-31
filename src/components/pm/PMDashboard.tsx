@@ -14,6 +14,8 @@ import {
   Layers,
   Sparkles,
 } from 'lucide-react';
+import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
+import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 
 interface PMDashboardProps {
   currentUser: User;
@@ -34,6 +36,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   onNavigateTab,
   onShowToast,
 }) => {
+  const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+
   const safeProjects = projects || [];
   const safeTimesheets = timesheets || [];
   const safeWeekendRequests = weekendRequests || [];
@@ -182,20 +186,19 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           <p className="text-[11px] text-emerald-700 font-medium truncate">Billable logged</p>
         </div>
 
-        {/* Today's Logged Hours */}
-        <div
-          onClick={() => onNavigateTab('pm_timesheet_review')}
-          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-              Today's Hours
-            </span>
-            <Calendar className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+          {/* Team Leaves */}
+          <div
+            className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 group"
+          >
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                Team Leaves
+              </span>
+              <Calendar className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-2xl font-black text-slate-900">{upcomingLeaves?.length || 0}</div>
+            <p className="text-[11px] text-slate-500 font-medium truncate">Upcoming or ongoing leaves</p>
           </div>
-          <div className="text-2xl font-black text-slate-900">{todayLoggedHours}h</div>
-          <p className="text-[11px] text-slate-500 font-medium truncate">Submitted today</p>
-        </div>
       </div>
 
       {/* Main Grid: Projects Overview & Recent Timesheet Submissions */}
@@ -364,6 +367,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               </div>
             )}
           </div>
+        </div>
+
+        {/* Upcoming Leaves Widget Row */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <UpcomingLeavesWidget />
         </div>
       </div>
     </div>

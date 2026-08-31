@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Project, TimesheetEntry, LeaveRequest, ActivityLog } from '../../types';
-import { useGetDashboardSummaryQuery } from '../../store/api/dataApi';
+import { useGetDashboardSummaryQuery, useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import {
     Users,
     Clock,
@@ -20,6 +20,7 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { AdminTab } from '../Sidebar';
+import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
 
 interface AdminOverviewProps {
     users: User[];
@@ -51,6 +52,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     const safeProjects = projects || [];
 
     const { data: dashboardData, isLoading } = useGetDashboardSummaryQuery();
+    const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
 
     if (isLoading) {
         return (
@@ -68,6 +70,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     const pendingLeaves = safeLeaveRequests.filter((l) => l.status.toLowerCase() === 'pending');
     const pendingLeavesCount = adminOverview.pending_leaves_count ?? pendingLeaves.length;
     const activeProjectsCount = adminOverview.active_projects_count ?? safeProjects.length;
+    const upcomingLeavesCount = upcomingLeaves.length;
 
     const nextHoliday = dashboardData?.upcoming_holiday;
 
@@ -126,25 +129,22 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                     <h3 className="text-2xl font-black text-slate-900 mt-1">{activeUsersCount || 0}</h3>
                 </div>
 
-                {/* Pending Leave */}
-                <button
-                    type="button"
-                    onClick={() => onNavigateTab('admin_leave_approvals')}
-                    className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md hover:border-amber-300 transition-all text-left cursor-pointer"
+                {/* Upcoming Leaves Summary (Replacing Pending Leaves) */}
+                <div
+                    className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md hover:border-blue-300 transition-all text-left"
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                             <Clock className="w-4 h-4" />
                         </div>
-                        <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
                     </div>
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                        Pending Leave
+                        Team Leaves
                     </p>
                     <h3 className="text-2xl font-black text-slate-900 mt-1">
-                        {pendingLeavesCount}
+                        {upcomingLeavesCount}
                     </h3>
-                </button>
+                </div>
 
                 {/* Next Holiday */}
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md transition-shadow">
@@ -175,55 +175,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 </div>
             </div>
 
-            {/* Middle Section: Pending Leaves & Upcoming Holidays */}
+            {/* Middle Section: Upcoming Leaves & Upcoming Holidays */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Pending Leave Card (8 cols) */}
-                <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden flex flex-col justify-between">
-                    <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
-                        <h3 className="text-sm font-extrabold text-slate-900">Pending Leave</h3>
-                        <span className="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
-                            {pendingLeavesCount} Total
-                        </span>
-                    </div>
-
-                    <div className="divide-y divide-slate-100 flex-1 overflow-y-auto max-h-80">
-                        {dashboardData?.recent_leaves?.length > 0 ? (
-                            dashboardData.recent_leaves.map((req: any) => (
-                                <div key={req.id} className="p-4 hover:bg-slate-50/80 transition-colors space-y-3">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs ring-2 ring-amber-500/20">
-                                                LR
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-extrabold text-slate-900 truncate capitalize">
-                                                    {req.status}
-                                                </p>
-                                                <p className="text-[11px] text-slate-500 font-medium">
-                                                    {req.type} - {req.days_count} Days
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-                                            {req.start_date}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => onNavigateTab('admin_leave_approvals')}
-                                            className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                                        >
-                                            Review Request
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-xs text-slate-500 text-center py-6">No recent leave requests found.</div>
-                        )}
-                    </div>
+                {/* Upcoming Leaves Widget (8 cols) */}
+                <div className="lg:col-span-8">
+                    <UpcomingLeavesWidget className="h-full max-h-[400px]" />
                 </div>
 
                 {/* Sidebar Card: Upcoming Holidays (4 cols) */}
@@ -362,4 +318,5 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
         </div>
     );
 };
+
 
