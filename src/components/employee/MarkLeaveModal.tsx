@@ -45,6 +45,7 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const [halfPeriod, setHalfPeriod] = useState<HalfPeriod>('first');
   const [partialStart, setPartialStart] = useState('09:00');
   const [partialEnd, setPartialEnd] = useState('11:00');
+  const [singleDate, setSingleDate] = useState(selectedDate);
   const [rangeStart, setRangeStart] = useState(selectedDate);
   const [rangeEnd, setRangeEnd] = useState(selectedDate);
   const [leaveTypeId, setLeaveTypeId] = useState('');
@@ -71,8 +72,13 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const validateAndBuild = (): MarkLeavePayload | null => {
     setValidationError(null);
 
-    if (!leaveTypeId) {
-      setValidationError('Please select a leave type.');
+    let finalLeaveTypeId = leaveTypeId;
+    if (durationType !== 'multiple_days') {
+      finalLeaveTypeId = activeLeaveTypes[0]?.id?.toString() || '';
+    }
+
+    if (!finalLeaveTypeId) {
+      setValidationError('Please select a leave type or ensure active leave types exist.');
       return null;
     }
 
@@ -101,14 +107,10 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         setValidationError('Start date must be before end date.');
         return null;
       }
-      if (rangeEnd > today) {
-        setValidationError('Cannot mark leave for future dates.');
-        return null;
-      }
     }
 
     const payload: MarkLeavePayload = {
-      leave_type_id: Number(leaveTypeId),
+      leave_type_id: Number(finalLeaveTypeId),
       leave_duration_type: durationType,
       reason: 'Marked from timesheet',
     };
@@ -117,7 +119,7 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
       payload.start_date = rangeStart;
       payload.end_date = rangeEnd;
     } else {
-      payload.leave_date = selectedDate;
+      payload.leave_date = singleDate;
     }
 
     if (durationType === 'half_day') payload.half_day_period = halfPeriod;
@@ -174,26 +176,28 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-          {/* Leave Type Selector */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave Type</label>
-            {loadingTypes ? (
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Loader2 className="w-4 h-4 animate-spin" /> Loading...
-              </div>
-            ) : (
-              <select
-                value={leaveTypeId}
-                onChange={(e) => setLeaveTypeId(e.target.value)}
-                className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
-              >
-                <option value="">— Select leave type —</option>
-                {activeLeaveTypes.map((lt) => (
-                  <option key={lt.id} value={lt.id}>{lt.name}</option>
-                ))}
-              </select>
-            )}
-          </div>
+          {/* Leave Type Selector (Only for Multiple Days) */}
+          {durationType === 'multiple_days' && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave Type</label>
+              {loadingTypes ? (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                </div>
+              ) : (
+                <select
+                  value={leaveTypeId}
+                  onChange={(e) => setLeaveTypeId(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
+                >
+                  <option value="">— Select leave type —</option>
+                  {activeLeaveTypes.map((lt) => (
+                    <option key={lt.id} value={lt.id}>{lt.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
           {/* Duration Type */}
           <div className="space-y-2">
@@ -224,11 +228,24 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
 
           {/* Full Day */}
           {durationType === 'full_day' && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-rose-500 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-rose-700">Full Day Leave on {selectedDate}</p>
-                <p className="text-[10px] text-rose-600 mt-0.5">Timesheet entry will be blocked for this date.</p>
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-rose-500 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-rose-700">Full Day Leave</p>
+                  <p className="text-[10px] text-rose-600 mt-0.5">Timesheet entry will be blocked for this date.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={singleDate}
+                    onChange={(e) => setSingleDate(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -236,6 +253,17 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
           {/* Half Day */}
           {durationType === 'half_day' && (
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={singleDate}
+                    onChange={(e) => setSingleDate(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
+                  />
+                </div>
+              </div>
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Which half?</label>
               <div className="grid grid-cols-2 gap-3">
                 {(['first', 'second'] as HalfPeriod[]).map((p) => (
@@ -266,8 +294,19 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
           {/* Partial Day */}
           {durationType === 'partial_day' && (
             <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave Time Window</label>
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={singleDate}
+                    onChange={(e) => setSingleDate(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Time Window (Max 2h)</label>
+              <div className="flex items-center gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">From</label>
                   <input
@@ -370,3 +409,4 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
     </div>
   );
 };
+

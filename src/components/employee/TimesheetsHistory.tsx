@@ -336,17 +336,17 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   type="button"
                   key={dateStr}
                   onClick={() => {
-                    if (isFutureDate) return;
+                    
                     if (dayEntries.length === 0 && onNavigateToSubmit) {
                       onNavigateToSubmit(dateStr);
                     } else {
                       setSelectedDateModal(dateStr);
                     }
                   }}
-                  disabled={isFutureDate}
+                  disabled={false}
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
                     isFutureDate
-                      ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
+                      ? 'bg-white border-slate-100 hover:border-blue-400 hover:scale-[1.02] cursor-pointer'
                       : isFullDayLeave
                         ? 'bg-rose-50 border-rose-300 hover:border-rose-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                         : isWeekend
@@ -842,3 +842,5 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
     </div>
   );
 };
+
+
