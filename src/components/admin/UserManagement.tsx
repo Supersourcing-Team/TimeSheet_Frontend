@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import {
   fetchUsersApi,
   createUserApi,
@@ -73,6 +74,7 @@ const defaultCreate = {
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
   const currentUserId = currentUser ? Number(currentUser.id) : null;
+  const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
 
   // ── Server state ──────────────────────────────────────────────────────────
   const [users, setUsers] = useState<BackendUser[]>([]);
@@ -974,3 +976,4 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
     </div>
   );
 };
+

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Project, User, ProjectTool } from '../../types';
 import { formatINR } from '../../utils/formatters';
+import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import {
   Users,
   Wrench,
@@ -41,6 +42,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
   onRemoveToolFromProject,
   onShowToast,
 }) => {
+  const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
   const [activeSubTab, setActiveSubTab] = useState<'employees' | 'tools'>('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('all');
@@ -274,6 +276,11 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                 (p.assignedUserIds || []).includes(user.id)
               );
 
+              const userLeaves = upcomingLeaves.filter((l: any) => l.user_id === user.id);
+              const todayStr = new Date().toISOString().split('T')[0];
+              const isCurrentlyOnLeave = userLeaves.some((l: any) => l.start_date <= todayStr && l.end_date >= todayStr);
+              const upcomingLeave = userLeaves.find((l: any) => l.start_date > todayStr);
+
               return (
                 <div
                   key={user.id}
@@ -287,7 +294,15 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                         className="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/20 shrink-0"
                       />
                       <div className="min-w-0">
-                        <h3 className="font-extrabold text-slate-900 text-sm truncate">{user.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-slate-900 text-sm truncate">{user.name}</h3>
+                          {isCurrentlyOnLeave && (
+                            <span className="shrink-0 px-1.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase rounded-md">On Leave</span>
+                          )}
+                          {!isCurrentlyOnLeave && upcomingLeave && (
+                            <span className="shrink-0 px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold uppercase rounded-md">Leave: {new Date(upcomingLeave.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          )}
+                        </div>
                         <p className="text-xs text-blue-600 font-semibold truncate">{user.title}</p>
                         <p className="text-[10px] text-slate-500 truncate">{user.department}</p>
                       </div>
@@ -608,3 +623,4 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
     </div>
   );
 };
+

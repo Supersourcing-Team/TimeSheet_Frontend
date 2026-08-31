@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import { Project, User, TimesheetEntry } from '../../types';
 import {
   CheckSquare,
@@ -28,6 +29,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
   allUsers = [],
   timesheets = [],
 }) => {
+  const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<string>('all');
@@ -228,66 +230,73 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredTimesheets.map((ts) => (
-                  <tr key={ts.id} className="hover:bg-blue-50/20 transition-colors">
-                    {/* Employee */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={ts.userAvatar}
-                          alt={ts.userName}
-                          className="w-7 h-7 rounded-full object-cover ring-2 ring-blue-500/20"
-                        />
-                        <div>
-                          <p className="font-extrabold text-slate-900">{ts.userName}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Submitted</p>
+                {filteredTimesheets.map((ts) => {
+                  const userLeaves = upcomingLeaves.filter((l: any) => l.user_id.toString() === ts.userId.toString());
+                  const isOnLeaveThisDay = userLeaves.some((l: any) => l.start_date <= ts.date && l.end_date >= ts.date);
+                  
+                  return (
+                    <tr key={ts.id} className="hover:bg-blue-50/20 transition-colors">
+                      {/* Employee */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={ts.userAvatar}
+                            alt={ts.userName}
+                            className="w-7 h-7 rounded-full object-cover ring-2 ring-blue-500/20"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-extrabold text-slate-900">{ts.userName}</p>
+                              {isOnLeaveThisDay && (
+                                <span className="px-1 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold uppercase tracking-wider">On Leave</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium">Submitted</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Project */}
-                    <td className="py-3.5 px-4 whitespace-nowrap font-bold text-blue-700">
-                      {ts.projectName}
-                    </td>
+                      {/* Project */}
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-blue-700">
+                        {ts.projectName}
+                      </td>
 
-                    {/* Date */}
-                    <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px] text-slate-600">
-                      {ts.date}
-                    </td>
+                      {/* Date */}
+                      <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[11px] text-slate-600">
+                        {ts.date}
+                      </td>
 
+                      {/* Work Summary */}
+                      <td
+                        className="py-3.5 px-4 max-w-sm cursor-pointer group"
+                        onClick={() => setViewingDesc({ billable: ts.billableDescription || ts.description, nonBillable: ts.nonBillableDescription })}
+                      >
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-800 truncate leading-relaxed group-hover:text-blue-600 transition-colors flex-1">
+                            {ts.description || ts.billableDescription || ts.nonBillableDescription || 'No summary provided'}
+                          </p>
+                          <span className="shrink-0 px-2 py-1 rounded bg-blue-50 text-[10px] font-extrabold text-blue-700 border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-all uppercase tracking-wider">
+                            View
+                          </span>
+                        </div>
+                      </td>
 
-
-                    {/* Work Summary */}
-                    <td
-                      className="py-3.5 px-4 max-w-sm cursor-pointer group"
-                      onClick={() => setViewingDesc({ billable: ts.billableDescription || ts.description, nonBillable: ts.nonBillableDescription })}
-                    >
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-800 truncate leading-relaxed group-hover:text-blue-600 transition-colors flex-1">
-                          {ts.description || ts.billableDescription || ts.nonBillableDescription || 'No summary provided'}
-                        </p>
-                        <span className="shrink-0 px-2 py-1 rounded bg-blue-50 text-[10px] font-extrabold text-blue-700 border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-all uppercase tracking-wider">
-                          View
+                      {/* Hours */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <span className="font-black text-slate-900 text-sm block">{ts.hours}h Total</span>
+                        <span className="text-[10px] font-bold text-emerald-700 block">
+                          {ts.billableHours}h Billable / {ts.nonBillableHours}h NB
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Hours */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <span className="font-black text-slate-900 text-sm block">{ts.hours}h Total</span>
-                      <span className="text-[10px] font-bold text-emerald-700 block">
-                        {ts.billableHours}h Billable / {ts.nonBillableHours}h NB
-                      </span>
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
-                        Submitted Log
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      {/* Status Badge */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
+                          Submitted Log
+                        </span>
+                      </td>
+                    </tr>
+                  )})}
               </tbody>
             </table>
           </div>
@@ -332,3 +341,5 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
     </div>
   );
 };
+
+

@@ -376,6 +376,11 @@ export const dataApi = apiSlice.injectEndpoints({
       invalidatesTags: ['LeaveRequest', 'LeaveBalance'],
     }),
     /** Check leave status for a specific date — GET /leave-requests/check-date */
+    getUpcomingLeaves: builder.query<any[], void>({
+      query: () => '/leave-requests/upcoming',
+      transformResponse: (res: any) => res.data || res || [],
+      providesTags: ['LeaveRequest'],
+    }),
     getLeaveForDate: builder.query<import('../../types').LeaveStatusForDate, string>({
       query: (date) => `/leave-requests/check-date?date=${date}`,
       transformResponse: (res: any) => res.data || res,
@@ -772,6 +777,7 @@ export const {
   useDeleteTimesheetMutation,
   // Leave
   useGetLeaveRequestsQuery,
+  useGetUpcomingLeavesQuery,
   useGetMyLeaveRequestsQuery,
   useCreateLeaveRequestMutation,
   useApproveLeaveRequestMutation,
@@ -815,4 +821,7 @@ export const {
   useGetNotificationsQuery,
   useClearNotificationsMutation,
 } = dataApi;
+
+
+
 
