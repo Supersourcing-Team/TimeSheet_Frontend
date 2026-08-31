@@ -72,13 +72,13 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const validateAndBuild = (): MarkLeavePayload | null => {
     setValidationError(null);
 
-    let finalLeaveTypeId = leaveTypeId;
-    if (durationType !== 'multiple_days') {
-      finalLeaveTypeId = activeLeaveTypes[0]?.id?.toString() || '';
+    let finalLeaveTypeId: string | undefined = leaveTypeId;
+    if (durationType === 'half_day' || durationType === 'partial_day') {
+      finalLeaveTypeId = undefined;
     }
 
-    if (!finalLeaveTypeId) {
-      setValidationError('Please select a leave type or ensure active leave types exist.');
+    if (!finalLeaveTypeId && (durationType === 'multiple_days' || durationType === 'full_day')) {
+      setValidationError('Please select a leave type.');
       return null;
     }
 
@@ -110,10 +110,12 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
     }
 
     const payload: MarkLeavePayload = {
-      leave_type_id: Number(finalLeaveTypeId),
       leave_duration_type: durationType,
       reason: 'Marked from timesheet',
     };
+    if (finalLeaveTypeId) {
+      payload.leave_type_id = Number(finalLeaveTypeId);
+    }
 
     if (durationType === 'multiple_days') {
       payload.start_date = rangeStart;
@@ -176,8 +178,8 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-          {/* Leave Type Selector (Only for Multiple Days) */}
-          {durationType === 'multiple_days' && (
+          {/* Leave Type Selector (Only for Full Day & Multiple Days) */}
+          {(durationType === 'multiple_days' || durationType === 'full_day') && (
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Leave Type</label>
               {loadingTypes ? (

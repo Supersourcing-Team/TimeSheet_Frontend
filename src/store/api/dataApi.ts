@@ -128,7 +128,7 @@ export interface LeaveRequestCreatePayload {
 // Mark leave from timesheet payload
 // ---------------------------------------------------------------------------
 export interface MarkLeavePayload {
-  leave_type_id: number;
+  leave_type_id?: number;
   leave_duration_type: 'full_day' | 'half_day' | 'partial_day' | 'multiple_days';
   leave_date?: string;          // YYYY-MM-DD — for single-day leaves
   start_date?: string;          // YYYY-MM-DD — for multiple_days
