@@ -18,6 +18,9 @@ import {
     ChevronRight,
     Palmtree,
     Sparkles,
+    ArrowUpRight,
+    ArrowDownRight,
+    X,
 } from 'lucide-react';
 import { AdminTab } from '../Sidebar';
 import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
@@ -53,6 +56,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
     const { data: dashboardData, isLoading } = useGetDashboardSummaryQuery();
     const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+    const [showLeavesModal, setShowLeavesModal] = useState(false);
 
     if (isLoading) {
         return (
@@ -131,7 +135,8 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
                 {/* Upcoming Leaves Summary (Replacing Pending Leaves) */}
                 <div
-                    className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md hover:border-blue-300 transition-all text-left"
+                    onClick={() => setShowLeavesModal(true)}
+                    className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md hover:border-blue-300 transition-all text-left cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -315,6 +320,29 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                     </table>
                 </div>
             </div>
+
+            {/* Team Leaves Modal */}
+            {showLeavesModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div
+                        className="bg-white w-full max-w-3xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+                    >
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <h2 className="text-xl font-black text-slate-900">Team Leaves Details</h2>
+                            <button
+                                onClick={() => setShowLeavesModal(false)}
+                                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5 text-slate-500" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto">
+                            <UpcomingLeavesWidget />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

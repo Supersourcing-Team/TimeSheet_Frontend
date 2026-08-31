@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Project, User, TimesheetEntry, WeekendWorkRequest } from '../../types';
 import {
   Briefcase,
@@ -13,6 +13,7 @@ import {
   Calendar,
   Layers,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
 import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
@@ -37,6 +38,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   onShowToast,
 }) => {
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+  const [showLeavesModal, setShowLeavesModal] = useState(false);
 
   const safeProjects = projects || [];
   const safeTimesheets = timesheets || [];
@@ -188,7 +190,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
           {/* Team Leaves */}
           <div
-            className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 group"
+            onClick={() => setShowLeavesModal(true)}
+            className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           >
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -368,13 +371,30 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
             )}
           </div>
         </div>
-
-        {/* Upcoming Leaves Widget Row */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <UpcomingLeavesWidget />
-        </div>
       </div>
+
+      {/* Team Leaves Modal */}
+      {showLeavesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div
+            className="bg-white w-full max-w-3xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+          >
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-xl font-black text-slate-900">Team Leaves Details</h2>
+              <button
+                onClick={() => setShowLeavesModal(false)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <UpcomingLeavesWidget />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

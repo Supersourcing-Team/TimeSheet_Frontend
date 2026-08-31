@@ -236,13 +236,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       desc: 'Employees, Roles & Status',
     },
     {
-      id: 'admin_leave_approvals',
-      label: 'Leave Approvals',
-      icon: Palmtree,
-      desc: 'Review & Approve Employee Leaves',
-      badge: pendingLeavesCount > 0 ? pendingLeavesCount : undefined,
-    },
-    {
       id: 'admin_holidays',
       label: 'Holidays',
       icon: CalendarCheck,

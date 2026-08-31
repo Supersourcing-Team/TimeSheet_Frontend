@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, TimesheetEntry, Project, LeaveBalance, LeaveRequest, HolidayItem } from '../../types';
 import {
   Clock,
@@ -15,7 +15,10 @@ import {
   FileText,
   Palmtree,
   Moon,
+  X,
 } from 'lucide-react';
+import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
+import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import { EmployeeTab } from '../Sidebar';
 
 interface MyDashboardProps {
@@ -70,7 +73,11 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   );
 
   const billableThisWeek = currentWeekTimesheets.reduce((acc, curr) => acc + curr.billableHours, 0);
-  const focusProject = (projects || []).find((p) => p.assignedUserIds?.includes(currentUser.id)) || projects[0];
+  const safeProjects = projects || [];
+  const focusProject = safeProjects.find((p) => p.assignedUserIds?.includes(currentUser.id)) || safeProjects[0];
+
+  const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+  const [showLeavesModal, setShowLeavesModal] = useState(false);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -199,30 +206,35 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
           </button>
         </div>
 
-        {/* Card 3: Leave Balance */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
+        {/* Card 3: My Leaves */}
+        <div
+          onClick={() => setShowLeavesModal(true)}
+          className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Annual Leave Balance
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition-colors">
+              My Leaves
             </span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
               <Palmtree className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
             <div className="text-2xl font-extrabold text-slate-900">
-              {leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}{' '}
-              <span className="text-xs text-slate-400 font-normal">/ {leaveBalance.annualLeaveTotal} days</span>
+              {upcomingLeaves.length}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Sick Leave: <span className="text-emerald-700 font-bold">{leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed} days left</span>
+              Upcoming or ongoing leaves
             </p>
           </div>
           <button
-            onClick={() => onNavigateTab('leave_management')}
-            className="mt-3 text-xs text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateTab('leave_management');
+            }}
+            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
           >
-            <span>Leave Balances & Request</span>
+            <span>Request Leave</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -420,6 +432,34 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* My Leaves Modal */}
+      {showLeavesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div
+            className="bg-white w-full max-w-3xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+          >
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-xl font-black text-slate-900">My Leaves Details</h2>
+              <button
+                onClick={() => setShowLeavesModal(false)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <UpcomingLeavesWidget 
+                title="My Upcoming Leaves" 
+                subtitle="Your approved and pending leaves" 
+                emptyTitle="No upcoming leaves" 
+                emptySubtitle="You don't have any upcoming leaves scheduled."
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -91,16 +91,29 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
       reason,
 
       isHalfDay,
-      status: 'pending',
+      status: 'approved',
       appliedOn: new Date().toISOString().split('T')[0],
     });
 
     onShowToast(
-      'Leave Request Submitted!',
-      `Requested ${daysRequested} days of ${leaveType} starting ${startDate}.`,
+      'Leave Marked!',
+      `Successfully marked ${daysRequested} days of ${leaveType} starting ${startDate}.`,
       'success'
     );
     setShowApplyModal(false);
+  };
+
+  const getLeaveStatus = (req: LeaveRequest) => {
+    const start = new Date(req.startDate);
+    const end = new Date(req.endDate);
+    const today = new Date();
+    start.setHours(0,0,0,0);
+    end.setHours(23,59,59,999);
+    today.setHours(0,0,0,0);
+  
+    if (today < start) return 'upcoming';
+    if (today > end) return 'completed';
+    return 'active';
   };
 
   return (
@@ -109,10 +122,10 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
       <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>Leave Management & Balances</span>
+            <span>My Leaves</span>
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            Track annual, sick, parental and comp-off balances and submit leave applications.
+            View your upcoming leaves and mark new absences.
           </p>
         </div>
 
@@ -121,117 +134,16 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all hover:scale-105"
         >
           <Plus className="w-4 h-4" />
-          <span>Apply for Leave</span>
+          <span>Mark Leave</span>
         </button>
-      </div>
-
-      {/* 4 Balance Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Annual Leave */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-md space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Annual Leave
-            </span>
-
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}{' '}
-            <span className="text-xs text-slate-500 font-normal">/ {leaveBalance.annualLeaveTotal} Days</span>
-          </div>
-          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-emerald-500 h-1.5 rounded-full"
-              style={{
-                width: `${((leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed) /
-                  leaveBalance.annualLeaveTotal) *
-                  100
-                  }%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Sick Leave */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-md space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Sick Leave
-            </span>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed}{' '}
-            <span className="text-xs text-slate-500 font-normal">/ {leaveBalance.sickLeaveTotal} Days</span>
-          </div>
-          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-rose-500 h-1.5 rounded-full"
-              style={{
-                width: `${((leaveBalance.sickLeaveTotal - leaveBalance.sickLeaveUsed) /
-                  leaveBalance.sickLeaveTotal) *
-                  100
-                  }%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Parental Leave */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-md space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Parental Leave
-            </span>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {leaveBalance.parentalLeaveTotal - leaveBalance.parentalLeaveUsed}{' '}
-            <span className="text-xs text-slate-500 font-normal">/ {leaveBalance.parentalLeaveTotal} Days</span>
-          </div>
-          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-purple-500 h-1.5 rounded-full"
-              style={{
-                width: `${((leaveBalance.parentalLeaveTotal - leaveBalance.parentalLeaveUsed) /
-                  leaveBalance.parentalLeaveTotal) *
-                  100
-                  }%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Comp Off */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-md space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Compensatory Off
-            </span>
-
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {leaveBalance.compOffTotal - leaveBalance.compOffUsed}{' '}
-            <span className="text-xs text-slate-500 font-normal">/ {leaveBalance.compOffTotal} Days</span>
-          </div>
-          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-            <div
-              className="bg-amber-500 h-1.5 rounded-full"
-              style={{
-                width: `${((leaveBalance.compOffTotal - leaveBalance.compOffUsed) /
-                  leaveBalance.compOffTotal) *
-                  100
-                  }%`,
-              }}
-            />
-          </div>
-        </div>
       </div>
 
       {/* Leave Request History Table */}
       <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-lg space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-          <h3 className="text-base font-bold text-slate-900">My Leave Application History</h3>
+          <h3 className="text-base font-bold text-slate-900">My Leave History</h3>
           <span className="text-xs text-slate-500 font-semibold">
-            Total Requests: {userRequests.length}
+            Total Leaves: {userRequests.length}
           </span>
         </div>
 
@@ -249,7 +161,9 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/70">
-              {userRequests.map((req) => (
+              {userRequests.map((req) => {
+                const status = getLeaveStatus(req);
+                return (
                 <tr key={req.id} className="hover:bg-slate-50/40 transition-colors">
                   <td className="py-3.5 px-3 font-bold text-emerald-700 whitespace-nowrap">
                     {req.type}
@@ -265,36 +179,26 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                   </td>
                   <td className="py-3.5 px-3 text-center whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${req.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : req.status === 'pending'
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${status === 'active'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : status === 'upcoming'
                           ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-slate-100 text-slate-700 border border-slate-300'
                         }`}
                     >
-                      {req.status}
+                      {status}
                     </span>
                   </td>
                   <td className="py-3.5 px-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
-                      {req.reviewComment && (
-                        <button
-                          type="button"
-                          onClick={() => onShowToast('Manager Remark', req.reviewComment, 'info')}
-                          className="px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-700 text-[10px] text-slate-600 transition-colors font-bold"
-                          title="View Remark"
-                        >
-                          Remark
-                        </button>
-                      )}
-                      {req.status === 'pending' && (
+                      {status === 'upcoming' && (
                         <button
                           onClick={() => {
                             onCancelLeave(req.id);
-                            onShowToast('Cancelled Request', 'Leave application withdrawn.', 'info');
+                            onShowToast('Cancelled Leave', 'Upcoming leave withdrawn.', 'info');
                           }}
                           className="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                          title="Cancel Request"
+                          title="Cancel Leave"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -302,7 +206,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -318,7 +222,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                 <Palmtree className="w-5 h-5 text-emerald-400" />
-                <span>Apply for Leave</span>
+                <span>Mark Leave</span>
               </h3>
               <button
                 type="button"
@@ -399,7 +303,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
               {/* Reason */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-600 uppercase tracking-wider text-[10px]">
-                  Reason for Application
+                  Reason / Description
                 </label>
                 <textarea
                   rows={2}
@@ -421,9 +325,9 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold shadow-lg shadow-emerald-600/30"
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-900 font-bold shadow-lg shadow-emerald-600/30 text-white"
               >
-                Submit Application
+                Mark Leave
               </button>
             </div>
           </form>

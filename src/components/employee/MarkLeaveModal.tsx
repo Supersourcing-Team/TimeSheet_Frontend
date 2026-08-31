@@ -355,7 +355,6 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                   <input
                     type="date"
                     value={rangeStart}
-                    max={today}
                     onChange={(e) => setRangeStart(e.target.value)}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
                   />
@@ -365,7 +364,6 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                   <input
                     type="date"
                     value={rangeEnd}
-                    max={today}
                     min={rangeStart}
                     onChange={(e) => setRangeEnd(e.target.value)}
                     className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-rose-400 focus:outline-none"
