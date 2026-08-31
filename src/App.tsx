@@ -415,8 +415,17 @@ export default function App() {
   };
 
   // --- Projects / PM / AC ---
-  const handleUpdateProjectBudget = (projectId: string, newBudget: number, newRate: number) => {
-    showToast('Info', 'Project budget update pending', 'info');
+  const handleUpdateProjectBudget = async (projectId: string, newBudget: number, newRate: number) => {
+    try {
+      await updateProjectMutation({
+        id: projectId,
+        budget: newBudget,
+        hourly_rate: newRate,
+      }).unwrap();
+      showToast('Success', 'Project budget updated successfully', 'success');
+    } catch (e: any) {
+      showToast('Error', e?.data?.message || 'Failed to update project budget', 'error');
+    }
   };
 
   const [createClientMutation] = useCreateClientMutation();
@@ -677,6 +686,8 @@ export default function App() {
                 <SubmitTimesheet
                   currentUser={currentUser}
                   projects={projects}
+                  timesheets={timesheets}
+                  onNavigateTab={(tab) => setActiveEmployeeTab(tab as EmployeeTab)}
                   projectAssignments={myProjectAssignments}
                   onSubmitTimesheet={handleTimesheetSubmit}
                   onUpdateTimesheet={handleUpdateTimesheet}
@@ -720,6 +731,7 @@ export default function App() {
                   currentUser={currentUser}
                   leaveBalance={leaveBalance}
                   leaveRequests={leaveRequests}
+                  leaveTypes={leaveTypes}
                   onApplyLeave={handleApplyLeave}
                   onCancelLeave={handleCancelLeave}
                   onShowToast={showToast}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LeaveBalance, LeaveRequest } from '../../types';
+import { User, LeaveBalance, LeaveRequest, LeaveTypeConfig } from '../../types';
 import {
   Palmtree,
   Plus,
@@ -19,6 +19,7 @@ interface LeaveManagementProps {
   currentUser: User;
   leaveBalance: LeaveBalance;
   leaveRequests: LeaveRequest[];
+  leaveTypes: LeaveTypeConfig[];
   onApplyLeave: (request: Omit<LeaveRequest, 'id'>) => void;
   onCancelLeave: (id: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -28,13 +29,15 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   currentUser,
   leaveBalance,
   leaveRequests,
+  leaveTypes,
   onApplyLeave,
   onCancelLeave,
   onShowToast,
 }) => {
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [leaveType, setLeaveType] =
-    useState<LeaveRequest['type']>('Annual Leave');
+  const [leaveType, setLeaveType] = useState<LeaveRequest['type']>(
+    (leaveTypes?.filter(lt => lt.status === 'active')?.[0]?.name as LeaveRequest['type']) || 'Annual Leave'
+  );
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]);
   const [isHalfDay, setIsHalfDay] = useState(false);
@@ -248,25 +251,25 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <tbody className="divide-y divide-slate-200/70">
               {userRequests.map((req) => (
                 <tr key={req.id} className="hover:bg-slate-50/40 transition-colors">
-                  <td className="py-3.5 px-3 font-bold text-emerald-300 whitespace-nowrap">
+                  <td className="py-3.5 px-3 font-bold text-emerald-700 whitespace-nowrap">
                     {req.type}
                   </td>
-                  <td className="py-3.5 px-3 font-semibold text-slate-200 whitespace-nowrap">
+                  <td className="py-3.5 px-3 font-semibold text-slate-700 whitespace-nowrap">
                     {req.startDate} to {req.endDate}
                   </td>
                   <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">
                     {req.daysCount} {req.daysCount === 1 ? 'day' : 'days'}
                   </td>
-                  <td className="py-3.5 px-3 text-slate-600 max-w-xs truncate" title={req.reason}>
+                  <td className="py-3.5 px-3 text-slate-700 max-w-xs truncate" title={req.reason}>
                     {req.reason}
                   </td>
                   <td className="py-3.5 px-3 text-center whitespace-nowrap">
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${req.status === 'approved'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : req.status === 'pending'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                     >
                       {req.status}
@@ -337,10 +340,11 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                   onChange={(e) => setLeaveType(e.target.value as LeaveRequest['type'])}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 >
-                  <option value="Annual Leave">Annual Leave (Paid)</option>
-                  <option value="Sick Leave">Sick Leave</option>
-                  <option value="Parental Leave">Parental Leave</option>
-                  <option value="Compensatory Off">Compensatory Off</option>
+                  {leaveTypes.filter(lt => lt.status === 'active').map(lt => (
+                    <option key={lt.id} value={lt.name}>
+                      {lt.name} {lt.isPaid ? '(Paid)' : '(Unpaid)'}
+                    </option>
+                  ))}
                 </select>
               </div>
 
