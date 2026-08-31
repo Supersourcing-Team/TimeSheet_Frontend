@@ -118,6 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: FolderKanban,
       desc: 'Sprint Projects & Tools',
     },
+    /* 
     {
       id: 'leave_management',
       label: 'Leave Management',
@@ -125,6 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       desc: 'Balances & Leave Request Form',
       badge: pendingLeavesCount > 0 ? pendingLeavesCount : undefined,
     },
+    */
     {
       id: 'weekend_work',
       label: 'Weekend Work Requests',

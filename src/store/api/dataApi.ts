@@ -49,7 +49,6 @@ function mapBackendTimesheetToFrontend(t: any): TimesheetEntry {
     projectId: String(t.project_assignment?.project_id ?? ''),
     projectName: t.project_name || 'Unknown Project',
     date: t.timesheet_date,
-    hours: billable + nonBillable,
     billableHours: billable,
     nonBillableHours: nonBillable,
     description: [
@@ -58,6 +57,7 @@ function mapBackendTimesheetToFrontend(t: any): TimesheetEntry {
     ].filter(Boolean).join(' | '),
     billableDescription: t.billable_work_summary ?? '',
     nonBillableDescription: t.non_billable_work_summary ?? '',
+    category: t.category ?? 'Development',
     status: (t.status ?? 'submitted') as TimesheetEntry['status'],
     submittedAt: t.created_at ?? '',
   };
@@ -101,11 +101,16 @@ function mapBackendLeaveToFrontend(r: any): LeaveRequest {
     daysCount,
     reason: r.reason ?? '',
     backupContact: '',
-    isHalfDay: false,
+    isHalfDay: r.leave_duration_type === 'half_day',
     status: (r.status?.toLowerCase() ?? 'pending') as LeaveRequest['status'],
     appliedOn: r.created_at ? r.created_at.split('T')[0] : '',
     reviewedBy: r.manager ? `${r.manager.first_name} ${r.manager.last_name}` : undefined,
     reviewComment: r.rejection_reason ?? undefined,
+    // Inline leave fields
+    leaveDurationType: r.leave_duration_type ?? undefined,
+    halfDayPeriod: r.half_day_period ?? undefined,
+    partialStartTime: r.partial_start_time ?? undefined,
+    partialEndTime: r.partial_end_time ?? undefined,
   };
 }
 
@@ -117,6 +122,21 @@ export interface LeaveRequestCreatePayload {
   start_date: string;  // YYYY-MM-DD
   end_date: string;    // YYYY-MM-DD
   reason: string;
+}
+
+// ---------------------------------------------------------------------------
+// Mark leave from timesheet payload
+// ---------------------------------------------------------------------------
+export interface MarkLeavePayload {
+  leave_type_id: number;
+  leave_duration_type: 'full_day' | 'half_day' | 'partial_day' | 'multiple_days';
+  leave_date?: string;          // YYYY-MM-DD — for single-day leaves
+  start_date?: string;          // YYYY-MM-DD — for multiple_days
+  end_date?: string;            // YYYY-MM-DD — for multiple_days
+  half_day_period?: 'first' | 'second';
+  partial_start_time?: string;  // HH:MM
+  partial_end_time?: string;    // HH:MM
+  reason?: string;
 }
 
 export const dataApi = apiSlice.injectEndpoints({
@@ -345,6 +365,21 @@ export const dataApi = apiSlice.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: ['LeaveRequest', 'LeaveBalance'],
+    }),
+    /** Mark leave directly from the timesheet — POST /leave-requests/mark-from-timesheet */
+    markLeaveFromTimesheet: builder.mutation<any[], MarkLeavePayload>({
+      query: (body) => ({
+        url: '/leave-requests/mark-from-timesheet',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['LeaveRequest', 'LeaveBalance'],
+    }),
+    /** Check leave status for a specific date — GET /leave-requests/check-date */
+    getLeaveForDate: builder.query<import('../../types').LeaveStatusForDate, string>({
+      query: (date) => `/leave-requests/check-date?date=${date}`,
+      transformResponse: (res: any) => res.data || res,
+      providesTags: ['LeaveRequest'],
     }),
     /** @deprecated kept for compat, use approveLeaveRequest / rejectLeaveRequest */
     updateLeaveStatus: builder.mutation<void, { id: string; status: string; comment?: string }>({
@@ -744,6 +779,8 @@ export const {
   useCancelLeaveRequestMutation,
   useUpdateLeaveStatusMutation,
   useGetMyLeaveBalancesQuery,
+  useMarkLeaveFromTimesheetMutation,
+  useGetLeaveForDateQuery,
   // Weekend
   useGetWeekendRequestsQuery,
   useGetManagedWeekendRequestsQuery,

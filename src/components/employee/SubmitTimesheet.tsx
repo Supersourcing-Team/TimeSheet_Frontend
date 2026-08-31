@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
-import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation } from '../../store/api/dataApi';
+import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery } from '../../store/api/dataApi';
+import { MarkLeaveModal } from './MarkLeaveModal';
 import {
   Clock,
   Plus,
@@ -23,6 +24,7 @@ import {
   Layers,
   Bot,
   FolderKanban,
+  CalendarX,
 } from 'lucide-react';
 
 interface SubmitTimesheetProps {
@@ -72,6 +74,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   onShowToast,
 }) => {
   const today = new Date().toISOString().split('T')[0];
+  const [showMarkLeaveModal, setShowMarkLeaveModal] = useState(false);
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const [rows, setRows] = useState<FormRow[]>(() => {
     if (editingEntry) {
@@ -132,11 +135,21 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const totalBillable = rows.reduce((sum, r) => sum + (Number(r.billableHours) || 0), 0);
   const totalNonBillable = rows.reduce((sum, r) => sum + (Number(r.nonBillableHours) || 0), 0);
   const grandTotal = totalBillable + totalNonBillable;
-  const targetDayHours = 8.0;
+
+  // Fetch leave status for the primary date (first row) — used to derive minimum hours
+  const primaryDate = rows[0]?.date || today;
+  const { data: leaveStatus, refetch: refetchLeave } = useGetLeaveForDateQuery(primaryDate);
+  const isOnFullDayLeave = leaveStatus?.has_leave && leaveStatus.leave_duration_type === 'full_day';
+  const effectiveMinHours = leaveStatus?.has_leave ? leaveStatus.available_hours : 8.0;
+  const targetDayHours = effectiveMinHours;
 
   const handleSubmit = async () => {
-    if (grandTotal < 8) {
-      onShowToast('Validation Error', 'You must log a minimum of 8 hours per day.', 'error');
+    if (isOnFullDayLeave) {
+      onShowToast('Leave Day', 'You are on full-day leave. Timesheet submission is not allowed.', 'error');
+      return;
+    }
+    if (grandTotal < effectiveMinHours) {
+      onShowToast('Validation Error', `You must log a minimum of ${effectiveMinHours.toFixed(1)} hours for this day.`, 'error');
       return;
     }
     if (grandTotal > 24) {
@@ -257,7 +270,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-slate-900 font-sans">
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-slate-900 font-sans">
       {/* Left Column: Form & Work Breakdown */}
       <div className="lg:col-span-8 space-y-6">
         {/* Header Bar */}
@@ -268,11 +282,53 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             </h2>
             <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
               {editingEntry
-                ? 'Update your daily logged work hours and descriptions. Minimum 8 hours total.'
+                ? 'Update your daily logged work hours and descriptions.'
                 : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
             </p>
           </div>
+          {/* Mark Leave Button */}
+          {!editingEntry && (
+            <button
+              type="button"
+              onClick={() => setShowMarkLeaveModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-extrabold shadow-md shadow-rose-900/30 transition-all hover:scale-[1.02] active:scale-95 shrink-0 cursor-pointer"
+            >
+              <CalendarX className="w-4 h-4" />
+              Mark Leave
+            </button>
+          )}
         </div>
+
+        {/* Leave Banner */}
+        {leaveStatus?.has_leave && (
+          <div
+            className={`flex items-center gap-3 p-4 rounded-2xl border ${
+              isOnFullDayLeave
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}
+          >
+            <CalendarX className={`w-5 h-5 shrink-0 ${isOnFullDayLeave ? 'text-red-500' : 'text-amber-500'}`} />
+            <div className="flex-1">
+              <p className="text-xs font-extrabold">
+                {leaveStatus.blocked_message || 'On Leave'}
+                {leaveStatus.leave_type_name && (
+                  <span className="font-normal ml-1 text-slate-500">({leaveStatus.leave_type_name})</span>
+                )}
+              </p>
+              {isOnFullDayLeave ? (
+                <p className="text-[10px] mt-0.5">
+                  Timesheet submission is blocked for this date.
+                </p>
+              ) : (
+                <p className="text-[10px] mt-0.5">
+                  You can log up to{' '}
+                  <strong>{leaveStatus.available_hours.toFixed(1)} hours</strong> of timesheet today.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Target Progress & Summary Bar */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
@@ -623,6 +679,19 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         </div>
       </div>
     </div>
+    {/* Mark Leave Modal */}
+    {showMarkLeaveModal && (
+      <MarkLeaveModal
+        selectedDate={primaryDate}
+        onClose={() => setShowMarkLeaveModal(false)}
+        onSuccess={() => {
+          setShowMarkLeaveModal(false);
+          refetchLeave();
+        }}
+        onShowToast={onShowToast}
+      />
+    )}
+    </>
   );
 };
 

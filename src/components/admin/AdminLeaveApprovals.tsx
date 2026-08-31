@@ -632,6 +632,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                         <div className="flex items-center justify-end gap-1.5">
                           {req.status === 'pending' ? (
                             <>
+                              {/* 
                               <button
                                 type="button"
                                 onClick={() => openReviewModal(req, 'approve')}
@@ -650,6 +651,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                                 <X className="w-3.5 h-3.5" />
                                 <span>Reject</span>
                               </button>
+                              */}
                             </>
                           ) : (
                             <button
@@ -927,6 +929,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
               {detailRequest.status === 'pending' && (
                 <>
+                  {/* 
                   <button
                     type="button"
                     onClick={() => {
@@ -949,6 +952,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                   >
                     Reject Request
                   </button>
+                  */}
                 </>
               )}
               <button

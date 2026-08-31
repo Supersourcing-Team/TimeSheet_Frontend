@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { User, TimesheetEntry, Project } from '../../types';
+import { User, TimesheetEntry, Project, LeaveRequest } from '../../types';
+import { useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
 import {
   Calendar as CalendarIcon,
   ListFilter,
@@ -16,6 +17,7 @@ import {
   ChevronRight,
   Filter,
   Info,
+  CalendarX,
 } from 'lucide-react';
 
 interface TimesheetsHistoryProps {
@@ -84,6 +86,32 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
+
+  // Fetch leave requests for leave status visualization
+  const { data: leaveData } = useGetMyLeaveRequestsQuery(undefined as any);
+  const myLeaves: LeaveRequest[] = leaveData || [];
+
+  // Helper: get first active leave for a date
+  const getLeaveForDate = (dateStr: string): LeaveRequest | undefined => {
+    return myLeaves.find(
+      (lr) =>
+        lr.startDate <= dateStr &&
+        lr.endDate >= dateStr &&
+        (lr.status === 'approved' || lr.status === 'pending')
+    );
+  };
+
+  const formatLeaveBadgeLabel = (lr: LeaveRequest): string => {
+    const dur = lr.leaveDurationType;
+    if (!dur || dur === 'full_day') return 'On Leave';
+    if (dur === 'half_day') {
+      return lr.halfDayPeriod === 'first' ? 'Leave – 1st Half' : 'Leave – 2nd Half';
+    }
+    if (dur === 'partial_day' && lr.partialStartTime && lr.partialEndTime) {
+      return `Leave ${lr.partialStartTime}–${lr.partialEndTime}`;
+    }
+    return 'On Leave';
+  };
 
   // Calendar logic
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -266,6 +294,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span>Partial (&lt;8h)</span>
               </span>
+              <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                <span>Leave Day</span>
+              </span>
               <span className="flex items-center gap-1.5 text-slate-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
                 <span>Off / Weekend</span>
@@ -291,6 +323,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
               const dayEntries = userTimesheets.filter((t) => t.date === dateStr);
               const dayTotalHours = dayEntries.reduce((acc, curr) => acc + (curr.billableHours + curr.nonBillableHours), 0);
+              const leaveForDay = getLeaveForDate(dateStr);
+              const isFullDayLeave = leaveForDay && (!leaveForDay.leaveDurationType || leaveForDay.leaveDurationType === 'full_day');
 
               const dateObj = new Date(dateStr);
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
@@ -310,16 +344,21 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     }
                   }}
                   disabled={isFutureDate}
-                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${isFutureDate
-                    ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
-                    : isWeekend
-                      ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                      : dayTotalHours >= 8
-                        ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                        : dayTotalHours > 0
-                          ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                          : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                    }`}
+                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                    isFutureDate
+                      ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed'
+                      : isFullDayLeave
+                        ? 'bg-rose-50 border-rose-300 hover:border-rose-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : isWeekend
+                          ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          : dayTotalHours >= 8
+                            ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                            : dayTotalHours > 0
+                              ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                              : leaveForDay
+                                ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                  }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <span className="text-xs font-extrabold text-slate-900">
@@ -327,18 +366,29 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     </span>
                     {dayTotalHours > 0 && (
                       <span
-                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${dayTotalHours >= 8
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                          }`}
+                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                          dayTotalHours >= 8
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
                       >
                         {dayTotalHours}h
                       </span>
                     )}
+                    {leaveForDay && dayTotalHours === 0 && (
+                      <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                    )}
                   </div>
 
                   <div className="space-y-1">
-                    {dayEntries.slice(0, 2).map((e) => (
+                    {/* Leave badge */}
+                    {leaveForDay && (
+                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-extrabold border border-rose-200 flex items-center gap-1">
+                        <CalendarX className="w-2.5 h-2.5 shrink-0" />
+                        <span className="truncate">{formatLeaveBadgeLabel(leaveForDay)}</span>
+                      </div>
+                    )}
+                    {dayEntries.slice(0, leaveForDay ? 1 : 2).map((e) => (
                       <div
                         key={e.id}
                         className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-100 flex items-center justify-between"
@@ -347,12 +397,12 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         <span className="font-extrabold shrink-0 ml-1">{e.billableHours + e.nonBillableHours}h</span>
                       </div>
                     ))}
-                    {dayEntries.length > 2 && (
+                    {dayEntries.length > (leaveForDay ? 1 : 2) && (
                       <div className="text-[9px] text-slate-500 font-bold px-1">
-                        +{dayEntries.length - 2} more
+                        +{dayEntries.length - (leaveForDay ? 1 : 2)} more
                       </div>
                     )}
-                    {dayEntries.length === 0 && !isWeekend && !isFutureDate && (
+                    {dayEntries.length === 0 && !leaveForDay && !isWeekend && !isFutureDate && (
                       <span className="text-[10px] text-slate-400 italic">Click to log</span>
                     )}
                   </div>
@@ -420,6 +470,37 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
+                {/* Leave request rows */}
+                {myLeaves
+                  .filter((lr) => lr.status === 'approved' || lr.status === 'pending')
+                  .map((lr) => (
+                    <tr key={`leave-${lr.id}`} className="bg-rose-50/60 hover:bg-rose-50 transition-colors">
+                      <td className="py-3.5 px-3 font-bold text-rose-800 whitespace-nowrap">
+                        {lr.startDate === lr.endDate ? lr.startDate : `${lr.startDate} – ${lr.endDate}`}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <span className="font-bold text-rose-700">{lr.type}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 text-rose-600 max-w-xs font-medium">
+                        {formatLeaveBadgeLabel(lr)}
+                      </td>
+                      <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
+                        {lr.reason || '—'}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-extrabold text-rose-700 whitespace-nowrap">
+                        {lr.leaveDurationType === 'full_day' ? '8h (full)' : lr.leaveDurationType === 'half_day' ? '4h (half)' : 'Partial'}
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-rose-100 text-rose-700 border border-rose-200">
+                          {lr.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-right text-slate-400 text-[10px] italic">—</td>
+                    </tr>
+                  ))}
                 {filteredTimesheets.map((ts) => (
                   <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>

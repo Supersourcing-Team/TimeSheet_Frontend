@@ -65,7 +65,7 @@ export async function loginWithGoogleApi(credential: string): Promise<AuthSucces
 
   return {
     user: frontendUser,
-  };
+  } as AuthSuccessData;
 }
 
 export async function fetchCurrentUserApi(): Promise<User> {
@@ -103,7 +103,7 @@ export async function refreshAccessTokenApi(): Promise<AuthSuccessData> {
 
   return {
     user: frontendUser,
-  };
+  } as AuthSuccessData;
 }
 
 export async function logoutApi(): Promise<void> {

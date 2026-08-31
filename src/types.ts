@@ -117,8 +117,9 @@ export interface TimesheetEntry {
   billableDescription?: string; // Separate description for billable work
   nonBillableDescription?: string; // Separate description for non-billable work
   category: 'Development' | 'Design' | 'Meeting' | 'Code Review' | 'Testing' | 'Documentation' | 'DevOps';
-  status: 'submitted';
+  status: 'submitted' | 'approved' | 'rejected' | 'pending';
   submittedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface LeaveBalance {
@@ -144,11 +145,31 @@ export interface LeaveRequest {
   reason: string;
   backupContact?: string;
   isHalfDay?: boolean;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   appliedOn: string;
   reviewedBy?: string;
   reviewComment?: string;
+  // Inline mark-leave fields
+  leaveDurationType?: 'full_day' | 'half_day' | 'partial_day' | 'multiple_days';
+  halfDayPeriod?: 'first' | 'second';
+  partialStartTime?: string; // HH:MM
+  partialEndTime?: string;   // HH:MM
 }
+
+/** Response from GET /leave-requests/check-date */
+export interface LeaveStatusForDate {
+  date: string;
+  has_leave: boolean;
+  leave_duration_type?: 'full_day' | 'half_day' | 'partial_day';
+  half_day_period?: 'first' | 'second';
+  partial_start_time?: string;
+  partial_end_time?: string;
+  leave_id?: number;
+  leave_type_name?: string;
+  available_hours: number;
+  blocked_message?: string;
+}
+
 
 export interface WeekendWorkRequest {
   id: string;

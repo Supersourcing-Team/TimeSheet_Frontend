@@ -242,7 +242,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-201',
     projectName: 'Fintech Mobile Rebrand',
     date: '2025-08-04',
-    hours: 7.5,
+
     billableHours: 6.0,
     nonBillableHours: 1.5,
     description: 'Refactored navigation bar component & internal daily standby.',
@@ -260,7 +260,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-203',
     projectName: 'Enterprise AI Assistant Integration',
     date: '2025-08-04',
-    hours: 2.5,
+
     billableHours: 2.0,
     nonBillableHours: 0.5,
     description: 'Gemini API response parsing & client sync.',
@@ -278,7 +278,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-202',
     projectName: 'Project Apollo Core Architecture',
     date: '2025-08-03',
-    hours: 8.0,
+
     billableHours: 7.5,
     nonBillableHours: 0.5,
     description: 'Kubernetes ingress setup & local docker debug.',
@@ -296,7 +296,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-201',
     projectName: 'Fintech Mobile Rebrand',
     date: '2025-08-02',
-    hours: 8.0,
+
     billableHours: 7.0,
     nonBillableHours: 1.0,
     description: 'Design token setup & design critique session.',
@@ -314,7 +314,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-203',
     projectName: 'Enterprise AI Assistant Integration',
     date: '2025-08-01',
-    hours: 7.5,
+
     billableHours: 7.0,
     nonBillableHours: 0.5,
     description: 'Summarization endpoint & documentation.',
@@ -333,7 +333,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-201',
     projectName: 'Fintech Mobile Rebrand',
     date: '2025-08-04',
-    hours: 8.0,
+
     billableHours: 7.0,
     nonBillableHours: 1.0,
     description: 'Mobile dashboard wireframes and client sync.',
@@ -351,7 +351,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-202',
     projectName: 'Project Apollo Core Architecture',
     date: '2025-08-04',
-    hours: 8.5,
+
     billableHours: 8.0,
     nonBillableHours: 0.5,
     description: 'OAuth security patch and team chat.',
@@ -369,7 +369,7 @@ export const INITIAL_TIMESHEETS: TimesheetEntry[] = [
     projectId: 'prj-203',
     projectName: 'Enterprise AI Assistant Integration',
     date: '2025-08-01',
-    hours: 6.0,
+
     billableHours: 5.0,
     nonBillableHours: 1.0,
     description: 'Automated test suite creation.',
@@ -723,3 +723,4 @@ export const INITIAL_SETTINGS = {
   leaveRequestAlerts: true,
   primaryColor: '#004ac6',
 };
+
