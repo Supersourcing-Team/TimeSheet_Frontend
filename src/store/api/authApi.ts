@@ -18,18 +18,39 @@ export function mapBackendUserToFrontendUser(backendUser: any): User {
   const name = [backendUser.first_name, backendUser.last_name].filter(Boolean).join(' ') || backendUser.email;
   const role = mapBackendRoleToFrontendRole(backendUser.role);
 
+  // Normalize status dynamically from backend
+  let userStatus: User['status'] = 'active';
+  if (backendUser.status) {
+    const s = String(backendUser.status).toLowerCase();
+    if (s === 'pending') userStatus = 'pending';
+    else if (s === 'inactive') userStatus = 'inactive';
+    else if (s === 'on_leave') userStatus = 'on_leave';
+    else if (s === 'resigned') userStatus = 'resigned';
+    else userStatus = 'active';
+  } else if (backendUser.is_active === false) {
+    userStatus = 'pending';
+  }
+
+  // Format joining date
+  let joinDate = new Date().toISOString().split('T')[0];
+  if (backendUser.joining_date) {
+    joinDate = String(backendUser.joining_date).split('T')[0];
+  } else if (backendUser.created_at) {
+    joinDate = String(backendUser.created_at).split('T')[0];
+  }
+
   return {
     id: String(backendUser.id),
+    employee_id: backendUser.employee_id || undefined,
     name: name,
     email: backendUser.email,
-    avatar: `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80`,
+    avatar: backendUser.avatar || `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80`,
     role: role,
     department: role === 'admin' ? 'Executive' : role === 'pm' ? 'Project Management' : role === 'ac_manager' ? 'Account Management' : 'Engineering',
     title: backendUser.role?.name || backendUser.role || 'Employee',
-    status: 'active',
-    hourlyRate: 1500, // mock fallback
-    joinDate: new Date().toISOString().split('T')[0],
-    allocatedProjectsCount: 2, // mock fallback
+    status: userStatus,
+    joinDate: joinDate,
+    allocatedProjectsCount: backendUser.allocatedProjectsCount || 0,
   };
 }
 

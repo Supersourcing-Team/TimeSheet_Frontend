@@ -242,6 +242,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                         >
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
+                            <option value="pending">Pending</option>
                             <option value="on_leave">On Leave</option>
                             <option value="inactive">Inactive</option>
                         </select>
@@ -262,12 +263,22 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredUsers.slice(0, 5).map((user, idx) => {
-                                const empId = user.id ? `EMP-${user.id}` : `EMP-${1000 + idx}`;
+                                const empId = user.employee_id || (user.id ? `EMP-${user.id}` : `EMP-${1000 + idx}`);
                                 const initials = (user?.name || 'User')
                                     .split(' ')
                                     .map((n) => n[0] || '')
                                     .join('')
                                     .toUpperCase() || 'U';
+
+                                const statusLower = (user.status || '').toLowerCase();
+                                const statusBadgeClass =
+                                    statusLower === 'active'
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : statusLower === 'pending'
+                                            ? 'bg-amber-100 text-amber-800'
+                                            : statusLower === 'on_leave'
+                                                ? 'bg-blue-100 text-blue-800'
+                                                : 'bg-rose-100 text-rose-800';
 
                                 return (
                                     <tr key={user.id || idx} className="hover:bg-slate-50/80 transition-colors group">
@@ -291,12 +302,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                                         <td className="py-3.5 px-4 text-slate-600 font-medium">{user.title}</td>
                                         <td className="py-3.5 px-4">
                                             <span
-                                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${user.status === 'active'
-                                                    ? 'bg-emerald-100 text-emerald-800'
-                                                    : user.status === 'on_leave'
-                                                        ? 'bg-blue-100 text-blue-800'
-                                                        : 'bg-rose-100 text-rose-800'
-                                                    }`}
+                                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${statusBadgeClass}`}
                                             >
                                                 {(user.status || '').replace('_', ' ')}
                                             </span>

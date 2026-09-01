@@ -328,12 +328,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Top Header & Search Bar */}
-           <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
 
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10">
           <h1 className="text-2xl font-black text-white-900 flex items-center gap-3">
-           
+
             <span>My Projects Management</span>
           </h1>
           <p className="text-xs text-white-500 mt-2 font-medium max-w-xl leading-relaxed">
@@ -385,11 +385,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         {filteredProjects.map((proj) => {
           const assignedCount = (proj.assignedUserIds || []).length;
           const toolsCount = (proj.tools || []).length;
-          
+
           const calculatedLoggedHours = timesheets
             .filter((ts) => ts.projectId === proj.id)
             .reduce((sum, ts) => sum + (ts.hours || 0), 0);
-            
+
           const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
 
           return (
@@ -406,15 +406,14 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   <span className="text-[11px] font-black font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 opacity-0">
                   </span>
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                      proj.status === 'active'
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${proj.status === 'active'
                         ? 'bg-emerald-100 text-emerald-800'
                         : proj.status === 'planning'
-                        ? 'bg-amber-100 text-amber-800'
-                        : proj.status === 'completed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
+                          ? 'bg-amber-100 text-amber-800'
+                          : proj.status === 'completed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-200 text-slate-700'
+                      }`}
                   >
                     {proj.status.replace('_', ' ')}
                   </span>
@@ -504,44 +503,40 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             <div className="flex border-b border-slate-200 bg-slate-50 px-6 shrink-0 text-xs font-bold">
               <button
                 onClick={() => setActiveTab('details')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === 'details'
+                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'details'
                     ? 'border-blue-600 text-blue-600 font-extrabold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <Briefcase className="w-4 h-4" />
                 <span>Project Details</span>
               </button>
               <button
                 onClick={() => setActiveTab('team')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === 'team'
+                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'team'
                     ? 'border-blue-600 text-blue-600 font-extrabold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <Users className="w-4 h-4" />
                 <span>Team ({selectedProject.assignedUserIds?.length || 0})</span>
               </button>
               <button
                 onClick={() => setActiveTab('tools')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === 'tools'
+                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'tools'
                     ? 'border-blue-600 text-blue-600 font-extrabold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <Wrench className="w-4 h-4" />
                 <span>Tools & Services ({selectedProject.tools?.length || 0})</span>
               </button>
               <button
                 onClick={() => setActiveTab('timesheets')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === 'timesheets'
+                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'timesheets'
                     ? 'border-blue-600 text-blue-600 font-extrabold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 <Clock className="w-4 h-4" />
                 <span>Project Timesheets</span>
@@ -637,9 +632,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                           </div>
 
                           <div className="flex items-center gap-4">
-                            <span className="text-[11px] font-bold text-slate-700">
-                              {formatINR(userObj.hourlyRate)}/hr
-                            </span>
                             {userId !== currentUser.id && (
                               <button
                                 onClick={() => handleRemoveUser(userId)}

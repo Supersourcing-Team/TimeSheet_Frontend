@@ -17,7 +17,6 @@ export const CURRENT_USER: User = {
   department: 'Product Engineering',
   title: 'Senior Full Stack Engineer',
   status: 'active',
-  hourlyRate: 1800, // ₹1,800/hr
   joinDate: '2022-03-15',
   allocatedProjectsCount: 3,
 };

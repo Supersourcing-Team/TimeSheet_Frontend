@@ -343,8 +343,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-3 mt-auto border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-extrabold text-slate-900">{formatINR(user.hourlyRate)}/hr</span>
+                  <div className="pt-3 mt-auto border-t border-slate-100 flex items-center justify-end text-xs">
                     <button
                       onClick={() => {
                         setAssignUserId(user.id);
