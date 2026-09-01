@@ -76,7 +76,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
           onShowToast={onShowToast}
           setEditingProject={setEditingProject}
           setEditBudget={setEditBudget}
-          />
+        />
       )}
 
       {activeTab === 'project_financials' && (
@@ -87,7 +87,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
           totalProfit={totalProfit}
           setEditingProject={setEditingProject}
           setEditBudget={setEditBudget}
-          />
+        />
       )}
 
       {activeTab === 'budget_vs_actual' && (
@@ -132,8 +132,9 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
                 </label>
                 <input
                   type="number"
-                  value={editBudget}
-                  onChange={(e) => setEditBudget(Number(e.target.value))}
+                  placeholder="0"
+                  value={editBudget === 0 ? '' : editBudget}
+                  onChange={(e) => setEditBudget(e.target.value === '' ? 0 : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />

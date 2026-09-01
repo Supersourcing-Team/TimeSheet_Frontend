@@ -322,8 +322,9 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={daysPerYear}
-                    onChange={(e) => setDaysPerYear(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    value={daysPerYear === 0 ? '' : daysPerYear}
+                    onChange={(e) => setDaysPerYear(e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
@@ -458,8 +459,9 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={editDaysPerYear}
-                    onChange={(e) => setEditDaysPerYear(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    value={editDaysPerYear === 0 ? '' : editDaysPerYear}
+                    onChange={(e) => setEditDaysPerYear(e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />

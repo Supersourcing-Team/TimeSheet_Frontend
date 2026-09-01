@@ -761,8 +761,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     step="0.5"
                     min="0.5"
                     max="24"
-                    value={addHours}
-                    onChange={(e) => setAddHours(Number(e.target.value))}
+                    placeholder="0"
+                    value={addHours === 0 ? '' : addHours}
+                    onChange={(e) => setAddHours(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
@@ -775,8 +776,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     step="0.5"
                     min="0"
                     max={addHours}
-                    value={addBillableHours}
-                    onChange={(e) => setAddBillableHours(Number(e.target.value))}
+                    placeholder="0"
+                    value={addBillableHours === 0 ? '' : addBillableHours}
+                    onChange={(e) => setAddBillableHours(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />

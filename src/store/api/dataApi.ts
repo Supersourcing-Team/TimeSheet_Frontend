@@ -183,7 +183,10 @@ export const dataApi = apiSlice.injectEndpoints({
             allocationId: String(t.allocation_id),
             name: t.name || '', 
             category: t.category || '', 
-            monthlyCost: t.monthly_cost || 0
+            monthlyCost: t.monthly_cost || 0,
+            allocationDate: t.allocation_date || t.allocationDate || '',
+            deallocationDate: t.deallocation_date || t.deallocationDate || '',
+            status: t.status || 'active'
           })) || [],
         }));
       },
