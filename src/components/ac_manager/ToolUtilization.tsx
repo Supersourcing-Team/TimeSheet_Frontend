@@ -144,8 +144,9 @@ export const ToolUtilization: React.FC<ToolUtilizationProps> = ({
                   <label className="block text-xs font-bold text-slate-700 mb-1">Monthly Cost (₹)</label>
                   <input
                     type="number"
-                    value={newToolCost}
-                    onChange={(e) => setNewToolCost(Number(e.target.value))}
+                    placeholder="0"
+                    value={newToolCost === 0 ? '' : newToolCost}
+                    onChange={(e) => setNewToolCost(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold"
                     required
                   />

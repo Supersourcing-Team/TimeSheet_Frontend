@@ -412,7 +412,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                       </td>
                       <td className="py-3.5 px-4 font-black text-slate-900">{formatINR(tool.monthlyCost)}/mo</td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
-                        {tool.allocationDate || '2024-01-15'}
+                        {tool.allocationDate || 'N/A'}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
@@ -584,8 +584,9 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Monthly Cost (₹ INR)</label>
                 <input
                   type="number"
-                  value={toolMonthlyCost}
-                  onChange={(e) => setToolMonthlyCost(Number(e.target.value))}
+                  placeholder="0"
+                  value={toolMonthlyCost === 0 ? '' : toolMonthlyCost}
+                  onChange={(e) => setToolMonthlyCost(e.target.value === '' ? 0 : Number(e.target.value))}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
                 />
               </div>

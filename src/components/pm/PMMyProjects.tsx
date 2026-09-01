@@ -823,8 +823,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
                   <input
                     type="number"
-                    value={newProject.budget}
-                    onChange={(e) => setNewProject({ ...newProject, budget: Number(e.target.value) })}
+                    placeholder="0"
+                    value={newProject.budget === 0 ? '' : newProject.budget}
+                    onChange={(e) => setNewProject({ ...newProject, budget: e.target.value === '' ? 0 : Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -932,8 +933,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
                   <input
                     type="number"
-                    value={editFormData.budget}
-                    onChange={(e) => setEditFormData({ ...editFormData, budget: Number(e.target.value) })}
+                    placeholder="0"
+                    value={editFormData.budget === 0 ? '' : editFormData.budget}
+                    onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value === '' ? 0 : Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
                   />
                 </div>
@@ -1077,8 +1079,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Monthly Cost (₹ INR)</label>
                 <input
                   type="number"
-                  value={newTool.monthlyCost}
-                  onChange={(e) => setNewTool({ ...newTool, monthlyCost: Number(e.target.value) })}
+                  placeholder="0"
+                  value={newTool.monthlyCost === 0 ? '' : newTool.monthlyCost}
+                  onChange={(e) => setNewTool({ ...newTool, monthlyCost: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
                 />
               </div>

@@ -447,9 +447,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       step="0.5"
                       min="0"
                       max="24"
-                      value={row.billableHours}
+                      placeholder="0"
+                      value={row.billableHours === 0 ? '' : row.billableHours}
                       onChange={(e) =>
-                        handleRowChange(idx, 'billableHours', parseFloat(e.target.value) || 0)
+                        handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                       }
                       className="w-full bg-white border border-emerald-300 text-emerald-800 font-extrabold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
@@ -465,9 +466,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       step="0.5"
                       min="0"
                       max="24"
-                      value={row.nonBillableHours}
+                      placeholder="0"
+                      value={row.nonBillableHours === 0 ? '' : row.nonBillableHours}
                       onChange={(e) =>
-                        handleRowChange(idx, 'nonBillableHours', parseFloat(e.target.value) || 0)
+                        handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                       }
                       className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />

@@ -125,8 +125,9 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                     step="0.5"
                     min="1"
                     max="16"
-                    value={fullDayHours}
-                    onChange={(e) => setFullDayHours(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    value={fullDayHours === 0 ? '' : fullDayHours}
+                    onChange={(e) => setFullDayHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-blue-600 font-black text-base focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
@@ -147,8 +148,9 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                     step="0.5"
                     min="1"
                     max="10"
-                    value={halfDayHours}
-                    onChange={(e) => setHalfDayHours(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    value={halfDayHours === 0 ? '' : halfDayHours}
+                    onChange={(e) => setHalfDayHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-blue-600 font-black text-base focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
@@ -169,8 +171,9 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                     step="0.5"
                     min="0.5"
                     max="8"
-                    value={partialDayMinHours}
-                    onChange={(e) => setPartialDayMinHours(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    value={partialDayMinHours === 0 ? '' : partialDayMinHours}
+                    onChange={(e) => setPartialDayMinHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
@@ -191,8 +194,9 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                     step="0.5"
                     min="1"
                     max="14"
-                    value={partialDayMaxHours}
-                    onChange={(e) => setPartialDayMaxHours(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    value={partialDayMaxHours === 0 ? '' : partialDayMaxHours}
+                    onChange={(e) => setPartialDayMaxHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />

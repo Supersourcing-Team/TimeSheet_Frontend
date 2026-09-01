@@ -155,8 +155,9 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 step="0.5"
                 min="1"
                 max="16"
-                value={plannedHours}
-                onChange={(e) => setPlannedHours(parseFloat(e.target.value) || 1)}
+                placeholder="0"
+                value={plannedHours === 0 ? '' : plannedHours}
+                onChange={(e) => setPlannedHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-black-slate-300 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 required
               />
