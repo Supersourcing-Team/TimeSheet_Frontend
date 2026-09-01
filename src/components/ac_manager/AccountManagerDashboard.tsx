@@ -48,28 +48,11 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
 
   const totalBudget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
 
-  const totalCost = safeProjects.reduce((sum, p) => {
-    const prjTimesheets = safeTimesheets.filter(t => t.projectId === p.id && t.status === 'approved');
-    const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
-    const cost = loggedHrs * 1800;
-    return sum + (cost > 0 ? cost : (p.budget || 0) * 0.6);
-  }, 0);
+  const totalCost = safeProjects.reduce((sum, p) => sum + (p.cost || 0), 0);
 
-  const totalRevenue = safeProjects.reduce((sum, p) => {
-    const prjTimesheets = safeTimesheets.filter(t => t.projectId === p.id && t.status === 'approved');
-    const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
-    const rev = loggedHrs * 3500;
-    return sum + (rev > 0 ? rev : (p.budget || 0) * 0.95);
-  }, 0);
+  const totalRevenue = safeProjects.reduce((sum, p) => sum + (p.revenue || 0), 0);
 
-  const totalProfit = safeProjects.reduce((sum, p) => {
-    const prjTimesheets = safeTimesheets.filter(t => t.projectId === p.id && t.status === 'approved');
-    const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
-    const cost = loggedHrs * 1800;
-    const rev = loggedHrs * 3500;
-    const profit = rev - cost;
-    return sum + (profit > 0 ? profit : (p.budget || 0) * 0.35);
-  }, 0);
+  const totalProfit = safeProjects.reduce((sum, p) => sum + (p.profit || 0), 0);
 
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,19 +134,6 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
                   type="number"
                   value={editBudget}
                   onChange={(e) => setEditBudget(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Client Hourly Billing Rate (INR ₹)
-                </label>
-                <input
-                  type="number"
-                  value={editRate}
-                  onChange={(e) => setEditRate(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />

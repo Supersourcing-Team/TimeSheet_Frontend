@@ -63,9 +63,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     .filter((p) => p.status === 'active')
     .slice(0, 3)
     .map((p, index) => {
-      const consumedPercent = p.budget
-        ? Math.min(100, Math.round((((p.loggedHours || 0) * 1800) / p.budget) * 100))
-        : 0;
+      const consumedPercent = p.completion_percentage || 0;
       const remainingPercent = 100 - consumedPercent;
 
       const colors = ['bg-blue-600', 'bg-amber-600', 'bg-rose-600'];
@@ -341,13 +339,9 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredSnapshotProjects.map((p) => {
-                const prjTimesheets = safeTimesheets.filter(
-                  (t) => t.projectId === p.id && t.status === 'approved'
-                );
-                const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
-                const cost = loggedHrs * 1800; // Average internal cost rate
-                const revenue = loggedHrs * 3500;
-                const profit = revenue - cost;
+                const cost = p.cost || 0;
+                const revenue = p.revenue || 0;
+                const profit = p.profit || 0;
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
@@ -364,9 +358,9 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                     </td>
                     <td className="py-3.5 px-4 text-slate-700 font-semibold">{p.client}</td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{formatCr(p.budget)}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{formatCr(cost > 0 ? cost : p.budget * 0.6)}</td>
-                    <td className="py-3.5 px-4 text-emerald-700 font-bold">{formatCr(revenue > 0 ? revenue : p.budget * 0.95)}</td>
-                    <td className="py-3.5 px-4 text-blue-700 font-bold">{formatCr(profit > 0 ? profit : p.budget * 0.35)}</td>
+                    <td className="py-3.5 px-4 text-slate-600">{formatCr(cost)}</td>
+                    <td className="py-3.5 px-4 text-emerald-700 font-bold">{formatCr(revenue)}</td>
+                    <td className="py-3.5 px-4 text-blue-700 font-bold">{formatCr(profit)}</td>
                     <td className="py-3.5 px-4">
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase ${p.status === 'active'
@@ -385,7 +379,6 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                         onClick={() => {
                           setEditingProject(p);
                           setEditBudget(p.budget);
-                          setEditRate3500;
                         }}
                         className="px-3 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 rounded-lg text-xs font-bold transition-all"
                       >

@@ -176,6 +176,8 @@ export const dataApi = apiSlice.injectEndpoints({
           endDate: p.end_date || '',
           description: p.description || '',
           assignedUserIds: p.assigned_user_ids?.map(String) || [],
+          milestones: p.milestones || [],
+          completion_percentage: p.completion_percentage || 0,
           tools: p.tools?.map((t: any) => ({ 
             id: String(t.id), 
             allocationId: String(t.allocation_id),
@@ -200,6 +202,27 @@ export const dataApi = apiSlice.injectEndpoints({
     }),
     deleteProject: builder.mutation<void, string>({
       query: (id) => ({ url: `/projects/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Project'],
+    }),
+
+    // -----------------------------------------------------------------------
+    // Milestones
+    // -----------------------------------------------------------------------
+    getMilestonesByProject: builder.query<any[], number>({
+      query: (projectId) => `/milestones/project/${projectId}`,
+      transformResponse: (res: any) => res.data || [],
+      providesTags: ['Project'],
+    }),
+    createMilestone: builder.mutation<any, any>({
+      query: (body) => ({ url: '/milestones', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    updateMilestone: builder.mutation<any, { id: number } & Partial<any>>({
+      query: ({ id, ...body }) => ({ url: `/milestones/${id}`, method: 'PUT', body }),
+      invalidatesTags: ['Project'],
+    }),
+    deleteMilestone: builder.mutation<void, number>({
+      query: (id) => ({ url: `/milestones/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Project'],
     }),
 
@@ -756,6 +779,11 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  // Milestones
+  useGetMilestonesByProjectQuery,
+  useCreateMilestoneMutation,
+  useUpdateMilestoneMutation,
+  useDeleteMilestoneMutation,
   // Assignments
   useGetMyProjectAssignmentsQuery,
   useAssignUserToProjectMutation,

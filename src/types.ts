@@ -82,6 +82,18 @@ export interface ProjectTool {
   status?: 'active' | 'deallocated';
 }
 
+export interface Milestone {
+  id: number;
+  project_id: number;
+  name: string;
+  description?: string;
+  start_date?: string;
+  expected_completion_date?: string;
+  status: 'planned' | 'in_progress' | 'achieved';
+  weight_percentage: number;
+  actual_achievement_date?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -99,6 +111,8 @@ export interface Project {
   description: string;
   tools: ProjectTool[];
   assignedUserIds: string[];
+  milestones: Milestone[];
+  completion_percentage: number;
 }
 
 export interface TimesheetEntry {
