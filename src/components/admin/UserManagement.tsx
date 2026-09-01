@@ -66,10 +66,10 @@ const defaultCreate = {
   first_name: '',
   last_name: '',
   email: '',
-  employee_id: '',
   role_id: 0,
   joining_date: '',
   status: 'Pending',
+  ctc: undefined as number | undefined,
 };
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
@@ -112,6 +112,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
     role_id: number;
     joining_date: string;
     status: string;
+    ctc?: number;
   } | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
@@ -200,8 +201,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.first_name || !createForm.last_name || !createForm.email || !createForm.employee_id) {
-      onShowToast('Validation Error', 'Please fill in all required fields.', 'error');
+    if (!createForm.first_name || !createForm.last_name || !createForm.email) {
+      onShowToast('Missing Fields', 'Please complete all required fields.', 'error');
       return;
     }
     if (!createForm.role_id) {
@@ -214,10 +215,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         email: createForm.email,
         first_name: createForm.first_name,
         last_name: createForm.last_name,
-        employee_id: createForm.employee_id,
         role_id: createForm.role_id,
         joining_date: createForm.joining_date || null,
         status: createForm.status,
+        ctc: createForm.ctc,
       });
       onShowToast('Employee Created', `Account for ${createForm.first_name} ${createForm.last_name} created.`, 'success');
       setShowAddModal(false);
@@ -240,6 +241,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
       role_id: user.role_id,
       joining_date: user.joining_date ? user.joining_date.split('T')[0] : '',
       status: user.status,
+      ctc: user.ctc,
     });
   };
 
@@ -256,6 +258,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         role_id: editForm.role_id,
         joining_date: editForm.joining_date || null,
         status: editForm.status,
+        ctc: editForm.ctc,
       });
       onShowToast('User Updated', `Updated ${editForm.first_name} ${editForm.last_name}.`, 'success');
       setEditingUser(null);
@@ -507,14 +510,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                           <span>Edit</span>
                         </button>
 
-                        {/* <button
-                          onClick={() => setResetPassUser(user)}
-                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold transition-colors border border-amber-200/60"
-                          title="Reset Password"
-                        >
-                          <KeyRound className="w-3.5 h-3.5" />
-                        </button> */}
-
                         <button
                           onClick={() => handleToggleStatus(user)}
                           disabled={togglingIds.has(user.id) || user.id === currentUserId}
@@ -626,13 +621,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className={labelCls}>Employee ID</label>
+                  <label className={labelCls}>CTC (₹)</label>
                   <input
-                    type="text"
-                    value={editForm.employee_id}
-                    onChange={(e) => setEditForm({ ...editForm, employee_id: e.target.value })}
+                    type="number"
+                    value={editForm.ctc || ''}
+                    onChange={(e) => setEditForm({ ...editForm, ctc: Number(e.target.value) })}
                     className={inputCls}
-                    required
+                    placeholder="E.g., 500000"
                   />
                 </div>
               </div>
@@ -769,15 +764,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className={labelCls}>Employee ID *</label>
+                  <label className={labelCls}>CTC (₹)</label>
                   <input
-                    type="text"
-                    value={createForm.employee_id}
-                    onChange={(e) => setCreateForm({ ...createForm, employee_id: e.target.value })}
-                    placeholder="EMP001"
+                    type="number"
+                    value={createForm.ctc || ''}
+                    onChange={(e) => setCreateForm({ ...createForm, ctc: Number(e.target.value) })}
+                    placeholder="E.g. 500000"
                     className={inputCls}
-                    required
                   />
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Employee ID is auto-generated
+                  </div>
                 </div>
               </div>
 
