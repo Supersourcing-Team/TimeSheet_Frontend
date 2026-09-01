@@ -52,7 +52,18 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const { data: leaveTypes = [], isLoading: loadingTypes } = useGetLeaveTypesQuery();
-  const activeLeaveTypes = leaveTypes.filter((lt) => lt.status === 'active');
+  const activeLeaveTypes = leaveTypes.filter((lt) => {
+    if (lt.status !== 'active') return false;
+    const lowerName = (lt.name || '').toLowerCase();
+    const lowerCode = (lt.code || '').toLowerCase();
+    const isDurationOnly =
+      lowerName.includes('partial') ||
+      lowerName.includes('half day') ||
+      lowerName.includes('half-day') ||
+      lowerCode.includes('partial') ||
+      lowerCode.includes('half');
+    return !isDurationOnly;
+  });
 
   const [markLeave, { isLoading: isSaving }] = useMarkLeaveFromTimesheetMutation();
 
@@ -398,7 +409,7 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving || !leaveTypeId}
+            disabled={isSaving || ((durationType === 'full_day' || durationType === 'multiple_days') && !leaveTypeId)}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-md shadow-rose-500/20 transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
