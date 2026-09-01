@@ -68,6 +68,16 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [updateMilestone] = useUpdateMilestoneMutation();
   const [deleteMilestone] = useDeleteMilestoneMutation();
 
+  // Keep selected project in sync with upstream changes
+  React.useEffect(() => {
+    if (selectedProject) {
+      const updated = projects.find((p) => p.id === selectedProject.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedProject)) {
+        setSelectedProject(updated);
+      }
+    }
+  }, [projects, selectedProject]);
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -421,11 +431,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   {proj.description || 'No project description available.'}
                 </p>
 
-                {/* Hours */}
+                {/* Hours placeholder if needed later, removing logged hours for now */}
                 <div className="pt-2 flex justify-between items-center text-xs font-semibold text-slate-700">
-                  <span>Logged Hours:</span>
-                  <span className="font-bold text-blue-600">
-                    {actualLoggedHours} hrs
+                  <span>Completion:</span>
+                  <span className="font-bold text-emerald-600">
+                    {proj.completion_percentage || 0}%
                   </span>
                 </div>
               </div>
@@ -563,8 +573,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                     )}
 
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Logged Billable Hours</span>
-                      <p className="text-lg font-black text-emerald-700 mt-0.5">{selectedProject.billableHours}h</p>
+                      <span className="text-[10px] uppercase font-bold text-slate-500">Milestone Progress</span>
+                      <p className="text-lg font-black text-emerald-700 mt-0.5">{selectedProject.completion_percentage || 0}%</p>
                     </div>
                   </div>
 
