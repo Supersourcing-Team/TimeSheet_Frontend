@@ -64,9 +64,9 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
               <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
                 <th className="py-3 px-4">Project Name</th>
                 <th className="py-3 px-4">Client</th>
-                <th className="py-3 px-4">Billing Rate / Hr</th>
+                <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Contract Budget</th>
-                <th className="py-3 px-4">Logged Hours</th>
+                <th className="py-3 px-4">Completion (%)</th>
                 <th className="py-3 px-4">Actions</th>
               </tr>
             </thead>
@@ -77,7 +77,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                   <td className="py-3 px-4 text-slate-600">{p.client}</td>
                   <td className="py-3 px-4 font-bold text-slate-700 capitalize">{p.status}</td>
                   <td className="py-3 px-4 font-bold text-slate-900">{formatINR(p.budget)}</td>
-                  <td className="py-3 px-4 text-slate-700">{p.loggedHours || 120} hrs</td>
+                  <td className="py-3 px-4 text-slate-700">{p.completion_percentage || 0}%</td>
                   <td className="py-3 px-4">
                     <button
                       type="button"

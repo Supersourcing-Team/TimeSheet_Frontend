@@ -100,13 +100,13 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
           <p className="text-[11px] text-slate-500 font-medium">Logged timesheet records</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+        {/* <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
           <span className="text-[10px] uppercase font-black text-slate-500 tracking-wider">
             Total Hours Logged
           </span>
           <div className="text-2xl font-black text-blue-700">{totalLoggedHours}h</div>
           <p className="text-[11px] text-slate-500 font-medium">Across selected projects</p>
-        </div>
+        </div> */}
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
           <span className="text-[10px] uppercase font-black text-emerald-700 tracking-wider">

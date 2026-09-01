@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Project, User, ProjectTool, TimesheetEntry } from '../../types';
+import { Project, User, ProjectTool, TimesheetEntry, Milestone } from '../../types';
 import { formatINR } from '../../utils/formatters';
+import { useCreateMilestoneMutation, useUpdateMilestoneMutation, useDeleteMilestoneMutation } from '../../store/api/dataApi';
 import {
   Briefcase,
   Plus,
@@ -60,7 +61,22 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'team' | 'tools' | 'timesheets'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'team' | 'tools' | 'timesheets' | 'milestones'>('details');
+
+  // Milestone Mutations
+  const [createMilestone] = useCreateMilestoneMutation();
+  const [updateMilestone] = useUpdateMilestoneMutation();
+  const [deleteMilestone] = useDeleteMilestoneMutation();
+
+  // Keep selected project in sync with upstream changes
+  React.useEffect(() => {
+    if (selectedProject) {
+      const updated = projects.find((p) => p.id === selectedProject.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedProject)) {
+        setSelectedProject(updated);
+      }
+    }
+  }, [projects, selectedProject]);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -98,6 +114,20 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     monthlyCost: 0,
     allocationDate: new Date().toISOString().split('T')[0],
     status: 'active',
+  });
+
+  // Add Milestone Form
+  const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false);
+  const [newMilestone, setNewMilestone] = useState<{
+    name: string;
+    description: string;
+    expected_completion_date: string;
+    weight_percentage: number;
+  }>({
+    name: '',
+    description: '',
+    expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+    weight_percentage: 10,
   });
 
   // Selected User for Assignment
@@ -240,6 +270,61 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     setSelectedProject({ ...selectedProject, tools: updatedTools });
   };
 
+  const handleAddMilestoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProject || !newMilestone.name) return;
+    
+    // Check total weight
+    const currentWeight = (selectedProject.milestones || []).reduce((sum, m) => sum + m.weight_percentage, 0);
+    if (currentWeight + Number(newMilestone.weight_percentage) > 100) {
+      onShowToast('Weight Error', 'Total milestone weights cannot exceed 100%.', 'error');
+      return;
+    }
+
+    try {
+      await createMilestone({
+        project_id: Number(selectedProject.id),
+        name: newMilestone.name,
+        description: newMilestone.description,
+        expected_completion_date: newMilestone.expected_completion_date,
+        weight_percentage: Number(newMilestone.weight_percentage),
+        status: 'planned'
+      }).unwrap();
+      onShowToast('Milestone Created', 'Successfully added milestone', 'success');
+      setShowAddMilestoneModal(false);
+      setNewMilestone({
+        name: '',
+        description: '',
+        expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+        weight_percentage: 10,
+      });
+      // We don't locally update selectedProject here, rely on RTK query invalidation which refreshes the project list.
+      // Alternatively, we could refresh the modal or let the user close and open it.
+      // Note: In a real app we'd trigger a project refetch or local update.
+    } catch (err: any) {
+      onShowToast('Error', err?.data?.detail || 'Failed to create milestone', 'error');
+    }
+  };
+
+  const handleUpdateMilestoneStatus = async (milestoneId: number, status: string) => {
+    try {
+      await updateMilestone({ id: milestoneId, status }).unwrap();
+      onShowToast('Status Updated', 'Milestone status updated successfully.', 'success');
+    } catch (err: any) {
+      onShowToast('Error', err?.data?.detail || 'Failed to update milestone', 'error');
+    }
+  };
+
+  const handleDeleteMilestone = async (milestoneId: number) => {
+    if (!confirm('Are you sure you want to delete this milestone?')) return;
+    try {
+      await deleteMilestone(milestoneId).unwrap();
+      onShowToast('Deleted', 'Milestone deleted.', 'info');
+    } catch (err: any) {
+      onShowToast('Error', err?.data?.detail || 'Failed to delete milestone', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Top Header & Search Bar */}
@@ -345,11 +430,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   {proj.description || 'No project description available.'}
                 </p>
 
-                {/* Hours */}
+                {/* Hours placeholder if needed later, removing logged hours for now */}
                 <div className="pt-2 flex justify-between items-center text-xs font-semibold text-slate-700">
-                  <span>Logged Hours:</span>
-                  <span className="font-bold text-blue-600">
-                    {actualLoggedHours} hrs
+                  <span>Completion:</span>
+                  <span className="font-bold text-emerald-600">
+                    {proj.completion_percentage || 0}%
                   </span>
                 </div>
               </div>
@@ -456,6 +541,17 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <Clock className="w-4 h-4" />
                 <span>Project Timesheets</span>
               </button>
+              <button
+                onClick={() => setActiveTab('milestones')}
+                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
+                  activeTab === 'milestones'
+                    ? 'border-blue-600 text-blue-600 font-extrabold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>Milestones ({selectedProject.milestones?.length || 0})</span>
+              </button>
             </div>
 
             {/* Modal Content Body */}
@@ -472,8 +568,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                     )}
 
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Logged Billable Hours</span>
-                      <p className="text-lg font-black text-emerald-700 mt-0.5">{selectedProject.billableHours}h</p>
+                      <span className="text-[10px] uppercase font-bold text-slate-500">Milestone Progress</span>
+                      <p className="text-lg font-black text-emerald-700 mt-0.5">{selectedProject.completion_percentage || 0}%</p>
                     </div>
                   </div>
 
@@ -662,6 +758,95 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                         </div>
                       ))}
                   </div>
+                </div>
+              )}
+
+              {/* TAB 5: MILESTONES */}
+              {activeTab === 'milestones' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-sm">Project Milestones</h3>
+                      <p className="text-slate-500 text-[11px]">Track progress and revenue through milestones.</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddMilestoneModal(true)}
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Milestone</span>
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-2">
+                      <span>Total Project Completion</span>
+                      <span>{selectedProject.completion_percentage}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(selectedProject.completion_percentage || 0, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {(selectedProject.milestones || []).length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <Layers className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      <p className="font-bold text-slate-700">No milestones created yet.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
+                      <table className="w-full text-left">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-extrabold text-slate-500">
+                          <tr>
+                            <th className="py-2.5 px-3">Name</th>
+                            <th className="py-2.5 px-3">Expected Date</th>
+                            <th className="py-2.5 px-3">Weight</th>
+                            <th className="py-2.5 px-3">Status</th>
+                            <th className="py-2.5 px-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 text-xs">
+                          {(selectedProject.milestones || []).map((m) => (
+                            <tr key={m.id} className="hover:bg-slate-50">
+                              <td className="py-3 px-3">
+                                <p className="font-bold text-slate-900">{m.name}</p>
+                                {m.description && <p className="text-[10px] text-slate-500 truncate w-48">{m.description}</p>}
+                              </td>
+                              <td className="py-3 px-3 font-mono text-[11px] text-slate-600">{m.expected_completion_date}</td>
+                              <td className="py-3 px-3 font-extrabold text-slate-800">{m.weight_percentage}%</td>
+                              <td className="py-3 px-3">
+                                <select
+                                  value={m.status}
+                                  onChange={(e) => handleUpdateMilestoneStatus(m.id, e.target.value)}
+                                  className={`px-2 py-1 rounded border text-[10px] font-bold ${
+                                    m.status === 'achieved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                    m.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                    'bg-slate-50 text-slate-700 border-slate-200'
+                                  }`}
+                                >
+                                  <option value="planned">Planned</option>
+                                  <option value="in_progress">In Progress</option>
+                                  <option value="achieved">Achieved</option>
+                                </select>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <button
+                                  onClick={() => handleDeleteMilestone(m.id)}
+                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold"
+                                  title="Delete milestone"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1110,6 +1295,87 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
               >
                 Allocate Tool
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      {/* ADD MILESTONE MODAL */}
+      {showAddMilestoneModal && selectedProject && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <form
+            onSubmit={handleAddMilestoneSubmit}
+            className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+              <h3 className="text-base font-black text-slate-900">Add Milestone to Project</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddMilestoneModal(false)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Milestone Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Phase 1 - Design Complete"
+                  value={newMilestone.name}
+                  onChange={(e) => setNewMilestone({ ...newMilestone, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Description</label>
+                <textarea
+                  placeholder="Details of the milestone..."
+                  value={newMilestone.description}
+                  onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Expected Completion Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={newMilestone.expected_completion_date}
+                  onChange={(e) => setNewMilestone({ ...newMilestone, expected_completion_date: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Weight Percentage (%) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                  value={newMilestone.weight_percentage}
+                  onChange={(e) => setNewMilestone({ ...newMilestone, weight_percentage: Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddMilestoneModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              >
+                Add Milestone
               </button>
             </div>
           </form>
