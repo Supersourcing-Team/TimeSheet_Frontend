@@ -595,10 +595,6 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 ? userLoggedHours.toFixed(1)
                 : (p.loggedHours > 0 ? p.loggedHours.toFixed(1) : ((idx + 1) * 8).toFixed(1));
 
-              const formattedAllocated = p.allocatedHours > 0
-                ? `${p.allocatedHours}h`
-                : (idx === 4 ? '- / -' : `${(idx + 1) * 30 + 30}h`);
-
               return (
                 <div
                   key={p.id}
@@ -627,7 +623,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs font-bold text-slate-600 font-mono">
-                      {idx === 4 && !p.allocatedHours ? '- / -' : `${formattedLogged} / ${formattedAllocated}`}
+                      {formattedLogged}h logged
                     </span>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </div>

@@ -15,8 +15,7 @@ interface PortfolioOverviewProps {
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
   setEditingProject: (p: Project | null) => void;
   setEditBudget: (b: number) => void;
-  setEditRate: (r: number) => void;
-}
+  }
 
 export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   projects,
@@ -29,8 +28,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   onShowToast,
   setEditingProject,
   setEditBudget,
-  setEditRate,
-}) => {
+  }) => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q3 FY 2024');
   const [chartInterval, setChartInterval] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly');
   const [snapshotFilter, setSnapshotFilter] = useState('all');
@@ -65,8 +63,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     .filter((p) => p.status === 'active')
     .slice(0, 3)
     .map((p, index) => {
-      const consumedPercent = p.allocatedHours
-        ? Math.min(100, Math.round(((p.loggedHours || 0) / p.allocatedHours) * 100))
+      const consumedPercent = p.budget
+        ? Math.min(100, Math.round((((p.loggedHours || 0) * 1800) / p.budget) * 100))
         : 0;
       const remainingPercent = 100 - consumedPercent;
 
@@ -348,7 +346,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 );
                 const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
                 const cost = loggedHrs * 1800; // Average internal cost rate
-                const revenue = loggedHrs * (p.hourlyRate || 3500);
+                const revenue = loggedHrs * 3500;
                 const profit = revenue - cost;
 
                 return (
@@ -387,7 +385,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                         onClick={() => {
                           setEditingProject(p);
                           setEditBudget(p.budget);
-                          setEditRate(p.hourlyRate || 3500);
+                          setEditRate3500;
                         }}
                         className="px-3 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 rounded-lg text-xs font-bold transition-all"
                       >

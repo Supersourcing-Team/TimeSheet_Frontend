@@ -9,8 +9,7 @@ interface ProjectFinancialsProps {
   totalProfit: number;
   setEditingProject: (p: Project | null) => void;
   setEditBudget: (b: number) => void;
-  setEditRate: (r: number) => void;
-}
+  }
 
 export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
   projects,
@@ -19,8 +18,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
   totalProfit,
   setEditingProject,
   setEditBudget,
-  setEditRate,
-}) => {
+  }) => {
   const safeProjects = projects || [];
 
   const formatCr = (amount: number): string => {
@@ -77,7 +75,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="py-3 px-4 font-bold text-slate-900">{p.name}</td>
                   <td className="py-3 px-4 text-slate-600">{p.client}</td>
-                  <td className="py-3 px-4 font-bold text-blue-600">{formatINR(p.hourlyRate || 3500)}/hr</td>
+                  <td className="py-3 px-4 font-bold text-slate-700 capitalize">{p.status}</td>
                   <td className="py-3 px-4 font-bold text-slate-900">{formatINR(p.budget)}</td>
                   <td className="py-3 px-4 text-slate-700">{p.loggedHours || 120} hrs</td>
                   <td className="py-3 px-4">
@@ -86,8 +84,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                       onClick={() => {
                         setEditingProject(p);
                         setEditBudget(p.budget);
-                        setEditRate(p.hourlyRate || 3500);
-                      }}
+                        }}
                       className="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-bold"
                     >
                       Update Budget

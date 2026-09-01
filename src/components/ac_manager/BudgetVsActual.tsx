@@ -29,7 +29,7 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {safeProjects.map((p) => {
-          const consumed = Math.min(100, Math.round(((p.loggedHours || 80) / (p.allocatedHours || 200)) * 100));
+          const consumed = p.budget ? Math.min(100, Math.round((((p.loggedHours || 0) * 1800) / p.budget) * 100)) : 0;
           return (
             <div key={p.id} className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
               <div className="flex justify-between items-center">
@@ -54,8 +54,8 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
               </div>
 
               <div className="flex justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                <span>Logged: {p.loggedHours || 80} hrs</span>
-                <span>Allocated: {p.allocatedHours || 200} hrs</span>
+                <span>Logged: {p.loggedHours || 0} hrs</span>
+                <span>Contract: {formatCr(p.budget)}</span>
               </div>
             </div>
           );

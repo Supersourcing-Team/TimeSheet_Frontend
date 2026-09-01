@@ -22,6 +22,8 @@ import {
   Layers,
   Sparkles,
   FileText,
+  Building2,
+  Loader2,
 } from 'lucide-react';
 
 interface PMMyProjectsProps {
@@ -32,7 +34,7 @@ interface PMMyProjectsProps {
   timesheets: TimesheetEntry[];
   onAddProject: (project: Omit<Project, 'id'>) => void;
   onUpdateProject: (updatedProject: Project) => void;
-  onCreateClient: (name: string) => void;
+  onCreateClient: (name: string, contactInfo?: string) => Promise<any> | void;
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
   onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
@@ -65,6 +67,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAddToolModal, setShowAddToolModal] = useState(false);
+  const [isAddingInlineClient, setIsAddingInlineClient] = useState(false);
+  const [inlineClientName, setInlineClientName] = useState('');
+  const [isInlineCreating, setIsInlineCreating] = useState(false);
 
   // New Project Form
   const [newProject, setNewProject] = useState({
@@ -72,8 +77,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     client: '',
     status: 'active' as const,
     budget: 0,
-    hourlyRate: 0,
-    allocatedHours: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     description: '',
@@ -134,8 +137,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       pmAvatar: currentUser.avatar,
       status: newProject.status,
       budget: Number(newProject.budget),
-      hourlyRate: Number(newProject.hourlyRate),
-      allocatedHours: Number(newProject.allocatedHours),
       loggedHours: 0,
       billableHours: 0,
       startDate: newProject.startDate,
@@ -152,8 +153,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       client: '',
       status: 'active',
       budget: 0,
-      hourlyRate: 0,
-      allocatedHours: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       description: '',
@@ -308,13 +307,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             
           const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
 
-          const rawProgressPct = proj.allocatedHours > 0
-            ? Math.round((actualLoggedHours / proj.allocatedHours) * 100)
-            : 0;
-          const displayPct = Math.min(100, rawProgressPct);
-          const isOverAllocated = rawProgressPct > 100;
-          const progressColor = isOverAllocated ? 'bg-rose-500' : rawProgressPct >= 80 ? 'bg-amber-500' : 'bg-blue-600';
-
           return (
             <div
               key={proj.id}
@@ -354,25 +346,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   {proj.description || 'No project description available.'}
                 </p>
 
-                {/* Hours & Budget */}
-                <div className="space-y-1.5 pt-2">
-                  <div className="flex justify-between text-xs font-semibold text-slate-700">
-                    <span>Logged Hours:</span>
-                    <span className={isOverAllocated ? 'text-rose-600 font-bold' : ''}>
-                      {actualLoggedHours} / {proj.allocatedHours} hrs ({rawProgressPct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                    <div
-                      className={`${progressColor} h-2 rounded-full transition-all duration-500`}
-                      style={{ width: `${displayPct}%` }}
-                    />
-                  </div>
-                  {isOverAllocated && (
-                    <p className="text-[10px] text-rose-600 font-medium flex items-center gap-1 mt-1">
-                      <AlertCircle className="w-3 h-3" /> Over allocated by {actualLoggedHours - proj.allocatedHours} hrs
-                    </p>
-                  )}
+                {/* Hours */}
+                <div className="pt-2 flex justify-between items-center text-xs font-semibold text-slate-700">
+                  <span>Logged Hours:</span>
+                  <span className="font-bold text-blue-600">
+                    {actualLoggedHours} hrs
+                  </span>
                 </div>
               </div>
 
@@ -496,14 +475,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                         <p className="text-lg font-black text-slate-900 mt-0.5">{formatINR(selectedProject.budget)}</p>
                       </div>
                     )}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Hourly Rate</span>
-                      <p className="text-lg font-black text-blue-700 mt-0.5">{formatINR(selectedProject.hourlyRate)}/hr</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Allocated Hours</span>
-                      <p className="text-lg font-black text-slate-900 mt-0.5">{selectedProject.allocatedHours}h</p>
-                    </div>
+
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <span className="text-[10px] uppercase font-bold text-slate-500">Logged Billable Hours</span>
                       <p className="text-lg font-black text-emerald-700 mt-0.5">{selectedProject.billableHours}h</p>
@@ -740,23 +712,104 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Client Name *</label>
-                  <button type="button" onClick={() => {
-                    const name = prompt("Enter new client name:");
-                    if (name) onCreateClient(name);
-                  }} className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1"><Plus className="w-3 h-3" /> New Client</button>
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    {isAddingInlineClient ? 'New Client Name *' : 'Client Name *'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingInlineClient(!isAddingInlineClient);
+                      setInlineClientName('');
+                    }}
+                    className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {isAddingInlineClient ? (
+                      <>
+                        <X className="w-3 h-3" /> Select Existing
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3 h-3" /> New Client
+                      </>
+                    )}
+                  </button>
                 </div>
-                <select
-                  required
-                  value={newProject.client}
-                  onChange={(e) => setNewProject({ ...newProject, client: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="" disabled>Select a client</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+
+                {isAddingInlineClient ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Enter client company name..."
+                      value={inlineClientName}
+                      onChange={(e) => setInlineClientName(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (!inlineClientName.trim() || isInlineCreating) return;
+                          setIsInlineCreating(true);
+                          try {
+                            const created = await onCreateClient(inlineClientName.trim());
+                            if (created?.id) {
+                              setNewProject((prev) => ({ ...prev, client: String(created.id) }));
+                            }
+                            setInlineClientName('');
+                            setIsAddingInlineClient(false);
+                          } finally {
+                            setIsInlineCreating(false);
+                          }
+                        } else if (e.key === 'Escape') {
+                          setIsAddingInlineClient(false);
+                        }
+                      }}
+                      className="w-full bg-white border-2 border-blue-400 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-400"
+                    />
+                    <button
+                      type="button"
+                      disabled={isInlineCreating || !inlineClientName.trim()}
+                      onClick={async () => {
+                        if (!inlineClientName.trim() || isInlineCreating) return;
+                        setIsInlineCreating(true);
+                        try {
+                          const created = await onCreateClient(inlineClientName.trim());
+                          if (created?.id) {
+                            setNewProject((prev) => ({ ...prev, client: String(created.id) }));
+                          }
+                          setInlineClientName('');
+                          setIsAddingInlineClient(false);
+                        } finally {
+                          setIsInlineCreating(false);
+                        }
+                      }}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shrink-0 transition-colors flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
+                      title="Save and select client"
+                    >
+                      {isInlineCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      <span>Add</span>
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={newProject.client}
+                    onChange={(e) => {
+                      if (e.target.value === '__create_new__') {
+                        setIsAddingInlineClient(true);
+                      } else {
+                        setNewProject({ ...newProject, client: e.target.value });
+                      }
+                    }}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="" disabled>Select a client</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                    <option value="__create_new__" className="font-bold text-blue-600">
+                      + Add New Client...
+                    </option>
+                  </select>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -785,25 +838,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </div>
               )}
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Hourly Rate (₹/hr)</label>
-                <input
-                  type="number"
-                  value={newProject.hourlyRate}
-                  onChange={(e) => setNewProject({ ...newProject, hourlyRate: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Allocated Hours</label>
-                <input
-                  type="number"
-                  value={newProject.allocatedHours}
-                  onChange={(e) => setNewProject({ ...newProject, allocatedHours: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Start Date</label>
@@ -912,15 +947,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </div>
               )}
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Hourly Rate (₹/hr)</label>
-                <input
-                  type="number"
-                  value={editFormData.hourlyRate}
-                  onChange={(e) => setEditFormData({ ...editFormData, hourlyRate: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
-              </div>
+
             </div>
 
             <div className="space-y-1">

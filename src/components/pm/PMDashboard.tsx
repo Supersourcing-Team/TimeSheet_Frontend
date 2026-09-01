@@ -231,10 +231,6 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pmProjects.map((proj) => {
-                const progressPct = proj.allocatedHours > 0
-                  ? Math.min(100, Math.round((proj.loggedHours / proj.allocatedHours) * 100))
-                  : 0;
-
                 const assignedCount = (proj.assignedUserIds || []).length;
                 const toolsCount = (proj.tools || []).length;
 
@@ -267,24 +263,12 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                       <p className="text-slate-500 text-[11px] font-medium">{proj.client}</p>
                     </div>
 
-                    {/* Hours Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-medium">
-                        <span className="text-slate-500">Logged vs Allocated Hours:</span>
-                        <span className="font-bold text-slate-800">
-                          {proj.loggedHours} / {proj.allocatedHours}h ({progressPct}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-2 rounded-full ${
-                            progressPct > 90
-                              ? 'bg-amber-500'
-                              : 'bg-blue-600'
-                          }`}
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
+                    {/* Hours */}
+                    <div className="flex justify-between items-center text-[11px] font-medium pt-1 border-t border-slate-100">
+                      <span className="text-slate-500">Logged Hours:</span>
+                      <span className="font-bold text-blue-600">
+                        {proj.loggedHours} hrs
+                      </span>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-medium">

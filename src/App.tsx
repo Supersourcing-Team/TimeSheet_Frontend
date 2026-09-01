@@ -415,12 +415,11 @@ export default function App() {
   };
 
   // --- Projects / PM / AC ---
-  const handleUpdateProjectBudget = async (projectId: string, newBudget: number, newRate: number) => {
+  const handleUpdateProjectBudget = async (projectId: string, newBudget: number) => {
     try {
       await updateProjectMutation({
         id: projectId,
         budget: newBudget,
-        hourly_rate: newRate,
       }).unwrap();
       showToast('Success', 'Project budget updated successfully', 'success');
     } catch (e: any) {
@@ -430,12 +429,14 @@ export default function App() {
 
   const [createClientMutation] = useCreateClientMutation();
 
-  const handleCreateClient = async (name: string) => {
+  const handleCreateClient = async (name: string, contactInfo?: string) => {
     try {
-      await createClientMutation({ name }).unwrap();
+      const res = await createClientMutation({ name, contact_info: contactInfo }).unwrap();
       showToast('Success', `Client "${name}" created successfully`, 'success');
+      return res?.data || res;
     } catch (e: any) {
       showToast('Error', e?.data?.message || 'Failed to create client', 'error');
+      throw e;
     }
   };
 
@@ -448,8 +449,6 @@ export default function App() {
         project_name: newProj.name,
         description: newProj.description,
         budget: newProj.budget,
-        hourly_rate: newProj.hourlyRate,
-        allocated_hours: newProj.allocatedHours,
         start_date: newProj.startDate,
         end_date: newProj.endDate,
       }).unwrap();
@@ -466,8 +465,6 @@ export default function App() {
         project_name: updatedProj.name,
         status: updatedProj.status,
         budget: updatedProj.budget,
-        hourly_rate: updatedProj.hourlyRate,
-        allocated_hours: updatedProj.allocatedHours,
         start_date: updatedProj.startDate,
         end_date: updatedProj.endDate,
       }).unwrap();

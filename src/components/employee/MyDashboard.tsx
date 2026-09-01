@@ -357,21 +357,8 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
               <div className="flex items-center justify-between text-slate-500 font-semibold">
                 <span>Hours Logged:</span>
                 <span className="font-bold text-blue-600">
-                  {focusProject?.loggedHours}h / {focusProject?.allocatedHours}h
+                  {focusProject?.loggedHours || 0}h
                 </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.round((focusProject?.loggedHours / focusProject?.allocatedHours) * 100)
-                    )}%`,
-                  }}
-                />
               </div>
 
               <div className="flex items-center justify-between pt-2">

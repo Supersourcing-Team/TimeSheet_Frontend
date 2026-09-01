@@ -92,8 +92,6 @@ export interface Project {
   pmAvatar: string;
   status: 'active' | 'completed' | 'on_hold' | 'planning';
   budget: number; // in INR ₹
-  hourlyRate: number; // in INR ₹
-  allocatedHours: number;
   loggedHours: number;
   billableHours: number;
   startDate: string;

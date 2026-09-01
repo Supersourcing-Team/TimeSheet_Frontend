@@ -18,7 +18,7 @@ import {
 
 interface ProjectFinancialsProps {
   projects: Project[];
-  onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => void;
+  onUpdateProjectBudget: (projectId: string, newBudget: number) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -31,13 +31,11 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editBudget, setEditBudget] = useState(0);
-  const [editRate, setEditRate] = useState(0);
-
   const safeProjects = projects || [];
 
   // Financial aggregates in INR
   const totalBudget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
-  const totalLaborCost = safeProjects.reduce((sum, p) => sum + (p.loggedHours || 0) * (p.hourlyRate || 0), 0);
+  const totalLaborCost = safeProjects.reduce((sum, p) => sum + (p.loggedHours || 0) * 1800, 0);
   const totalToolCosts = safeProjects.reduce(
     (sum, p) => sum + (p.tools || []).reduce((tSum, t) => tSum + (t.monthlyCost || 0) * 12, 0),
     0
@@ -62,7 +60,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
-    onUpdateProjectBudget(editingProject.id, editBudget, editRate);
+    onUpdateProjectBudget(editingProject.id, editBudget);
     onShowToast('Budget Updated', `Updated budget for ${editingProject.name} to ${formatINR(editBudget)}`, 'success');
     setEditingProject(null);
   };
@@ -176,7 +174,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-200">
               {filteredProjects.map((p) => {
-                const laborCost = (p.loggedHours || 0) * (p.hourlyRate || 0);
+                const laborCost = (p.loggedHours || 0) * 1800;
                 const toolCostYearly = (p.tools || []).reduce((sum, t) => sum + (t.monthlyCost || 0) * 12, 0);
                 const projectSpent = laborCost + toolCostYearly;
                 const utilPct = Math.min(100, Math.round((projectSpent / p.budget) * 100));
@@ -193,9 +191,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                     </td>
                     <td className="py-3.5 px-3 text-right font-bold text-blue-600">
                       {formatINR(laborCost)}
-                      <span className="text-[10px] text-slate-400 font-normal block">
-                        ({p.loggedHours}h @ {formatINR(p.hourlyRate)}/h)
-                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal block">({p.loggedHours || 0} hrs logged)</span>
                     </td>
                     <td className="py-3.5 px-3 text-right font-bold text-amber-600">
                       {formatINR(toolCostYearly)}/yr
@@ -222,9 +218,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                     <td className="py-3.5 px-3 text-right">
                       <button
                         onClick={() => {
-                          setEditingProject(p);
-                          setEditBudget(p.budget);
-                          setEditRate(p.hourlyRate);
+                          setEditingProject(p); setEditBudget(p.budget);
                         }}
                         className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-colors"
                         title="Edit Financials"

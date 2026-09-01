@@ -33,7 +33,6 @@ export const INITIAL_USERS: User[] = [
     department: 'Product Delivery',
     title: 'Lead Product Manager',
     status: 'active',
-    hourlyRate: 2200, // ₹2,200/hr
     joinDate: '2021-06-01',
     allocatedProjectsCount: 4,
   },
@@ -46,7 +45,6 @@ export const INITIAL_USERS: User[] = [
     department: 'Client Accounts & Strategy',
     title: 'Senior Account Manager',
     status: 'active',
-    hourlyRate: 2500, // ₹2,500/hr
     joinDate: '2021-02-15',
     allocatedProjectsCount: 5,
   },
@@ -59,7 +57,6 @@ export const INITIAL_USERS: User[] = [
     department: 'Executive Operations',
     title: 'Director of Technology',
     status: 'active',
-    hourlyRate: 3500, // ₹3,500/hr
     joinDate: '2020-01-10',
     allocatedProjectsCount: 5,
   },
@@ -72,7 +69,6 @@ export const INITIAL_USERS: User[] = [
     department: 'UX/UI Design',
     title: 'Principal Designer',
     status: 'active',
-    hourlyRate: 1900, // ₹1,900/hr
     joinDate: '2022-09-01',
     allocatedProjectsCount: 2,
   },
@@ -85,7 +81,6 @@ export const INITIAL_USERS: User[] = [
     department: 'DevOps & Security',
     title: 'Senior Cloud Architect',
     status: 'active',
-    hourlyRate: 2400, // ₹2,400/hr
     joinDate: '2021-11-20',
     allocatedProjectsCount: 3,
   },
@@ -98,7 +93,6 @@ export const INITIAL_USERS: User[] = [
     department: 'Quality Assurance',
     title: 'Lead QA Engineer',
     status: 'on_leave',
-    hourlyRate: 1500, // ₹1,500/hr
     joinDate: '2023-02-14',
     allocatedProjectsCount: 2,
   },
@@ -111,7 +105,6 @@ export const INITIAL_USERS: User[] = [
     department: 'Data Analytics',
     title: 'Data Engineer',
     status: 'inactive',
-    hourlyRate: 1600, // ₹1,600/hr
     joinDate: '2023-05-10',
     allocatedProjectsCount: 0,
   }
@@ -128,8 +121,6 @@ export const INITIAL_PROJECTS: Project[] = [
     pmAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
     status: 'active',
     budget: 4500000, // ₹45,00,000 (₹45 Lakhs)
-    hourlyRate: 2200, // ₹2,200/hr
-    allocatedHours: 2200,
     loggedHours: 1480,
     billableHours: 1350,
     startDate: '2025-01-10',
@@ -152,8 +143,6 @@ export const INITIAL_PROJECTS: Project[] = [
     pmAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     status: 'active',
     budget: 7500000, // ₹75,00,000 (₹75 Lakhs)
-    hourlyRate: 2500, // ₹2,500/hr
-    allocatedHours: 3500,
     loggedHours: 2890,
     billableHours: 2750,
     startDate: '2024-10-01',
@@ -175,8 +164,6 @@ export const INITIAL_PROJECTS: Project[] = [
     pmAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
     status: 'active',
     budget: 3200000, // ₹32,00,000 (₹32 Lakhs)
-    hourlyRate: 2000, // ₹2,000/hr
-    allocatedHours: 1600,
     loggedHours: 920,
     billableHours: 810,
     startDate: '2025-02-01',
@@ -198,8 +185,6 @@ export const INITIAL_PROJECTS: Project[] = [
     pmAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     status: 'planning',
     budget: 5500000, // ₹55,00,000 (₹55 Lakhs)
-    hourlyRate: 2100, // ₹2,100/hr
-    allocatedHours: 2800,
     loggedHours: 120,
     billableHours: 110,
     startDate: '2025-07-01',
@@ -220,8 +205,6 @@ export const INITIAL_PROJECTS: Project[] = [
     pmAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
     status: 'completed',
     budget: 3800000, // ₹38,00,000 (₹38 Lakhs)
-    hourlyRate: 1800, // ₹1,800/hr
-    allocatedHours: 1800,
     loggedHours: 1795,
     billableHours: 1750,
     startDate: '2024-04-01',

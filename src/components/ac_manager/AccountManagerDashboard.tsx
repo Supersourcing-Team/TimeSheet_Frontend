@@ -18,7 +18,7 @@ interface AccountManagerDashboardProps {
   timesheets: TimesheetEntry[];
   activeTab?: ACManagerTab;
   onNavigateTab?: (tab: ACManagerTab) => void;
-  onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => Promise<void> | void;
+  onUpdateProjectBudget: (projectId: string, newBudget: number) => Promise<void> | void;
   onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -37,8 +37,6 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
   // Shared Modals state
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editBudget, setEditBudget] = useState(0);
-  const [editRate, setEditRate] = useState(0);
-
   const { data: analyticsData } = useGetProjectFinancialsQuery();
 
   const safeProjects = projects || [];
@@ -60,7 +58,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
   const totalRevenue = safeProjects.reduce((sum, p) => {
     const prjTimesheets = safeTimesheets.filter(t => t.projectId === p.id && t.status === 'approved');
     const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
-    const rev = loggedHrs * (p.hourlyRate || 3500);
+    const rev = loggedHrs * 3500;
     return sum + (rev > 0 ? rev : (p.budget || 0) * 0.95);
   }, 0);
 
@@ -68,7 +66,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
     const prjTimesheets = safeTimesheets.filter(t => t.projectId === p.id && t.status === 'approved');
     const loggedHrs = prjTimesheets.reduce((s, t) => s + (t.hours || 0), 0);
     const cost = loggedHrs * 1800;
-    const rev = loggedHrs * (p.hourlyRate || 3500);
+    const rev = loggedHrs * 3500;
     const profit = rev - cost;
     return sum + (profit > 0 ? profit : (p.budget || 0) * 0.35);
   }, 0);
@@ -76,7 +74,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
-    await onUpdateProjectBudget(editingProject.id, editBudget, editRate);
+    await onUpdateProjectBudget(editingProject.id, editBudget);
     setEditingProject(null);
   };
 
@@ -95,8 +93,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
           onShowToast={onShowToast}
           setEditingProject={setEditingProject}
           setEditBudget={setEditBudget}
-          setEditRate={setEditRate}
-        />
+          />
       )}
 
       {activeTab === 'project_financials' && (
@@ -107,8 +104,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
           totalProfit={totalProfit}
           setEditingProject={setEditingProject}
           setEditBudget={setEditBudget}
-          setEditRate={setEditRate}
-        />
+          />
       )}
 
       {activeTab === 'budget_vs_actual' && (

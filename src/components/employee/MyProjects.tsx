@@ -49,11 +49,6 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
       {/* Projects Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {myProjects.map((project) => {
-          const progressPct = Math.min(
-            100,
-            Math.round((project.loggedHours / project.allocatedHours) * 100)
-          );
-
           return (
             <div
               key={project.id}
@@ -85,21 +80,13 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                 </p>
               </div>
 
-              {/* Progress & Stats */}
+              {/* Stats */}
               <div className="space-y-3 pt-3 border-t border-slate-200 text-xs">
-                <div>
-                  <div className="flex justify-between text-slate-600 text-[11px] font-bold mb-1">
-                    <span>Sprint Hours Progress</span>
-                    <span className="text-indigo-700">
-                      {project.loggedHours}h / {project.allocatedHours}h ({progressPct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-indigo-500 h-2 rounded-full transition-all"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
+                <div className="flex justify-between items-center text-slate-600 text-[11px] font-bold">
+                  <span>Logged Hours</span>
+                  <span className="text-indigo-700 font-extrabold">
+                    {project.loggedHours || 0} hrs
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold">
