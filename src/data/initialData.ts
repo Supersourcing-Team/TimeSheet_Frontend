@@ -131,6 +131,8 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: 't-3', name: 'OpenAI API Gateway', category: 'AI', monthlyCost: 32000, assignedUsersCount: 3 },
     ],
     assignedUserIds: ['usr-101', 'usr-102', 'usr-104', 'usr-105'],
+    milestones: [],
+    completion_percentage: 0,
   },
   {
     id: 'prj-202',
@@ -152,6 +154,8 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: 't-5', name: 'GitHub Copilot Enterprise', category: 'AI', monthlyCost: 22000, assignedUsersCount: 8 },
     ],
     assignedUserIds: ['usr-101', 'usr-103', 'usr-105'],
+    milestones: [],
+    completion_percentage: 0,
   },
   {
     id: 'prj-203',
@@ -173,6 +177,8 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: 't-7', name: 'JetBrains All Products', category: 'Dev', monthlyCost: 25000, assignedUsersCount: 5 },
     ],
     assignedUserIds: ['usr-101', 'usr-102', 'usr-106'],
+    milestones: [],
+    completion_percentage: 0,
   },
   {
     id: 'prj-204',
@@ -193,6 +199,8 @@ export const INITIAL_PROJECTS: Project[] = [
       { id: 't-8', name: 'Vanta Compliance Automator', category: 'SaaS', monthlyCost: 70000, assignedUsersCount: 3 },
     ],
     assignedUserIds: ['usr-103', 'usr-105', 'usr-106'],
+    milestones: [],
+    completion_percentage: 0,
   },
   {
     id: 'prj-205',
@@ -211,6 +219,8 @@ export const INITIAL_PROJECTS: Project[] = [
     description: 'IoT telemetry ingestion pipeline monitoring 10,000+ freight vehicles in real-time across national highways.',
     tools: [],
     assignedUserIds: ['usr-102', 'usr-104'],
+    milestones: [],
+    completion_percentage: 0,
   }
 ];
 

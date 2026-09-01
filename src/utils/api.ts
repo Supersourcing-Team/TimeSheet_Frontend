@@ -144,6 +144,7 @@ export interface BackendUser {
   role_id: number;
   joining_date: string | null;
   status: string;
+  ctc?: number;
   created_at: string;
   updated_at: string;
   role: { id: number; name: string; description: string | null; created_at: string };
@@ -161,10 +162,11 @@ export interface UserCreatePayload {
   email: string;
   first_name: string;
   last_name: string;
-  employee_id: string;
+  employee_id?: string;
   role_id: number;
   joining_date?: string | null;
   status?: string;
+  ctc?: number;
 }
 
 export interface UserUpdatePayload {
@@ -175,6 +177,7 @@ export interface UserUpdatePayload {
   role_id?: number;
   joining_date?: string | null;
   status?: string;
+  ctc?: number;
 }
 
 function authHeader() {

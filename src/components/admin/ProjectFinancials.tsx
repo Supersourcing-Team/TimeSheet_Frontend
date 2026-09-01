@@ -271,20 +271,6 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
                   Formatted: {formatINR(editBudget)}
                 </span>
               </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Project Hourly Rate (INR ₹/hr)
-                </label>
-                <input
-                  type="number"
-                  step="100"
-                  value={editRate}
-                  onChange={(e) => setEditRate(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-blue-600 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
