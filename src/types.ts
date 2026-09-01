@@ -16,6 +16,7 @@ export interface User {
   status: 'active' | 'inactive' | 'on_leave' | 'resigned' | 'pending';
   joinDate: string;
   allocatedProjectsCount: number;
+  ctc?: number;
 }
 
 export interface HolidayItem {
@@ -82,6 +83,14 @@ export interface ProjectTool {
   status?: 'active' | 'deallocated';
 }
 
+export interface MilestoneAssignment {
+  id: number;
+  milestone_id: number;
+  user_id: number;
+  user?: User;
+  is_active: boolean;
+}
+
 export interface Milestone {
   id: number;
   project_id: number;
@@ -89,9 +98,11 @@ export interface Milestone {
   description?: string;
   start_date?: string;
   expected_completion_date?: string;
+  budget?: number;
   status: 'planned' | 'in_progress' | 'achieved';
   weight_percentage: number;
   actual_achievement_date?: string;
+  assignments?: MilestoneAssignment[];
 }
 
 export interface Project {

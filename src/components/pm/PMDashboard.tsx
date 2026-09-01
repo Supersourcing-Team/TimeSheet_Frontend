@@ -79,13 +79,13 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   // Today's date YYYY-MM-DD
   const todayStr = new Date().toISOString().split('T')[0];
   const todayTimesheets = pmTimesheets.filter((t) => t.date === todayStr);
-  const todayLoggedHours = todayTimesheets.reduce((sum, t) => sum + t.hours, 0);
+  const todayLoggedHours = todayTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
 
   // This Week's billable hours
   const thisWeekBillableHours = pmTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
 
   // Average Team Utilization
-  const totalLoggedForUtilization = pmTimesheets.reduce((sum, t) => sum + t.hours, 0);
+  const totalLoggedForUtilization = pmTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
   const totalBillableForUtilization = pmTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
   const avgUtilization = totalLoggedForUtilization > 0
     ? Math.min(100, Math.round((totalBillableForUtilization / totalLoggedForUtilization) * 100))
@@ -346,7 +346,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                     <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60 font-medium">
                       <span>{ts.date}</span>
                       <span className="font-bold text-slate-900">
-                        {ts.hours}h ({ts.billableHours}h Billable)
+                        {((ts.billableHours || 0) + (ts.nonBillableHours || 0))}h ({ts.billableHours || 0}h Billable)
                       </span>
                     </div>
                   </div>
