@@ -6,6 +6,7 @@ export type ActivePortalMode = 'employee' | 'pm' | 'ac_manager' | 'admin';
 
 export interface User {
   id: string;
+  employee_id?: string;
   name: string;
   email: string;
   avatar: string;
@@ -13,7 +14,6 @@ export interface User {
   department: string;
   title: string;
   status: 'active' | 'inactive' | 'on_leave' | 'resigned' | 'pending';
-  hourlyRate: number; // in INR ₹
   joinDate: string;
   allocatedProjectsCount: number;
 }

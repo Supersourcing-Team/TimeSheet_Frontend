@@ -384,10 +384,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className="p-2 rounded-xl bg-slate-50 text-slate-700 flex justify-between items-center font-semibold">
-                  <span>Hourly Rate:</span>
-                  <span className="font-extrabold text-blue-600">{formatINR(currentUser.hourlyRate)}/hr</span>
-                </div>
+
 
                 <button
                   type="button"
