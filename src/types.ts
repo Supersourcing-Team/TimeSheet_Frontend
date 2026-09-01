@@ -25,7 +25,7 @@ export interface HolidayItem {
   month: string;
   day: string;
   dayOfWeek: string;
-  type: 'National' | 'Global' | 'Regional' | 'Observance';
+  type: 'National' | 'Global' | 'Regional' | 'Observance' | 'Other';
   description?: string;
   is_mandatory: boolean;
 }

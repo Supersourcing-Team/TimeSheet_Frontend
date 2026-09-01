@@ -39,14 +39,14 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   // Form State
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [type, setType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
+  const [type, setType] = useState<'National' | 'Global' | 'Regional' | 'Observance' | 'Other'>('National');
   const [description, setDescription] = useState('');
   const [is_mandatory, setis_mandatory] = useState(true);
 
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editDate, setEditDate] = useState('');
-  const [editType, setEditType] = useState<'National' | 'Global' | 'Regional' | 'Observance'>('National');
+  const [editType, setEditType] = useState<'National' | 'Global' | 'Regional' | 'Observance' | 'Other'>('National');
   const [editis_mandatory, setEditis_mandatory] = useState(true);
   const [editDescription, setEditDescription] = useState('');
 
@@ -201,6 +201,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                 <option value="Global">Global</option>
                 <option value="Regional">Regional</option>
                 <option value="Observance">Observance</option>
+                <option value="Other">Other</option>
               </select>
 
               <span className="text-slate-500 font-bold text-xs whitespace-nowrap">
@@ -445,6 +446,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                     <option value="Global">Global</option>
                     <option value="Regional">Regional</option>
                     <option value="Observance">Observance</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
@@ -554,6 +556,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                     <option value="Global">Global</option>
                     <option value="Regional">Regional</option>
                     <option value="Observance">Observance</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               </div>

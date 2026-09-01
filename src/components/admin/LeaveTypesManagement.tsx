@@ -8,8 +8,7 @@ import {
   Search,
   CheckCircle2,
   XCircle,
-  FileCheck,
-  ShieldAlert,
+  Clock,
 } from 'lucide-react';
 
 interface LeaveTypesManagementProps {
@@ -34,20 +33,14 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   // Form State
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [daysPerYear, setDaysPerYear] = useState(12);
   const [allocatedHours, setAllocatedHours] = useState<number | undefined>(undefined);
-  const [isPaid, setIsPaid] = useState(true);
   const [description, setDescription] = useState('');
-  const [requiresDocument, setRequiresDocument] = useState(false);
 
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
-  const [editDaysPerYear, setEditDaysPerYear] = useState(12);
   const [editAllocatedHours, setEditAllocatedHours] = useState<number | undefined>(undefined);
-  const [editIsPaid, setEditIsPaid] = useState(true);
   const [editDescription, setEditDescription] = useState('');
-  const [editRequiresDocument, setEditRequiresDocument] = useState(false);
 
   const filteredTypes = (leaveTypes || []).filter(
     (lt) =>
@@ -66,12 +59,12 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     onAddLeaveType({
       name,
       code: code.toUpperCase(),
-      daysPerYear,
+      daysPerYear: 0,
       allocatedHours,
-      isPaid,
+      isPaid: true,
       status: 'active',
       description,
-      requiresDocument,
+      requiresDocument: false,
     });
 
     onShowToast('Leave Type Created', `Added "${name} (${code.toUpperCase()})" to policies`, 'success');
@@ -86,11 +79,8 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     setEditingType(lt);
     setEditName(lt.name);
     setEditCode(lt.code);
-    setEditDaysPerYear(lt.daysPerYear);
     setEditAllocatedHours(lt.allocatedHours);
-    setEditIsPaid(lt.isPaid);
     setEditDescription(lt.description);
-    setEditRequiresDocument(!!lt.requiresDocument);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -101,11 +91,8 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       ...editingType,
       name: editName,
       code: editCode.toUpperCase(),
-      daysPerYear: editDaysPerYear,
       allocatedHours: editAllocatedHours,
-      isPaid: editIsPaid,
       description: editDescription,
-      requiresDocument: editRequiresDocument,
     });
 
     onShowToast('Leave Type Updated', `Updated policy details for ${editName}`, 'success');
@@ -122,7 +109,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
             <span>Leave Type Management & Entitlement Rules</span>
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            Configure leave categories (Casual, Sick, Earned, Comp-Off, Maternity/Paternity). In accordance with policy, leave types can be activated or deactivated, but not deleted.
+            Configure leave categories. In accordance with policy, leave types can be activated or deactivated, but not deleted.
           </p>
         </div>
 
@@ -207,34 +194,21 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                       </span>
                     </div>
 
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                        lt.isPaid
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}
-                    >
-                      {lt.isPaid ? 'Paid Leave' : 'Unpaid (LOP)'}
-                    </span>
+                    {lt.allocatedHours ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {lt.allocatedHours} hrs
+                      </span>
+                    ) : null}
                   </div>
 
                   <div>
                     <h3 className="text-base font-black text-slate-900">{lt.name}</h3>
-                    <p className="text-xs text-blue-600 font-bold mt-0.5">
-                      {lt.daysPerYear} Days / Year Standard Entitlement
-                    </p>
                   </div>
 
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    {lt.description}
+                    {lt.description || 'No description provided.'}
                   </p>
-
-                  {lt.requiresDocument && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60">
-                      <FileCheck className="w-3.5 h-3.5" />
-                      <span>Supporting document/certificate required</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
@@ -309,80 +283,37 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="e.g. SAB"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Days / Year Allowance
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={daysPerYear === 0 ? '' : daysPerYear}
-                    onChange={(e) => setDaysPerYear(e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Allocated Hrs
-                  </label>
-                  <input
-                    type="number"
-                    value={allocatedHours || ''}
-                    onChange={(e) => setAllocatedHours(parseInt(e.target.value) || undefined)}
-                    placeholder="e.g. 48 (Optional)"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Payment Status
-                  </label>
-                  <select
-                    value={isPaid ? 'true' : 'false'}
-                    onChange={(e) => setIsPaid(e.target.value === 'true')}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="true">Paid Leave</option>
-                    <option value="false">Unpaid (Loss of Pay)</option>
-                  </select>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Description & Policy Rules
+                  Allocated Hrs
+                </label>
+                <input
+                  type="number"
+                  value={allocatedHours || ''}
+                  onChange={(e) => setAllocatedHours(parseInt(e.target.value) || undefined)}
+                  placeholder="e.g. 48 (Optional)"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Description
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Explain eligibility, rollover terms, and notice period..."
-                  rows={2}
+                  rows={3}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="requiresDocument"
-                  checked={requiresDocument}
-                  onChange={(e) => setRequiresDocument(e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="requiresDocument" className="font-bold text-slate-800 text-xs">
-                  Require Medical Certificate / Verification Document
-                </label>
               </div>
             </div>
 
@@ -452,47 +383,17 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Days / Year Allowance
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={editDaysPerYear === 0 ? '' : editDaysPerYear}
-                    onChange={(e) => setEditDaysPerYear(e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Allocated Hrs
-                  </label>
-                  <input
-                    type="number"
-                    value={editAllocatedHours || ''}
-                    onChange={(e) => setEditAllocatedHours(parseInt(e.target.value) || undefined)}
-                    placeholder="e.g. 48 (Optional)"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                    Payment Status
-                  </label>
-                  <select
-                    value={editIsPaid ? 'true' : 'false'}
-                    onChange={(e) => setEditIsPaid(e.target.value === 'true')}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="true">Paid Leave</option>
-                    <option value="false">Unpaid (Loss of Pay)</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Allocated Hrs
+                </label>
+                <input
+                  type="number"
+                  value={editAllocatedHours || ''}
+                  onChange={(e) => setEditAllocatedHours(parseInt(e.target.value) || undefined)}
+                  placeholder="e.g. 48 (Optional)"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
               <div className="space-y-1">
@@ -502,23 +403,10 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 <textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  rows={2}
+                  rows={3}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="editRequiresDocument"
-                  checked={editRequiresDocument}
-                  onChange={(e) => setEditRequiresDocument(e.target.checked)}
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="editRequiresDocument" className="font-bold text-slate-800 text-xs">
-                  Require Supporting Document/Verification
-                </label>
               </div>
             </div>
 

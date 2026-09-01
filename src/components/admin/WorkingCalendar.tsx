@@ -26,9 +26,7 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
 }) => {
   const [fullDayHours, setFullDayHours] = useState(config.fullDayHours);
   const [halfDayHours, setHalfDayHours] = useState(config.halfDayHours);
-  const [partialDayMinHours, setPartialDayMinHours] = useState(config.partialDayMinHours);
-  const [partialDayMaxHours, setPartialDayMaxHours] = useState(config.partialDayMaxHours);
-  const [workingDays, setWorkingDays] = useState(config.workingDays);
+      const [workingDays, setWorkingDays] = useState(config.workingDays);
   const [timeZone, setTimeZone] = useState(config.timeZone);
 
   const handleToggleDay = (dayKey: keyof WorkingCalendarConfig['workingDays']) => {
@@ -46,16 +44,13 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
       return;
     }
 
-    if (partialDayMinHours >= partialDayMaxHours) {
-      onShowToast('Validation Error', 'Partial min hours must be less than max hours.', 'error');
-      return;
-    }
+    
 
     const updatedConfig: WorkingCalendarConfig = {
       fullDayHours,
       halfDayHours,
-      partialDayMinHours,
-      partialDayMaxHours,
+      partialDayMinHours: config.partialDayMinHours || 1.0,
+      partialDayMaxHours: config.partialDayMaxHours || 7.5,
       workingDays,
       timeZone,
     };
@@ -161,51 +156,9 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                <label className="font-extrabold text-slate-800 uppercase tracking-wider text-[10px] block">
-                  Partial-Day Minimum Limit
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="8"
-                    placeholder="0"
-                    value={partialDayMinHours === 0 ? '' : partialDayMinHours}
-                    onChange={(e) => setPartialDayMinHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                  <span className="font-bold text-slate-500 shrink-0">hrs min</span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  Minimum partial timesheet entry allowed per day.
-                </p>
-              </div>
+              
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                <label className="font-extrabold text-slate-800 uppercase tracking-wider text-[10px] block">
-                  Partial-Day Maximum Limit
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="1"
-                    max="14"
-                    placeholder="0"
-                    value={partialDayMaxHours === 0 ? '' : partialDayMaxHours}
-                    onChange={(e) => setPartialDayMaxHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  />
-                  <span className="font-bold text-slate-500 shrink-0">hrs max</span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  Maximum partial day entry before triggering full-day conversion.
-                </p>
-              </div>
+              
             </div>
           </div>
 
@@ -308,10 +261,7 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                 <span>Timesheet submissions on non-working days (e.g. Saturdays/Sundays) require a pre-approved Weekend Work Request.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
-                <span>Entries below {partialDayMinHours} hours will prompt for partial leave or compensatory off tag.</span>
-              </li>
+              
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                 <span>Project Managers and Account Managers monitor compliance against these standard weekly hours.</span>
