@@ -102,6 +102,17 @@ export interface Milestone {
   status: 'planned' | 'in_progress' | 'achieved';
   weight_percentage: number;
   actual_achievement_date?: string;
+  completion_percentage: number;
+  actual_start_date?: string;
+  planned_duration_days?: number;
+  actual_duration_days?: number;
+  delay_days?: number;
+  earned_value?: number;
+  planned_value?: number;
+  actual_cost?: number;
+  forecast_cost?: number;
+  cpi?: number;
+  cost_variance?: number;
   assignments?: MilestoneAssignment[];
 }
 
@@ -124,6 +135,18 @@ export interface Project {
   assignedUserIds: string[];
   milestones: Milestone[];
   completion_percentage: number;
+  cost?: number;
+  revenue?: number;
+  profit?: number;
+  earned_value?: number;
+  actual_cost?: number;
+  budget_utilization_percentage?: number;
+  cost_utilization_percentage?: number;
+  cost_variance?: number;
+  cpi?: number;
+  forecast_cost?: number;
+  financial_status?: string;
+  health?: string;
 }
 
 export interface TimesheetEntry {

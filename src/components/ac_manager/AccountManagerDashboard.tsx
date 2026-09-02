@@ -48,11 +48,13 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
 
   const totalBudget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
 
-  const totalCost = safeProjects.reduce((sum, p) => sum + (p.cost || 0), 0);
+  const totalCost = safeProjects.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
 
-  const totalRevenue = safeProjects.reduce((sum, p) => sum + (p.revenue || 0), 0);
+  const totalEarnedValue = safeProjects.reduce((sum, p) => sum + (p.earned_value || 0), 0);
 
-  const totalProfit = safeProjects.reduce((sum, p) => sum + (p.profit || 0), 0);
+  const totalCostVariance = safeProjects.reduce((sum, p) => sum + (p.cost_variance || 0), 0);
+
+  const totalForecastCost = safeProjects.reduce((sum, p) => sum + (p.forecast_cost || 0), 0);
 
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +71,9 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
           timesheets={safeTimesheets}
           totalBudget={totalBudget}
           totalCost={totalCost}
-          totalRevenue={totalRevenue}
-          totalProfit={totalProfit}
+          totalEarnedValue={totalEarnedValue}
+          totalCostVariance={totalCostVariance}
+          totalForecastCost={totalForecastCost}
           activeProjectsCount={activeProjectsCount}
           onUpdateProjectBudget={onUpdateProjectBudget}
           onShowToast={onShowToast}
@@ -83,8 +86,8 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
         <ProjectFinancials
           projects={safeProjects}
           totalBudget={totalBudget}
-          totalRevenue={totalRevenue}
-          totalProfit={totalProfit}
+          totalEarnedValue={totalEarnedValue}
+          totalCostVariance={totalCostVariance}
           setEditingProject={setEditingProject}
           setEditBudget={setEditBudget}
         />
@@ -138,6 +141,9 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
+                <p className="text-[10px] text-slate-500 mt-2 italic">
+                  Note: Milestone budgets are automatically calculated from this total project budget based on their weightages. Manual override of individual milestones is disabled.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

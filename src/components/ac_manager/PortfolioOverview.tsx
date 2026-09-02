@@ -8,8 +8,9 @@ interface PortfolioOverviewProps {
   timesheets: TimesheetEntry[];
   totalBudget: number;
   totalCost: number;
-  totalRevenue: number;
-  totalProfit: number;
+  totalEarnedValue: number;
+  totalCostVariance: number;
+  totalForecastCost: number;
   activeProjectsCount: number;
   onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -22,8 +23,9 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   timesheets,
   totalBudget,
   totalCost,
-  totalRevenue,
-  totalProfit,
+  totalEarnedValue,
+  totalCostVariance,
+  totalForecastCost,
   activeProjectsCount,
   onShowToast,
   setEditingProject,
@@ -122,26 +124,26 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
               <TrendingUp className="w-5 h-5" />
             </div>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-700 uppercase">
-              Revenue
+              Earned Value
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-slate-500">Total Revenue</p>
-            <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalRevenue)}</p>
+            <p className="text-[11px] font-semibold text-slate-500">Total Earned Value</p>
+            <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalEarnedValue)}</p>
           </div>
         </div>
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+            <div className={`p-2 rounded-xl ${totalCostVariance >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase">
-              Profit
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${totalCostVariance >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+              Variance
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-slate-500">Total Profit</p>
-            <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalProfit)}</p>
+            <p className="text-[11px] font-semibold text-slate-500">Cost Variance</p>
+            <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalCostVariance)}</p>
           </div>
         </div>
 
@@ -261,7 +263,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           <div className="flex items-center gap-6 pt-2 text-xs font-bold text-slate-600">
             <span className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-blue-600" />
-              <span>Revenue</span>
+              <span>Earned Value</span>
             </span>
             <span className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-slate-500" />
@@ -308,7 +310,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           <div>
             <h2 className="text-lg font-bold text-slate-900">Financial Snapshot</h2>
             <p className="text-xs text-slate-500">
-              Project contract budgets, actual costs, and profit margin analysis.
+              Project contract budgets, actual costs, earned values and health analysis.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -330,18 +332,19 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 <th className="py-3 px-4">Project</th>
                 <th className="py-3 px-4">Client</th>
                 <th className="py-3 px-4">Budget</th>
-                <th className="py-3 px-4">Cost</th>
-                <th className="py-3 px-4">Revenue</th>
-                <th className="py-3 px-4">Profit</th>
-                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Actual Cost</th>
+                <th className="py-3 px-4">Earned Value</th>
+                <th className="py-3 px-4">CPI</th>
+                <th className="py-3 px-4">Health</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredSnapshotProjects.map((p) => {
-                const cost = p.cost || 0;
-                const revenue = p.revenue || 0;
-                const profit = p.profit || 0;
+                const cost = p.actual_cost || 0;
+                const earned_value = p.earned_value || 0;
+                const cpi = p.cpi || 0;
+                const health = p.health || 'GREEN';
 
                 return (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
@@ -359,18 +362,22 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                     <td className="py-3.5 px-4 text-slate-700 font-semibold">{p.client}</td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{formatCr(p.budget)}</td>
                     <td className="py-3.5 px-4 text-slate-600">{formatCr(cost)}</td>
-                    <td className="py-3.5 px-4 text-emerald-700 font-bold">{formatCr(revenue)}</td>
-                    <td className="py-3.5 px-4 text-blue-700 font-bold">{formatCr(profit)}</td>
+                    <td className="py-3.5 px-4 text-emerald-700 font-bold">{formatCr(earned_value)}</td>
+                    <td className="py-3.5 px-4 text-slate-700 font-bold">
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] ${cpi >= 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                        {cpi.toFixed(2)}x
+                      </span>
+                    </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase ${p.status === 'active'
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase ${health === 'GREEN'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : p.status === 'completed'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                          : health === 'AMBER'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
                           }`}
                       >
-                        {p.status}
+                        {health}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
