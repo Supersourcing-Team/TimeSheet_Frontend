@@ -133,8 +133,8 @@ export interface Project {
   description: string;
   tools: ProjectTool[];
   assignedUserIds: string[];
-  milestones: Milestone[];
-  completion_percentage: number;
+  milestones?: Milestone[];
+  completion_percentage?: number;
   cost?: number;
   revenue?: number;
   profit?: number;

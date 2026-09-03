@@ -8,7 +8,7 @@ interface ToastProps {
   onDismiss: (id: string) => void;
 }
 
-export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
+export const ToastContainer: React.FC<ToastProps> = React.memo(({ toasts, onDismiss }) => {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
       <AnimatePresence>
@@ -54,4 +54,6 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
       </AnimatePresence>
     </div>
   );
-};
+});
+ToastContainer.displayName = 'ToastContainer';
+

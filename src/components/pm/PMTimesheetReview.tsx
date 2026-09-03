@@ -23,7 +23,7 @@ interface PMTimesheetReviewProps {
   timesheets: TimesheetEntry[];
 }
 
-export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
+export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   currentUser,
   projects = [],
   allUsers = [],
@@ -37,39 +37,56 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
   const [viewingDesc, setViewingDesc] = useState<{ billable: string; nonBillable: string } | null>(null);
 
   // PM's project IDs
-  const pmProjects = (projects || []).filter(
-    (p) =>
-      (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
-      currentUser?.role === 'admin' ||
-      currentUser?.role === 'pm'
-  );
-  const pmProjectIds = pmProjects.map((p) => p.id);
+  const pmProjects = React.useMemo(() => {
+    return (projects || []).filter(
+      (p) =>
+        (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
+        currentUser?.role === 'admin' ||
+        currentUser?.role === 'pm'
+    );
+  }, [projects, currentUser]);
+
+  const pmProjectIds = React.useMemo(() => pmProjects.map((p) => p.id), [pmProjects]);
 
   // Filter timesheets for PM's managed projects
-  const pmTimesheets = (timesheets || []).filter(
-    (t) => pmProjectIds.length === 0 || pmProjectIds.includes(t.projectId)
-  );
+  const pmTimesheets = React.useMemo(() => {
+    return (timesheets || []).filter(
+      (t) => pmProjectIds.length === 0 || pmProjectIds.includes(t.projectId)
+    );
+  }, [timesheets, pmProjectIds]);
 
   // Apply filters
-  const filteredTimesheets = pmTimesheets.filter((t) => {
-    const matchesSearch =
-      t.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.billableDescription && t.billableDescription.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredTimesheets = React.useMemo(() => {
+    const search = searchTerm.toLowerCase();
+    return pmTimesheets.filter((t) => {
+      const matchesSearch =
+        !search ||
+        t.userName.toLowerCase().includes(search) ||
+        t.projectName.toLowerCase().includes(search) ||
+        t.description.toLowerCase().includes(search) ||
+        (t.billableDescription && t.billableDescription.toLowerCase().includes(search));
 
-    const matchesProject = selectedProject === 'all' || t.projectId === selectedProject;
-    const matchesUser = selectedUser === 'all' || t.userId === selectedUser;
-    const matchesDate = !dateFilter || t.date === dateFilter;
+      const matchesProject = selectedProject === 'all' || t.projectId === selectedProject;
+      const matchesUser = selectedUser === 'all' || t.userId === selectedUser;
+      const matchesDate = !dateFilter || t.date === dateFilter;
 
-    return matchesSearch && matchesProject && matchesUser && matchesDate;
-  });
+      return matchesSearch && matchesProject && matchesUser && matchesDate;
+    });
+  }, [pmTimesheets, searchTerm, selectedProject, selectedUser, dateFilter]);
 
   // Calculate summary metrics
-  const totalLoggedHours = filteredTimesheets.reduce((sum, t) => sum + t.hours, 0);
-  const totalBillableHours = filteredTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
-  const totalNonBillableHours = filteredTimesheets.reduce((sum, t) => sum + (t.nonBillableHours || 0), 0);
-  const billableRatio = totalLoggedHours > 0 ? Math.round((totalBillableHours / totalLoggedHours) * 100) : 0;
+  const { totalLoggedHours, totalBillableHours, totalNonBillableHours, billableRatio } = React.useMemo(() => {
+    const logged = filteredTimesheets.reduce((sum, t) => sum + (t.billableHours + t.nonBillableHours), 0);
+    const billable = filteredTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
+    const nonBillable = filteredTimesheets.reduce((sum, t) => sum + (t.nonBillableHours || 0), 0);
+    const ratio = logged > 0 ? Math.round((billable / logged) * 100) : 0;
+    return {
+      totalLoggedHours: logged,
+      totalBillableHours: billable,
+      totalNonBillableHours: nonBillable,
+      billableRatio: ratio,
+    };
+  }, [filteredTimesheets]);
 
   return (
     <div className="space-y-6 text-slate-900 font-sans">
@@ -283,7 +300,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
 
                       {/* Hours */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <span className="font-black text-slate-900 text-sm block">{ts.hours}h Total</span>
+                        <span className="font-black text-slate-900 text-sm block">{(ts.billableHours || 0) + (ts.nonBillableHours || 0)}h Total</span>
                         <span className="text-[10px] font-bold text-emerald-700 block">
                           {ts.billableHours}h Billable / {ts.nonBillableHours}h NB
                         </span>
@@ -340,6 +357,8 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = ({
       )}
     </div>
   );
-};
+});
+PMTimesheetReview.displayName = 'PMTimesheetReview';
+
 
 

@@ -401,7 +401,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
           const calculatedLoggedHours = timesheets
             .filter((ts) => ts.projectId === proj.id)
-            .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+            .reduce((sum, ts) => sum + ((ts.billableHours || 0) + (ts.nonBillableHours || 0)), 0);
 
           const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
 
@@ -761,7 +761,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                               <span className="text-[10px] font-mono text-slate-500">({ts.date})</span>
                             </div>
                             <span className="font-extrabold text-slate-900">
-                              {ts.hours}h ({ts.billableHours}h Billable)
+                              {(ts.billableHours || 0) + (ts.nonBillableHours || 0)}h ({ts.billableHours}h Billable)
                             </span>
                           </div>
 

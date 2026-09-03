@@ -23,7 +23,7 @@ interface AccountManagerDashboardProps {
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = ({
+export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = React.memo(({
   currentUser,
   projects,
   allUsers,
@@ -44,17 +44,30 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
   const safeAllUsers = allUsers || [];
 
   // Aggregates calculated from frontend data
-  const activeProjectsCount = safeProjects.filter(p => p.status === 'active' || p.status === 'Active').length;
+  const {
+    activeProjectsCount,
+    totalBudget,
+    totalCost,
+    totalEarnedValue,
+    totalCostVariance,
+    totalForecastCost,
+  } = React.useMemo(() => {
+    const activeCount = safeProjects.filter(p => String(p.status).toLowerCase() === 'active').length;
+    const budget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const cost = safeProjects.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
+    const earnedVal = safeProjects.reduce((sum, p) => sum + (p.earned_value || 0), 0);
+    const costVar = safeProjects.reduce((sum, p) => sum + (p.cost_variance || 0), 0);
+    const forecast = safeProjects.reduce((sum, p) => sum + (p.forecast_cost || 0), 0);
 
-  const totalBudget = safeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
-
-  const totalCost = safeProjects.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
-
-  const totalEarnedValue = safeProjects.reduce((sum, p) => sum + (p.earned_value || 0), 0);
-
-  const totalCostVariance = safeProjects.reduce((sum, p) => sum + (p.cost_variance || 0), 0);
-
-  const totalForecastCost = safeProjects.reduce((sum, p) => sum + (p.forecast_cost || 0), 0);
+    return {
+      activeProjectsCount: activeCount,
+      totalBudget: budget,
+      totalCost: cost,
+      totalEarnedValue: earnedVal,
+      totalCostVariance: costVar,
+      totalForecastCost: forecast,
+    };
+  }, [safeProjects]);
 
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +78,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
 
   return (
     <div className="relative">
-      {(activeTab === 'ac_dashboard' || activeTab === 'ac_overview') && (
+      {activeTab === 'ac_dashboard' && (
         <PortfolioOverview
           projects={safeProjects}
           timesheets={safeTimesheets}
@@ -167,4 +180,6 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = (
       )}
     </div>
   );
-};
+});
+AccountManagerDashboard.displayName = 'AccountManagerDashboard';
+

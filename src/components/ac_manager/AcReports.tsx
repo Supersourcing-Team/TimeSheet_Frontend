@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler';
 import React, { useState } from 'react';
 import { FileText, BarChart3, Download, Loader2 } from 'lucide-react';
 
@@ -58,7 +59,7 @@ export const AcReports: React.FC<AcReportsProps> = ({ onShowToast }) => {
 
       onShowToast('Export Complete', `${reportName} downloaded successfully.`, 'success');
     } catch (err: any) {
-      onShowToast('Export Failed', err.message || `Failed to download ${reportName}.`, 'error');
+      onShowToast('Export Failed', getErrorMessage(err, `Failed to download ${reportName}.`), 'error');
     } finally {
       setLoading(false);
     }

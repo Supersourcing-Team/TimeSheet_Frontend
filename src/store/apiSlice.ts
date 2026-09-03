@@ -42,9 +42,13 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
             result = await baseQuery(args, api, extraOptions);
           } else {
             api.dispatch(logout());
+            // Clear stale cache so the next user never sees another user's data
+            api.dispatch(apiSlice.util.resetApiState());
           }
         } else {
           api.dispatch(logout());
+          // Clear stale cache on refresh failure too
+          api.dispatch(apiSlice.util.resetApiState());
         }
       } finally {
         release();

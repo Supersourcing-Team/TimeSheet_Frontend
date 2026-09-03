@@ -1,3 +1,4 @@
+import { getErrorMessage } from './utils/errorHandler';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from './store';
@@ -87,17 +88,11 @@ import { PMWeekendWorkRequests } from './components/pm/PMWeekendWorkRequests';
 import { AccountManagerDashboard } from './components/ac_manager/AccountManagerDashboard';
 
 const AdminOverview = React.lazy(() => import('./components/admin/AdminOverview').then(m => ({ default: m.AdminOverview })));
-AdminOverview.displayName = 'AdminOverview';
 const UserManagement = React.lazy(() => import('./components/admin/UserManagement').then(m => ({ default: m.UserManagement })));
-UserManagement.displayName = 'UserManagement';
 const AdminLeaveApprovals = React.lazy(() => import('./components/admin/AdminLeaveApprovals').then(m => ({ default: m.AdminLeaveApprovals })));
-AdminLeaveApprovals.displayName = 'AdminLeaveApprovals';
 const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysManagement').then(m => ({ default: m.HolidaysManagement })));
-HolidaysManagement.displayName = 'HolidaysManagement';
 const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
-LeaveTypesManagement.displayName = 'LeaveTypesManagement';
 const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
-WorkingCalendar.displayName = 'WorkingCalendar';
 
 // Initial mocks for things not yet in backend API endpoints
 import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
@@ -125,46 +120,171 @@ export default function App() {
 
   // If user profile is successfully fetched, set the credentials
   React.useEffect(() => {
-    if (userProfile && !currentUser) {
+    if (userProfile && !currentUser && !isLoggingOut) {
       dispatch(setCredentials({ user: userProfile }));
-      // Restore portal mode if explicitly provided in the URL and valid
-      if (urlPortal && ['employee', 'pm', 'ac_manager', 'admin'].includes(urlPortal)) {
+      // Restore portal mode: URL param > sessionStorage saved page > role default (set by setCredentials)
+      const validPortals = ['employee', 'pm', 'ac_manager', 'admin'];
+      if (urlPortal && validPortals.includes(urlPortal)) {
         setTimeout(() => dispatch(setPortalMode(urlPortal as ActivePortalMode)), 0);
+      } else {
+        // Try sessionStorage fallback for browser-close/reopen scenario
+        try {
+          const saved = JSON.parse(sessionStorage.getItem('ST_lastPage') || '{}');
+          if (saved.portal && validPortals.includes(saved.portal)) {
+            setTimeout(() => dispatch(setPortalMode(saved.portal as ActivePortalMode)), 0);
+          }
+        } catch { /* ignore */ }
       }
     }
-  }, [userProfile, currentUser, dispatch, urlPortal]);
+  }, [userProfile, currentUser, dispatch, urlPortal, isLoggingOut]);
 
-  // Local UI State initialized from URL
-  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>(
-    () => (urlPortal === 'employee' && urlTab ? urlTab : 'my_dashboard') as EmployeeTab
-  );
-  const [activePmTab, setActivePmTab] = useState<PMTab>(
-    () => (urlPortal === 'pm' && urlTab ? urlTab : 'pm_dashboard') as PMTab
-  );
-  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>(
-    () => (urlPortal === 'ac_manager' && urlTab ? urlTab : 'ac_dashboard') as ACManagerTab
-  );
-  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>(
-    () => (urlPortal === 'admin' && urlTab ? urlTab : 'admin_overview') as AdminTab
-  );
-
-  // Sync state changes to URL
+  // Reset isLoggingOut flag when a user logs in successfully
   React.useEffect(() => {
     if (currentUser) {
-      const params = new URLSearchParams(window.location.search);
-      params.set('portal', portalMode);
-      if (portalMode === 'employee') params.set('tab', activeEmployeeTab);
-      else if (portalMode === 'pm') params.set('tab', activePmTab);
-      else if (portalMode === 'ac_manager') params.set('tab', activeAcTab);
-      else if (portalMode === 'admin') params.set('tab', activeAdminTab);
-
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.replaceState(null, '', newUrl);
-    } else {
-      // Clear URL parameters when logged out
-      window.history.replaceState(null, '', window.location.pathname);
+      setIsLoggingOut(false);
     }
+  }, [currentUser]);
+
+  // Helper: read last-saved session page from sessionStorage
+  const _getSavedPage = () => {
+    try { return JSON.parse(sessionStorage.getItem('ST_lastPage') || '{}'); } catch { return {}; }
+  };
+
+  // Local UI State — URL params take priority, then sessionStorage fallback, then default
+  const _saved = _getSavedPage();
+  const [activeEmployeeTab, setActiveEmployeeTab] = useState<EmployeeTab>(() => {
+    if (urlPortal === 'employee' && urlTab) return urlTab as EmployeeTab;
+    if (_saved.portal === 'employee' && _saved.tab) return _saved.tab as EmployeeTab;
+    return 'my_dashboard';
+  });
+  const [activePmTab, setActivePmTab] = useState<PMTab>(() => {
+    if (urlPortal === 'pm' && urlTab) return urlTab as PMTab;
+    if (_saved.portal === 'pm' && _saved.tab) return _saved.tab as PMTab;
+    return 'pm_dashboard';
+  });
+  const [activeAcTab, setActiveAcTab] = useState<ACManagerTab>(() => {
+    if (urlPortal === 'ac_manager' && urlTab) return urlTab as ACManagerTab;
+    if (_saved.portal === 'ac_manager' && _saved.tab) return _saved.tab as ACManagerTab;
+    return 'ac_dashboard';
+  });
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>(() => {
+    if (urlPortal === 'admin' && urlTab) return urlTab as AdminTab;
+    if (_saved.portal === 'admin' && _saved.tab) return _saved.tab as AdminTab;
+    return 'admin_overview';
+  });
+
+  // Track previous tab per portal so we can distinguish a real tab change from a re-render
+  const prevTabRef = React.useRef<{ portal: string; tab: string } | null>(null);
+
+  // Sync state changes to URL and sessionStorage (for browser-close/reopen restoration)
+  React.useEffect(() => {
+    if (!currentUser) {
+      // Clear URL parameters and sessionStorage when logged out
+      window.history.replaceState(null, '', window.location.pathname);
+      try { sessionStorage.removeItem('ST_lastPage'); } catch { /* ignore */ }
+      prevTabRef.current = null;
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('portal', portalMode);
+    let activeTab = '';
+    if (portalMode === 'employee') { params.set('tab', activeEmployeeTab); activeTab = activeEmployeeTab; }
+    else if (portalMode === 'pm') { params.set('tab', activePmTab); activeTab = activePmTab; }
+    else if (portalMode === 'ac_manager') { params.set('tab', activeAcTab); activeTab = activeAcTab; }
+    else if (portalMode === 'admin') { params.set('tab', activeAdminTab); activeTab = activeAdminTab; }
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    const prev = prevTabRef.current;
+
+    if (prev === null) {
+      // First render after login — just set the URL, don't push history
+      window.history.replaceState({ portal: portalMode, tab: activeTab }, '', newUrl);
+    } else if (prev.portal !== portalMode) {
+      // Portal mode switched (e.g. employee → pm) — replace, not push (not a page navigation)
+      window.history.replaceState({ portal: portalMode, tab: activeTab }, '', newUrl);
+    } else if (prev.tab !== activeTab) {
+      // Tab changed within the same portal — push a real history entry so Back/Forward works
+      window.history.pushState({ portal: portalMode, tab: activeTab }, '', newUrl);
+    } else {
+      // Same portal + same tab (initial mount or re-render) — just replace silently
+      window.history.replaceState({ portal: portalMode, tab: activeTab }, '', newUrl);
+    }
+
+    prevTabRef.current = { portal: portalMode, tab: activeTab };
+    // Persist for browser close/reopen
+    try { sessionStorage.setItem('ST_lastPage', JSON.stringify({ portal: portalMode, tab: activeTab })); } catch { /* ignore */ }
   }, [currentUser, portalMode, activeEmployeeTab, activePmTab, activeAcTab, activeAdminTab]);
+
+  // Listen for browser Back/Forward (popstate) and sync React tab state to match the URL
+  React.useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      // Read the state object we stored in pushState/replaceState, or fall back to URL params
+      const state = event.state as { portal?: string; tab?: string } | null;
+      const params = new URLSearchParams(window.location.search);
+      const portal = state?.portal || params.get('portal') || portalMode;
+      const tab = state?.tab || params.get('tab') || '';
+
+      if (!tab) return;
+
+      // Update the correct tab state depending on which portal the history entry belongs to
+      if (portal === 'employee') {
+        setActiveEmployeeTab(tab as any);
+        if (portal !== portalMode) dispatch(setPortalMode('employee'));
+      } else if (portal === 'pm') {
+        setActivePmTab(tab as any);
+        if (portal !== portalMode) dispatch(setPortalMode('pm'));
+      } else if (portal === 'ac_manager') {
+        setActiveAcTab(tab as any);
+        if (portal !== portalMode) dispatch(setPortalMode('ac_manager'));
+      } else if (portal === 'admin') {
+        setActiveAdminTab(tab as any);
+        if (portal !== portalMode) dispatch(setPortalMode('admin'));
+      }
+
+      // Keep prevTabRef in sync so the next state change is classified correctly
+      prevTabRef.current = { portal, tab };
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [dispatch, portalMode]);
+
+  // Cross-tab logout: broadcast logout events so all tabs sign out together
+  React.useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('ST_auth');
+      bc.onmessage = (event) => {
+        if (event.data === 'logout' && !isLoggingOut) {
+          // Another tab logged out — mirror the logout here without calling the server again
+          setIsLoggingOut(true);
+          dispatch(logout());
+          dispatch(apiSlice.util.resetApiState());
+        }
+      };
+    } catch { /* BroadcastChannel not supported — silent fallback */ }
+    return () => { bc?.close(); };
+  }, [dispatch, isLoggingOut]);
+
+  // Sleep/wake revalidation: when tab becomes visible after being hidden, re-check session
+  React.useEffect(() => {
+    let hiddenAt = 0;
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else {
+        // Only revalidate if tab was hidden for more than 30 seconds (sleep/wake or long background)
+        const hiddenMs = Date.now() - hiddenAt;
+        if (hiddenMs > 30_000 && currentUser && !isLoggingOut) {
+          // Invalidate the RTK Query user tag to trigger a fresh /auth/me check
+          dispatch(apiSlice.util.invalidateTags(['User']));
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [dispatch, currentUser, isLoggingOut]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
@@ -177,7 +297,7 @@ export default function App() {
 
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
-  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || !isPm });
+  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || (!isPm && !isAdmin && portalMode !== 'ac_manager') });
   const { data: myTimesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
   const { data: managedTimesheets = [] } = useGetManagedTimesheetsQuery(undefined, { skip: skip || !isPm });
 
@@ -189,6 +309,7 @@ export default function App() {
     }
     return Array.from(map.values());
   }, [myTimesheets, managedTimesheets, isPm]);
+
   // Admins need all leave requests; others just need theirs
   const { data: allLeaveRequests = [] } = useGetLeaveRequestsQuery(undefined, { skip: skip || !isAdmin });
   const { data: myLeaveRequests = [] } = useGetMyLeaveRequestsQuery(undefined, { skip: skip || isAdmin });
@@ -202,8 +323,9 @@ export default function App() {
   const { data: fetchedLeaveBalance } = useGetMyLeaveBalancesQuery(undefined, { skip });
   const { data: leaveTypes = [] } = useGetLeaveTypesQuery(undefined, { skip });
 
-  const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip });
-  const { data: fetchedSettings } = useGetSettingsQuery(undefined, { skip });
+  // Only admin needs working calendar and system settings
+  const { data: fetchedWorkingCalendar } = useGetWorkingCalendarQuery(undefined, { skip: skip || !isAdmin });
+  const { data: fetchedSettings } = useGetSettingsQuery(undefined, { skip: skip || !isAdmin });
 
   const [createProjectMutation] = useCreateProjectMutation();
   const [updateProjectMutation] = useUpdateProjectMutation();
@@ -213,8 +335,9 @@ export default function App() {
   const [createTool] = useCreateToolMutation();
   const [allocateTool] = useAllocateToolMutation();
   const [removeToolMutation] = useDeallocateToolMutation();
+
   // Fallbacks for data not yet wired up
-  const leaveBalance = fetchedLeaveBalance || {
+  const leaveBalance = React.useMemo(() => fetchedLeaveBalance || {
     annualLeaveTotal: 0,
     annualLeaveUsed: 0,
     sickLeaveTotal: 0,
@@ -223,10 +346,11 @@ export default function App() {
     parentalLeaveUsed: 0,
     compOffTotal: 0,
     compOffUsed: 0,
-  };
-  const workingCalendar = fetchedWorkingCalendar || INITIAL_WORKING_CALENDAR;
+  }, [fetchedLeaveBalance]);
+
+  const workingCalendar = React.useMemo(() => fetchedWorkingCalendar || INITIAL_WORKING_CALENDAR, [fetchedWorkingCalendar]);
   const [activities] = useState<ActivityLog[]>(INITIAL_ACTIVITIES);
-  const settings = fetchedSettings || INITIAL_SETTINGS;
+  const settings = React.useMemo(() => fetchedSettings || INITIAL_SETTINGS, [fetchedSettings]);
 
   // RTK Mutations
   const [updateWorkingCalendar] = useUpdateWorkingCalendarMutation();
@@ -249,7 +373,7 @@ export default function App() {
   const [rejectWeekendWork] = useRejectWeekendWorkMutation();
   const [logoutApi] = useLogoutMutation();
 
-  const showToast = (title: string, description?: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const showToast = React.useCallback((title: string, description?: string, type: 'success' | 'error' | 'info' = 'info') => {
     const newToast: ToastMessage = {
       id: Date.now().toString() + Math.random().toString().slice(2, 5),
       title,
@@ -260,21 +384,14 @@ export default function App() {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
     }, 4000);
-  };
+  }, []);
 
-  const handleDismissToast = (id: string) => {
+  const handleDismissToast = React.useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, []);
 
-  const handleLogout = () => {
-    // React 18 batches all synchronous state updates in the same event handler
-    // into a single re-render. So setIsLoggingOut(true) + dispatch(logout())
-    // both take effect before the next render, meaning:
-    //   - skip: !!currentUser || isLoggingOut  →  skip: false || true  →  skip: true
-    // useGetCurrentUserQuery will NOT fire, isAuthLoading stays false,
-    // and the component jumps straight to <LoginPage /> in the same render.
-
-    // 1. Prevent getCurrentUser from re-firing (isLoggingOut batched with logout below).
+  const handleLogout = React.useCallback(() => {
+    // 1. Prevent getCurrentUser from re-firing during this render cycle.
     setIsLoggingOut(true);
 
     // 2. Clear user — component re-renders to <LoginPage /> immediately.
@@ -283,14 +400,24 @@ export default function App() {
     // 3. Wipe the RTK-Query cache so stale data isn't shown on next login.
     dispatch(apiSlice.util.resetApiState());
 
-    // 4. Tell the server to invalidate the session cookie — fire and forget.
+    // 4. Clear persisted last-page so the next user doesn't land on the previous user's page.
+    try { sessionStorage.removeItem('ST_lastPage'); } catch { /* ignore */ }
+
+    // 5. Notify other tabs to log out too.
+    try {
+      const bc = new BroadcastChannel('ST_auth');
+      bc.postMessage('logout');
+      bc.close();
+    } catch { /* BroadcastChannel not supported — silent fallback */ }
+
+    // 6. Tell the server to invalidate the session cookie — fire and forget.
     logoutApi().catch(() => {
       // Ignore server-side logout errors; the client is already logged out.
     });
-  };
+  }, [dispatch, logoutApi]);
 
   // --- Timesheet Handlers ---
-  const handleTimesheetSubmit = async (entries: Omit<TimesheetEntry, 'id'>[]) => {
+  const handleTimesheetSubmit = React.useCallback(async (entries: Omit<TimesheetEntry, 'id'>[]) => {
     try {
       const payload = entries.map(e => ({
         project_assignment_id: Number(e.projectId),
@@ -303,20 +430,20 @@ export default function App() {
       await createTimesheets(payload as any).unwrap();
       showToast('Success', 'Timesheets submitted', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to submit timesheets', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to submit timesheets'), 'error');
     }
-  };
+  }, [createTimesheets, showToast]);
 
-  const handleDeleteTimesheet = async (id: string) => {
+  const handleDeleteTimesheet = React.useCallback(async (id: string) => {
     try {
       await deleteTimesheetApi(id).unwrap();
       showToast('Success', 'Timesheet entry deleted', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to delete timesheet', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to delete timesheet'), 'error');
     }
-  };
+  }, [deleteTimesheetApi, showToast]);
 
-  const handleUpdateTimesheet = async (updatedEntry: TimesheetEntry) => {
+  const handleUpdateTimesheet = React.useCallback(async (updatedEntry: TimesheetEntry) => {
     try {
       await updateTimesheetApi({
         id: updatedEntry.id,
@@ -328,12 +455,12 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Timesheet entry updated', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to update timesheet', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update timesheet'), 'error');
     }
-  };
+  }, [updateTimesheetApi, showToast]);
 
   // --- Leave Handlers ---
-  const handleApplyLeave = async (req: Omit<LeaveRequest, 'id'>) => {
+  const handleApplyLeave = React.useCallback(async (req: Omit<LeaveRequest, 'id'>) => {
     try {
       // Map frontend type to leave_type_id dynamically using the fetched leaveTypes
       const matchedType = leaveTypes.find(lt => lt.name.toLowerCase() === req.type.toLowerCase());
@@ -347,39 +474,39 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Leave request submitted successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to apply for leave', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to apply for leave'), 'error');
     }
-  };
+  }, [leaveTypes, createLeaveRequest, showToast]);
 
-  const handleCancelLeave = async (id: string) => {
+  const handleCancelLeave = React.useCallback(async (id: string) => {
     try {
       await cancelLeaveRequest(id).unwrap();
       showToast('Success', 'Leave request cancelled', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to cancel leave', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to cancel leave'), 'error');
     }
-  };
+  }, [cancelLeaveRequest, showToast]);
 
-  const handleApproveLeave = async (id: string, comment?: string) => {
+  const handleApproveLeave = React.useCallback(async (id: string, comment?: string) => {
     try {
       await approveLeaveRequest({ id, comment }).unwrap();
       showToast('Success', 'Leave approved', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to approve leave', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to approve leave'), 'error');
     }
-  };
+  }, [approveLeaveRequest, showToast]);
 
-  const handleRejectLeave = async (id: string, comment?: string) => {
+  const handleRejectLeave = React.useCallback(async (id: string, comment?: string) => {
     try {
       await rejectLeaveRequest({ id, rejection_reason: comment }).unwrap();
       showToast('Success', 'Leave rejected', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to reject leave', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to reject leave'), 'error');
     }
-  };
+  }, [rejectLeaveRequest, showToast]);
 
   // --- Weekend Work ---
-  const handleRequestWeekendWork = async (req: Omit<WeekendWorkRequest, 'id'>) => {
+  const handleRequestWeekendWork = React.useCallback(async (req: Omit<WeekendWorkRequest, 'id'>) => {
     try {
       const assignment = myProjectAssignments.find(a => String(a.project_id) === req.projectId);
       const assignmentId = assignment ? assignment.id : Number(req.projectId); // fallback
@@ -392,30 +519,30 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Weekend work request submitted successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to submit weekend work request', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to submit weekend work request'), 'error');
     }
-  };
+  }, [myProjectAssignments, submitWeekendWork, showToast]);
 
-  const handleApproveWeekendWork = async (id: string) => {
+  const handleApproveWeekendWork = React.useCallback(async (id: string) => {
     try {
       await approveWeekendWork({ id }).unwrap();
       showToast('Success', 'Weekend work approved', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to approve weekend work', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to approve weekend work'), 'error');
     }
-  };
+  }, [approveWeekendWork, showToast]);
 
-  const handleRejectWeekendWork = async (id: string, comment?: string) => {
+  const handleRejectWeekendWork = React.useCallback(async (id: string, comment?: string) => {
     try {
       await rejectWeekendWork({ id, rejection_reason: comment }).unwrap();
       showToast('Success', 'Weekend work rejected', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to reject weekend work', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to reject weekend work'), 'error');
     }
-  };
+  }, [rejectWeekendWork, showToast]);
 
   // --- Projects / PM / AC ---
-  const handleUpdateProjectBudget = async (projectId: string, newBudget: number) => {
+  const handleUpdateProjectBudget = React.useCallback(async (projectId: string, newBudget: number) => {
     try {
       await updateProjectMutation({
         id: projectId,
@@ -423,24 +550,24 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Project budget updated successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to update project budget', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update project budget'), 'error');
     }
-  };
+  }, [updateProjectMutation, showToast]);
 
   const [createClientMutation] = useCreateClientMutation();
 
-  const handleCreateClient = async (name: string, contactInfo?: string) => {
+  const handleCreateClient = React.useCallback(async (name: string, contactInfo?: string) => {
     try {
       const res = await createClientMutation({ name, contact_info: contactInfo }).unwrap();
       showToast('Success', `Client "${name}" created successfully`, 'success');
       return res?.data || res;
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to create client', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to create client'), 'error');
       throw e;
     }
-  };
+  }, [createClientMutation, showToast]);
 
-  const handleAddProject = async (newProj: Omit<Project, 'id'>) => {
+  const handleAddProject = React.useCallback(async (newProj: Omit<Project, 'id'>) => {
     if (!currentUser) return;
     try {
       await createProjectMutation({
@@ -454,11 +581,11 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Project created successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to create project', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to create project'), 'error');
     }
-  };
+  }, [currentUser, createProjectMutation, showToast]);
 
-  const handleUpdateProject = async (updatedProj: Project) => {
+  const handleUpdateProject = React.useCallback(async (updatedProj: Project) => {
     try {
       await updateProjectMutation({
         id: updatedProj.id,
@@ -470,11 +597,11 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Project updated successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to update project', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update project'), 'error');
     }
-  };
+  }, [updateProjectMutation, showToast]);
 
-  const handleAssignUserToProject = async (projectId: string, userId: string) => {
+  const handleAssignUserToProject = React.useCallback(async (projectId: string, userId: string) => {
     try {
       await assignUserMutation({
         project_id: Number(projectId),
@@ -482,81 +609,68 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'User assigned successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to assign user', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to assign user'), 'error');
     }
-  };
+  }, [assignUserMutation, showToast]);
 
-  const handleRemoveUserFromProject = async (projectId: string, userId: string) => {
+  const handleRemoveUserFromProject = React.useCallback(async (projectId: string, userId: string) => {
     try {
       await removeUserMutation({ projectId, userId }).unwrap();
       showToast('Success', 'User removed from project successfully', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to remove user', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to remove user'), 'error');
     }
-  };
+  }, [removeUserMutation, showToast]);
 
-  const handleAddToolToProject = async (projectId: string, tool: Omit<import('./types').ProjectTool, 'id'>) => {
+  const handleAddToolToProject = React.useCallback(async (projectId: string, tool: Omit<import('./types').ProjectTool, 'id'>) => {
     try {
       const newTool = await createTool({ name: tool.name, category: tool.category, cost_per_month: tool.monthlyCost }).unwrap();
       await allocateTool({ tool_id: newTool.id, project_id: Number(projectId), allocation_date: tool.allocationDate }).unwrap();
       showToast('Success', 'Tool added and allocated to project', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to add tool', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to add tool'), 'error');
     }
-  };
+  }, [createTool, allocateTool, showToast]);
 
-  const handleRemoveToolFromProject = async (projectId: string, toolId: string) => {
+  const handleRemoveToolFromProject = React.useCallback(async (projectId: string, toolId: string) => {
     try {
       await removeToolMutation(toolId).unwrap();
       showToast('Success', 'Tool removed', 'success');
     } catch (e: any) {
-      showToast('Error', 'Failed to remove tool', 'error');
+      showToast('Action Failed', 'Failed to remove tool', 'error');
     }
-  };
-
-  // --- User / Admin ---
-  const handleAddUser = (user: Omit<User, 'id'>) => {
-    showToast('Info', 'Add user API pending', 'info');
-  };
-
-  const handleUpdateUser = (updatedUser: User) => {
-    showToast('Info', 'Update user API pending', 'info');
-  };
-
-  const handleToggleUserStatus = (userId: string) => {
-    showToast('Info', 'Toggle user status pending', 'info');
-  };
+  }, [removeToolMutation, showToast]);
 
   // --- Holidays / Settings ---
-  const handleAddHoliday = async (item: Omit<HolidayItem, 'id'>) => {
+  const handleAddHoliday = React.useCallback(async (item: Omit<HolidayItem, 'id'>) => {
     try {
       await createHoliday(item).unwrap();
       showToast('Success', 'Holiday Added', 'success');
     } catch (e: any) {
-      showToast('Error', e.message || 'Failed to add holiday', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to add holiday'), 'error');
     }
-  };
+  }, [createHoliday, showToast]);
 
-  const handleEditHoliday = async (updatedItem: HolidayItem) => {
+  const handleEditHoliday = React.useCallback(async (updatedItem: HolidayItem) => {
     try {
       await updateHoliday(updatedItem).unwrap();
       showToast('Success', 'Holiday Updated', 'success');
     } catch (e: any) {
-      showToast('Error', e.message || 'Failed to update holiday', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update holiday'), 'error');
     }
-  };
+  }, [updateHoliday, showToast]);
 
-  const handleDeleteHoliday = async (id: string) => {
+  const handleDeleteHoliday = React.useCallback(async (id: string) => {
     try {
       await deleteHoliday(id).unwrap();
       showToast('Success', 'Holiday deleted', 'success');
     } catch (e) {
-      showToast('Error', 'Failed to delete holiday', 'error');
+      showToast('Action Failed', 'Failed to delete holiday', 'error');
     }
-  };
+  }, [deleteHoliday, showToast]);
 
   // --- Leave Types Handlers ---
-  const handleAddLeaveType = async (type: Omit<LeaveTypeConfig, 'id'>) => {
+  const handleAddLeaveType = React.useCallback(async (type: Omit<LeaveTypeConfig, 'id'>) => {
     try {
       await createLeaveType({
         name: type.name,
@@ -568,11 +682,11 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Leave type added', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to add leave type', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to add leave type'), 'error');
     }
-  };
+  }, [createLeaveType, showToast]);
 
-  const handleEditLeaveType = async (updated: LeaveTypeConfig) => {
+  const handleEditLeaveType = React.useCallback(async (updated: LeaveTypeConfig) => {
     try {
       await updateLeaveType({
         id: updated.id,
@@ -585,23 +699,64 @@ export default function App() {
       }).unwrap();
       showToast('Success', 'Leave type updated', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to update leave type', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update leave type'), 'error');
     }
-  };
+  }, [updateLeaveType, showToast]);
 
-  const handleToggleLeaveTypeStatus = async (id: string) => {
+  const handleToggleLeaveTypeStatus = React.useCallback(async (id: string) => {
     try {
       await deleteLeaveType(id).unwrap();
       showToast('Success', 'Leave type status toggled', 'success');
     } catch (e: any) {
-      showToast('Error', e?.data?.message || 'Failed to toggle status', 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to toggle status'), 'error');
     }
-  };
+  }, [deleteLeaveType, showToast]);
+
+  // Memoized Sidebar & Header callbacks
+  const handleTogglePortalMode = React.useCallback((mode: ActivePortalMode) => {
+    dispatch(setPortalMode(mode));
+  }, [dispatch]);
+
+  const handleSelectEmployeeTab = React.useCallback((tab: EmployeeTab) => {
+    setActiveEmployeeTab(tab);
+    if (tab !== 'submit_timesheet') {
+      setEditingTimesheet(null);
+      setDefaultSubmitDate(null);
+    }
+  }, []);
+
+  const handleSelectPmTab = React.useCallback((tab: PMTab) => {
+    setActivePmTab(tab);
+  }, []);
+
+  const handleSelectAcTab = React.useCallback((tab: ACManagerTab) => {
+    setActiveAcTab(tab);
+  }, []);
+
+  const handleSelectAdminTab = React.useCallback((tab: AdminTab) => {
+    setActiveAdminTab(tab);
+  }, []);
+
+  const handleQuickAddTimesheet = React.useCallback(() => {
+    if (portalMode === 'employee') setActiveEmployeeTab('submit_timesheet');
+  }, [portalMode]);
 
   // -----------------------------------------------------------------
-  const pendingTimesheetsCount = (timesheets || []).filter((t: any) => t.status === 'pending').length;
-  const pendingLeavesCount = (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
-  const pendingWeekendCount = (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
+  const pendingTimesheetsCount = React.useMemo(() => {
+    return (timesheets || []).filter((t: any) => t.status === 'pending').length;
+  }, [timesheets]);
+
+  const pendingLeavesCount = React.useMemo(() => {
+    return (leaveRequests || []).filter((l: any) => l.status === 'pending').length;
+  }, [leaveRequests]);
+
+  const pendingWeekendCount = React.useMemo(() => {
+    return (weekendRequests || []).filter((w: any) => w.status === 'pending').length;
+  }, [weekendRequests]);
+
+  const pendingApprovalsTotal = React.useMemo(() => {
+    return pendingTimesheetsCount + pendingLeavesCount;
+  }, [pendingTimesheetsCount, pendingLeavesCount]);
 
   if (isAuthLoading && !currentUser) {
     return (
@@ -628,8 +783,8 @@ export default function App() {
       <Header
         currentUser={currentUser}
         portalMode={portalMode}
-        onTogglePortalMode={(mode) => dispatch(setPortalMode(mode))}
-        pendingApprovalsCount={pendingTimesheetsCount + pendingLeavesCount}
+        onTogglePortalMode={handleTogglePortalMode}
+        pendingApprovalsCount={pendingApprovalsTotal}
         onLogout={handleLogout}
       />
 
@@ -637,25 +792,17 @@ export default function App() {
         <Sidebar
           portalMode={portalMode}
           activeEmployeeTab={activeEmployeeTab}
-          onSelectEmployeeTab={(tab) => {
-            setActiveEmployeeTab(tab);
-            if (tab !== 'submit_timesheet') {
-              setEditingTimesheet(null);
-              setDefaultSubmitDate(null);
-            }
-          }}
+          onSelectEmployeeTab={handleSelectEmployeeTab}
           activePmTab={activePmTab}
-          onSelectPmTab={(tab) => setActivePmTab(tab)}
+          onSelectPmTab={handleSelectPmTab}
           activeAcTab={activeAcTab}
-          onSelectAcTab={(tab) => setActiveAcTab(tab)}
+          onSelectAcTab={handleSelectAcTab}
           activeAdminTab={activeAdminTab}
-          onSelectAdminTab={(tab) => setActiveAdminTab(tab)}
+          onSelectAdminTab={handleSelectAdminTab}
           pendingTimesheetsCount={pendingTimesheetsCount}
           pendingLeavesCount={pendingLeavesCount}
           pendingWeekendCount={pendingWeekendCount}
-          onQuickAddTimesheet={() => {
-            if (portalMode === 'employee') setActiveEmployeeTab('submit_timesheet');
-          }}
+          onQuickAddTimesheet={handleQuickAddTimesheet}
         />
 
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
@@ -700,6 +847,7 @@ export default function App() {
                   currentUser={currentUser}
                   timesheets={timesheets}
                   projects={projects}
+                  holidays={holidays || []}
                   onDeleteTimesheet={handleDeleteTimesheet}
                   onUpdateTimesheet={handleUpdateTimesheet}
                   onSubmitTimesheets={handleTimesheetSubmit}
@@ -892,7 +1040,7 @@ export default function App() {
                         await updateWorkingCalendar(newConfig).unwrap();
                         showToast('Success', 'Working calendar updated', 'success');
                       } catch (e: any) {
-                        showToast('Error', e?.data?.message || 'Failed to update working calendar', 'error');
+                        showToast('Action Failed', getErrorMessage(e, 'Failed to update working calendar'), 'error');
                       }
                     }}
                     onShowToast={showToast}

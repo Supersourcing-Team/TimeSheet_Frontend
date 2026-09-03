@@ -28,7 +28,7 @@ interface PMDashboardProps {
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const PMDashboard: React.FC<PMDashboardProps> = ({
+export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
   currentUser,
   projects = [],
   allUsers = [],
@@ -40,59 +40,87 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
   const [showLeavesModal, setShowLeavesModal] = useState(false);
 
-  const safeProjects = projects || [];
-  const safeTimesheets = timesheets || [];
-  const safeWeekendRequests = weekendRequests || [];
-  const safeAllUsers = allUsers || [];
+  const {
+    pmProjects,
+    pmProjectIds,
+    totalTeamMembersCount,
+    pendingWeekendRequests,
+    pmTimesheets,
+    totalLoggedHours,
+    totalBillableHours,
+    todayLoggedHours,
+    thisWeekBillableHours,
+    avgUtilization,
+    recentTimesheets,
+  } = React.useMemo(() => {
+    const safeProjects = projects || [];
+    const safeTimesheets = timesheets || [];
+    const safeWeekendRequests = weekendRequests || [];
+    const safeAllUsers = allUsers || [];
 
-  // PM's projects
-  const pmProjects = safeProjects.filter(
-    (p) =>
-      (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
-      currentUser?.role === 'admin' ||
-      currentUser?.role === 'pm'
-  );
+    // PM's projects
+    const pProjects = safeProjects.filter(
+      (p) =>
+        (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
+        currentUser?.role === 'admin' ||
+        currentUser?.role === 'pm'
+    );
 
-  const pmProjectIds = pmProjects.map((p) => p.id);
+    const pProjectIds = pProjects.map((p) => p.id);
 
-  // All team members assigned to PM's projects
-  const assignedTeamUserIds = Array.from(new Set(pmProjects.flatMap((p) => p.assignedUserIds || [])));
-  const totalTeamMembersCount = assignedTeamUserIds.filter(id => {
-    const user = safeAllUsers.find(u => u.id === id);
-    return user?.role === 'employee';
-  }).length;
+    // All team members assigned to PM's projects
+    const assignedTeamUserIds = Array.from(new Set(pProjects.flatMap((p) => p.assignedUserIds || [])));
+    const teamCount = assignedTeamUserIds.filter(id => {
+      const user = safeAllUsers.find(u => u.id === id);
+      return user?.role === 'employee';
+    }).length;
 
-  // Pending Weekend Work Requests for PM's projects
-  const pendingWeekendRequests = safeWeekendRequests.filter(
-    (w) => w.status === 'pending' && (pmProjectIds.length === 0 || pmProjectIds.includes(w.projectId))
-  );
+    // Pending Weekend Work Requests for PM's projects
+    const pendingRequests = safeWeekendRequests.filter(
+      (w) => w.status === 'pending' && (pProjectIds.length === 0 || pProjectIds.includes(w.projectId))
+    );
 
-  // Timesheets for PM's projects
-  const pmTimesheets = safeTimesheets.filter(
-    (t) => pmProjectIds.length === 0 || pmProjectIds.includes(t.projectId)
-  );
+    // Timesheets for PM's projects
+    const pTimesheets = safeTimesheets.filter(
+      (t) => pProjectIds.length === 0 || pProjectIds.includes(t.projectId)
+    );
 
-  // Calculations for stats
-  const totalLoggedHours = pmProjects.reduce((sum, p) => sum + p.loggedHours, 0);
-  const totalBillableHours = pmProjects.reduce((sum, p) => sum + p.billableHours, 0);
+    // Calculations for stats
+    const totLogged = pProjects.reduce((sum, p) => sum + p.loggedHours, 0);
+    const totBillable = pProjects.reduce((sum, p) => sum + p.billableHours, 0);
 
-  // Today's date YYYY-MM-DD
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayTimesheets = pmTimesheets.filter((t) => t.date === todayStr);
-  const todayLoggedHours = todayTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
+    // Today's date YYYY-MM-DD
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaySheets = pTimesheets.filter((t) => t.date === todayStr);
+    const todayLogged = todaySheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
 
-  // This Week's billable hours
-  const thisWeekBillableHours = pmTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
+    // This Week's billable hours
+    const weekBillable = pTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
 
-  // Average Team Utilization
-  const totalLoggedForUtilization = pmTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
-  const totalBillableForUtilization = pmTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
-  const avgUtilization = totalLoggedForUtilization > 0
-    ? Math.min(100, Math.round((totalBillableForUtilization / totalLoggedForUtilization) * 100))
-    : 0;
+    // Average Team Utilization
+    const totalLoggedForUtil = pTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
+    const totalBillableForUtil = pTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
+    const utilization = totalLoggedForUtil > 0
+      ? Math.min(100, Math.round((totalBillableForUtil / totalLoggedForUtil) * 100))
+      : 0;
 
-  // Recent 5 timesheet submissions
-  const recentTimesheets = [...pmTimesheets].reverse().slice(0, 5);
+    // Recent 5 timesheet submissions
+    const recent = [...pTimesheets].reverse().slice(0, 5);
+
+    return {
+      pmProjects: pProjects,
+      pmProjectIds: pProjectIds,
+      totalTeamMembersCount: teamCount,
+      pendingWeekendRequests: pendingRequests,
+      pmTimesheets: pTimesheets,
+      totalLoggedHours: totLogged,
+      totalBillableHours: totBillable,
+      todayLoggedHours: todayLogged,
+      thisWeekBillableHours: weekBillable,
+      avgUtilization: utilization,
+      recentTimesheets: recent,
+    };
+  }, [projects, timesheets, weekendRequests, allUsers, currentUser]);
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
@@ -381,4 +409,6 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
       )}
     </div>
   );
-};
+});
+PMDashboard.displayName = 'PMDashboard';
+

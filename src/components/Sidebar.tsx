@@ -72,7 +72,7 @@ interface SidebarProps {
   onQuickAddTimesheet?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+export const Sidebar: React.FC<SidebarProps> = React.memo(({
   portalMode,
   activeEmployeeTab,
   onSelectEmployeeTab,
@@ -483,4 +483,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
     </aside>
   );
-};
+});
+Sidebar.displayName = 'Sidebar';
+

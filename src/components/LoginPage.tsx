@@ -35,32 +35,55 @@ export const LoginPage: React.FC = () => {
    };
 
    useEffect(() => {
-      if (initializedRef.current) return;
-
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '146072997584-and6rpntvi6fi6gvvthkp8c37spr6snn.apps.googleusercontent.com';
-      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-         try {
-            window.google.accounts.id.initialize({
-               client_id: googleClientId,
-               callback: handleCredentialResponse,
-            });
 
-            initializedRef.current = true;
-
-            const btnContainer = document.getElementById('google-sso-btn-container');
-            if (btnContainer) {
-               btnContainer.innerHTML = '';
-               window.google.accounts.id.renderButton(btnContainer, {
-                  theme: 'outline',
-                  size: 'large',
-                  width: 340,
-                  text: 'signin_with',
+      const tryRenderGoogleButton = (): boolean => {
+         if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+            try {
+               (window as any).google.accounts.id.initialize({
+                  client_id: googleClientId,
+                  callback: handleCredentialResponse,
                });
+
+               const btnContainer = document.getElementById('google-sso-btn-container');
+               if (btnContainer) {
+                  btnContainer.innerHTML = '';
+                  (window as any).google.accounts.id.renderButton(btnContainer, {
+                     theme: 'outline',
+                     size: 'large',
+                     width: 340,
+                     text: 'signin_with',
+                  });
+                  return true;
+               }
+            } catch (err) {
+               console.warn('Google Identity initialization error:', err);
             }
-         } catch (err) {
-            console.warn('Google Identity initialization:', err);
          }
+         return false;
+      };
+
+      // 1. Try rendering immediately
+      if (tryRenderGoogleButton()) {
+         return;
       }
+
+      // 2. If Google script is still downloading, poll until window.google is ready
+      const interval = setInterval(() => {
+         if (tryRenderGoogleButton()) {
+            clearInterval(interval);
+         }
+      }, 100);
+
+      // 3. Safety timeout after 8 seconds
+      const timeout = setTimeout(() => {
+         clearInterval(interval);
+      }, 8000);
+
+      return () => {
+         clearInterval(interval);
+         clearTimeout(timeout);
+      };
    }, []);
 
 
@@ -183,7 +206,7 @@ export const LoginPage: React.FC = () => {
                      {isGoogleSigningIn ? (
                         <div className="w-full h-[60px] rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center gap-3 animate-pulse">
                            <div className="w-5 h-5 border-[2.5px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                           <span className="text-blue-700 font-semibold text-[15px]">Connecting to workspace...</span>
+                           <span className="text-blue-700 font-semibold text-[15px]">Connecting...</span>
                         </div>
                      ) : (
                         <div id="google-sso-btn-container" className="flex justify-center w-full hover:scale-[1.02] transition-transform duration-200"></div>

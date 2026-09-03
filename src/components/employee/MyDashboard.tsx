@@ -31,7 +31,7 @@ interface MyDashboardProps {
   onNavigateTab: (tab: EmployeeTab) => void;
 }
 
-export const MyDashboard: React.FC<MyDashboardProps> = ({
+export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
   currentUser,
   timesheets = [],
   projects = [],
@@ -40,58 +40,76 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
   holidays = [],
   onNavigateTab,
 }) => {
-  const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
+  const userTimesheets = React.useMemo(() => {
+    return (timesheets || []).filter((t) => t.userId === currentUser.id);
+  }, [timesheets, currentUser.id]);
 
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
+  const {
+    currentWeekTimesheets,
+    totalLoggedHoursThisWeek,
+    completionPercentage,
+    billableThisWeek,
+    targetWeeklyHours,
+  } = React.useMemo(() => {
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
 
-  const dayOfWeek = todayDate.getDay();
-  const diffToMonday = todayDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-  const mondayThisWeek = new Date(todayDate.getFullYear(), todayDate.getMonth(), diffToMonday);
-  const fridayThisWeek = new Date(mondayThisWeek.getFullYear(), mondayThisWeek.getMonth(), mondayThisWeek.getDate() + 4);
+    const dayOfWeek = todayDate.getDay();
+    const diffToMonday = todayDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const mondayThisWeek = new Date(todayDate.getFullYear(), todayDate.getMonth(), diffToMonday);
+    const fridayThisWeek = new Date(mondayThisWeek.getFullYear(), mondayThisWeek.getMonth(), mondayThisWeek.getDate() + 4);
 
-  // Using simple YYYY-MM-DD local format
-  const formatYMD = (d: Date) => {
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${mm}-${dd}`;
-  };
+    const formatYMD = (d: Date) => {
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${mm}-${dd}`;
+    };
 
-  const startOfWeek = formatYMD(mondayThisWeek);
-  const endOfWeek = formatYMD(fridayThisWeek);
+    const startOfWeek = formatYMD(mondayThisWeek);
+    const endOfWeek = formatYMD(fridayThisWeek);
 
-  const currentWeekTimesheets = userTimesheets.filter((t) => t.date >= startOfWeek && t.date <= endOfWeek);
+    const weekSheets = userTimesheets.filter((t) => t.date >= startOfWeek && t.date <= endOfWeek);
+    const totalLogged = weekSheets.reduce(
+      (acc, curr) => acc + ((curr as any).hours || (curr.billableHours + curr.nonBillableHours) || 0),
+      0
+    );
+    const target = 40;
+    const completion = Math.min(100, Math.round((totalLogged / target) * 100));
+    const billable = weekSheets.reduce((acc, curr) => acc + curr.billableHours, 0);
 
-  const totalLoggedHoursThisWeek = currentWeekTimesheets.reduce(
-    (acc, curr) => acc + ((curr as any).hours || (curr.billableHours + curr.nonBillableHours) || 0),
-    0
-  );
-  const targetWeeklyHours = 40;
-  const completionPercentage = Math.min(
-    100,
-    Math.round((totalLoggedHoursThisWeek / targetWeeklyHours) * 100)
-  );
+    return {
+      currentWeekTimesheets: weekSheets,
+      totalLoggedHoursThisWeek: totalLogged,
+      completionPercentage: completion,
+      billableThisWeek: billable,
+      targetWeeklyHours: target,
+    };
+  }, [userTimesheets]);
 
-  const billableThisWeek = currentWeekTimesheets.reduce((acc, curr) => acc + curr.billableHours, 0);
-  const safeProjects = projects || [];
-  const focusProject = safeProjects.find((p) => p.assignedUserIds?.includes(currentUser.id)) || safeProjects[0];
+  const focusProject = React.useMemo(() => {
+    const safeProjects = projects || [];
+    return safeProjects.find((p) => p.assignedUserIds?.includes(currentUser.id)) || safeProjects[0];
+  }, [projects, currentUser.id]);
 
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
   const [showLeavesModal, setShowLeavesModal] = useState(false);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { nextHoliday, remainingDays } = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const upcomingHolidays = (holidays || [])
-    .filter(h => new Date(h.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const upcoming = (holidays || [])
+      .filter(h => new Date(h.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const nextHoliday = upcomingHolidays[0];
-  let remainingDays = 0;
-  if (nextHoliday) {
-    const holidayDate = new Date(nextHoliday.date);
-    remainingDays = Math.ceil((holidayDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-  }
+    const next = upcoming[0];
+    let days = 0;
+    if (next) {
+      const holidayDate = new Date(next.date);
+      days = Math.ceil((holidayDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    }
+    return { nextHoliday: next, remainingDays: days };
+  }, [holidays]);
 
   return (
     <div className="space-y-6 text-slate-800">
@@ -312,7 +330,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
                       {ts.billableDescription || ts.description}
                     </td>
                     <td className="py-3 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                      {ts.hours}h <span className="text-[10px] text-emerald-600 font-bold">({ts.billableHours}h billable)</span>
+                      {ts.billableHours + ts.nonBillableHours}h <span className="text-[10px] text-emerald-600 font-bold">({ts.billableHours}h billable)</span>
                     </td>
                     <td className="py-3 px-3 text-center whitespace-nowrap">
                       <span
@@ -449,4 +467,6 @@ export const MyDashboard: React.FC<MyDashboardProps> = ({
       )}
     </div>
   );
-};
+});
+MyDashboard.displayName = 'MyDashboard';
+

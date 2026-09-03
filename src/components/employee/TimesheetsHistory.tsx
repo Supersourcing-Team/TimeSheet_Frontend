@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, TimesheetEntry, Project, LeaveRequest } from '../../types';
+import { User, TimesheetEntry, Project, LeaveRequest, HolidayItem } from '../../types';
 import { useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
 import {
   Calendar as CalendarIcon,
@@ -24,6 +24,7 @@ interface TimesheetsHistoryProps {
   currentUser: User;
   timesheets: TimesheetEntry[];
   projects: Project[];
+  holidays?: HolidayItem[];
   onDeleteTimesheet?: (id: string) => void;
   onUpdateTimesheet?: (entry: TimesheetEntry) => void;
   onEditRequest?: (entry: TimesheetEntry) => void;
@@ -36,6 +37,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   currentUser,
   timesheets,
   projects,
+  holidays = [],
   onDeleteTimesheet,
   onUpdateTimesheet,
   onEditRequest,
@@ -99,6 +101,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
         lr.endDate >= dateStr &&
         (lr.status === 'approved' || lr.status === 'pending')
     );
+  };
+
+  // Helper: get holiday for a date
+  const getHolidayForDate = (dateStr: string): HolidayItem | undefined => {
+    return (holidays || []).find((h) => h.date === dateStr);
   };
 
   const formatLeaveBadgeLabel = (lr: LeaveRequest): string => {
@@ -298,6 +305,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
                 <span>Leave Day</span>
               </span>
+              <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+                <span>Holiday</span>
+              </span>
               <span className="flex items-center gap-1.5 text-slate-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
                 <span>Off / Weekend</span>
@@ -324,6 +335,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               const dayEntries = userTimesheets.filter((t) => t.date === dateStr);
               const dayTotalHours = dayEntries.reduce((acc, curr) => acc + (curr.billableHours + curr.nonBillableHours), 0);
               const leaveForDay = getLeaveForDate(dateStr);
+              const holidayForDay = getHolidayForDate(dateStr);
               const isFullDayLeave = leaveForDay && (!leaveForDay.leaveDurationType || leaveForDay.leaveDurationType === 'full_day');
 
               const dateObj = new Date(dateStr);
@@ -346,18 +358,22 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   disabled={false}
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
                     isFutureDate
-                      ? 'bg-white border-slate-100 hover:border-blue-400 hover:scale-[1.02] cursor-pointer'
+                      ? holidayForDay
+                        ? 'bg-orange-50 border-orange-200 hover:border-orange-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : 'bg-white border-slate-100 hover:border-blue-400 hover:scale-[1.02] cursor-pointer'
                       : isFullDayLeave
                         ? 'bg-rose-50 border-rose-300 hover:border-rose-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                        : isWeekend
-                          ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                          : dayTotalHours >= 8
-                            ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                            : dayTotalHours > 0
-                              ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                              : leaveForDay
-                                ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                                : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : holidayForDay
+                          ? 'bg-orange-50 border-orange-300 hover:border-orange-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          : isWeekend
+                            ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                            : dayTotalHours >= 8
+                              ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                              : dayTotalHours > 0
+                                ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                : leaveForDay
+                                  ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                  : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -388,6 +404,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         <span className="truncate">{formatLeaveBadgeLabel(leaveForDay)}</span>
                       </div>
                     )}
+                    {/* Holiday badge */}
+                    {holidayForDay && !leaveForDay && (
+                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 font-extrabold border border-orange-200 flex items-center gap-1">
+                        <span>🎉</span>
+                        <span className="truncate">{holidayForDay.name}</span>
+                      </div>
+                    )}
                     {dayEntries.slice(0, leaveForDay ? 1 : 2).map((e) => (
                       <div
                         key={e.id}
@@ -402,8 +425,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         +{dayEntries.length - (leaveForDay ? 1 : 2)} more
                       </div>
                     )}
-                    {dayEntries.length === 0 && !leaveForDay && !isWeekend && !isFutureDate && (
+                    {dayEntries.length === 0 && !leaveForDay && !holidayForDay && !isWeekend && !isFutureDate && (
                       <span className="text-[10px] text-slate-400 italic">Click to log</span>
+                    )}
+                    {dayEntries.length === 0 && holidayForDay && !leaveForDay && !isFutureDate && (
+                      <span className="text-[10px] text-orange-400 italic">Holiday</span>
                     )}
                   </div>
                 </button>

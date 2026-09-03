@@ -92,7 +92,7 @@ function notificationBg(type: NotificationType, isRead: boolean): string {
 // ---------------------------------------------------------------------------
 // Header component
 // ---------------------------------------------------------------------------
-export const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = React.memo(({
   currentUser,
   portalMode,
   onTogglePortalMode,
@@ -404,4 +404,6 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
-};
+});
+Header.displayName = 'Header';
+

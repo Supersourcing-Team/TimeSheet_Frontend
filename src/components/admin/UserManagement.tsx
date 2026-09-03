@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import {
@@ -150,7 +151,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
     } catch (e: any) {
       const msg = e.message || 'Failed to load roles';
       setRolesError(msg);
-      onShowToast('Roles Load Failed', msg, 'error');
+      onShowToast('Roles Load Failed', getErrorMessage(e, 'Failed to load system roles.'), 'error');
     } finally {
       setRolesLoading(false);
     }
@@ -225,7 +226,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
       setCreateForm({ ...defaultCreate });
       loadUsers();
     } catch (e: any) {
-      onShowToast('Create Failed', e.message, 'error');
+      onShowToast('Create Failed', getErrorMessage(e, 'Failed to create user.'), 'error');
     } finally {
       setCreateLoading(false);
     }
@@ -265,7 +266,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
       setEditForm(null);
       loadUsers();
     } catch (e: any) {
-      onShowToast('Update Failed', e.message, 'error');
+      onShowToast('Update Failed', getErrorMessage(e, 'Failed to update user.'), 'error');
     } finally {
       setEditLoading(false);
     }
@@ -279,7 +280,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
       onShowToast('Status Updated', `${user.first_name} ${user.last_name} is now ${nextStatus}.`, 'info');
       loadUsers();
     } catch (e: any) {
-      onShowToast('Status Update Failed', e.message, 'error');
+      onShowToast('Status Update Failed', getErrorMessage(e, 'Failed to toggle user status.'), 'error');
     } finally {
       setTogglingIds((prev) => {
         const next = new Set(prev);

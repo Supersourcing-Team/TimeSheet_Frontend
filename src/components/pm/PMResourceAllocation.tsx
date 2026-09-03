@@ -32,7 +32,7 @@ interface PMResourceAllocationProps {
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
+export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.memo(({
   currentUser,
   projects = [],
   allUsers = [],
@@ -63,12 +63,14 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
   const [toolAllocationDate, setToolAllocationDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   // PM's projects
-  const pmProjects = (projects || []).filter(
-    (p) =>
-      (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
-      currentUser?.role === 'admin' ||
-      currentUser?.role === 'pm'
-  );
+  const pmProjects = React.useMemo(() => {
+    return (projects || []).filter(
+      (p) =>
+        (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
+        currentUser?.role === 'admin' ||
+        currentUser?.role === 'pm'
+    );
+  }, [projects, currentUser]);
 
   // Handle assign employee submission
   const handleConfirmAssign = (e: React.FormEvent) => {
@@ -98,34 +100,26 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
     onShowToast('Employee Removed', `Removed ${userName} from ${projectName}.`, 'info');
   };
 
-  // Handle tool allocation submission
+  // Handle add tool submission
   const handleConfirmAddTool = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toolProjectId || !toolName) return;
-
-    const targetProject = pmProjects.find((p) => p.id === toolProjectId);
-    if (!targetProject) return;
-
-    const isAlreadyAllocated = (targetProject.tools || []).some(
-      (t) => t.name.toLowerCase() === toolName.toLowerCase()
-    );
-    if (isAlreadyAllocated) {
-      onShowToast('Already Allocated', `${toolName} is already allocated to ${targetProject.name}.`, 'info');
+    if (!toolProjectId || !toolName) {
+      onShowToast('Validation Error', 'Please specify a tool name and project.', 'error');
       return;
     }
 
-    const toolPayload: Omit<ProjectTool, 'id'> = {
+    const targetProject = pmProjects.find((p) => p.id === toolProjectId);
+
+    onAddToolToProject(toolProjectId, {
       name: toolName,
       category: toolCategory,
-      monthlyCost: Number(toolMonthlyCost),
-      assignedUsersCount: (targetProject.assignedUserIds || []).length,
+      monthlyCost: Number(toolMonthlyCost) || 0,
+      assignedUsersCount: (targetProject?.assignedUserIds || []).length || 0,
       allocationDate: toolAllocationDate,
       status: 'active',
-    };
+    });
 
-    onAddToolToProject(toolProjectId, toolPayload);
-    onShowToast('Tool Allocated', `Allocated ${toolName} to ${targetProject.name}`, 'success');
-
+    onShowToast('Tool Added', `Allocated ${toolName} to project.`, 'success');
     setShowToolModal(false);
     setToolProjectId('');
     setToolName('');
@@ -139,40 +133,48 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
   };
 
   // Filtered list of users
-  const filteredUsers = (allUsers || []).filter((u) => {
-    if (u.role !== 'employee') return false;
+  const filteredUsers = React.useMemo(() => {
+    const term = (searchTerm || '').toLowerCase();
+    return (allUsers || []).filter((u) => {
+      if (u.role !== 'employee') return false;
 
-    const matchesSearch =
-      (u.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
-      (u.department || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
-      (u.title || '').toLowerCase().includes((searchTerm || '').toLowerCase());
+      const matchesSearch =
+        (u.name || '').toLowerCase().includes(term) ||
+        (u.department || '').toLowerCase().includes(term) ||
+        (u.title || '').toLowerCase().includes(term);
 
-    if (selectedProjectFilter === 'all') return matchesSearch;
+      if (selectedProjectFilter === 'all') return matchesSearch;
 
-    const targetProj = pmProjects.find((p) => p.id === selectedProjectFilter);
-    return matchesSearch && (targetProj?.assignedUserIds || []).includes(u.id);
-  });
+      const targetProj = pmProjects.find((p) => p.id === selectedProjectFilter);
+      return matchesSearch && (targetProj?.assignedUserIds || []).includes(u.id);
+    });
+  }, [allUsers, searchTerm, selectedProjectFilter, pmProjects]);
 
   // Flat list of allocated tools across PM's projects
-  const allAllocatedTools = pmProjects.flatMap((p) =>
-    (p.tools || []).map((t) => ({
-      ...t,
-      projectId: p.id,
-      projectName: p.name,
-      projectCode: p.code,
-    }))
-  );
+  const allAllocatedTools = React.useMemo(() => {
+    return pmProjects.flatMap((p) =>
+      (p.tools || []).map((t) => ({
+        ...t,
+        projectId: p.id,
+        projectName: p.name,
+        projectCode: p.code,
+      }))
+    );
+  }, [pmProjects]);
 
-  const filteredTools = allAllocatedTools.filter((t) => {
-    const matchesSearch =
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTools = React.useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return allAllocatedTools.filter((t) => {
+      const matchesSearch =
+        t.name.toLowerCase().includes(term) ||
+        t.projectName.toLowerCase().includes(term) ||
+        t.category.toLowerCase().includes(term);
 
-    const matchesProject = selectedProjectFilter === 'all' || t.projectId === selectedProjectFilter;
+      const matchesProject = selectedProjectFilter === 'all' || t.projectId === selectedProjectFilter;
 
-    return matchesSearch && matchesProject;
-  });
+      return matchesSearch && matchesProject;
+    });
+  }, [allAllocatedTools, searchTerm, selectedProjectFilter]);
 
   return (
     <div className="space-y-6 text-slate-900 font-sans">
@@ -421,7 +423,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <button
-                          onClick={() => handleRemoveTool(tool.projectId, tool.allocationId, tool.name)}
+                          onClick={() => handleRemoveTool(tool.projectId, tool.id, tool.name)}
                           className="px-3 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold text-xs border border-rose-200"
                         >
                           Deallocate
@@ -622,5 +624,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = ({
       )}
     </div>
   );
-};
+});
+PMResourceAllocation.displayName = 'PMResourceAllocation';
+
 
