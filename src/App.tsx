@@ -113,9 +113,20 @@ export default function App() {
     skip: !!currentUser || isLoggingOut,
   });
 
+  function normalizePortalMode(portal: string | null | undefined): ActivePortalMode | null {
+    if (!portal) return null;
+    const p = String(portal).toLowerCase();
+    if (p.includes('admin')) return 'admin';
+    if (p.includes('project') || p === 'pm') return 'pm';
+    if (p.includes('account') || p === 'ac_manager') return 'ac_manager';
+    if (p.includes('employee')) return 'employee';
+    return null;
+  }
+
   // Initialize URL Sync variables
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const urlPortal = searchParams.get('portal');
+  const rawUrlPortal = searchParams.get('portal');
+  const urlPortal = normalizePortalMode(rawUrlPortal);
   const urlTab = searchParams.get('tab');
 
   // If user profile is successfully fetched, set the credentials
@@ -125,13 +136,14 @@ export default function App() {
       // Restore portal mode: URL param > sessionStorage saved page > role default (set by setCredentials)
       const validPortals = ['employee', 'pm', 'ac_manager', 'admin'];
       if (urlPortal && validPortals.includes(urlPortal)) {
-        setTimeout(() => dispatch(setPortalMode(urlPortal as ActivePortalMode)), 0);
+        setTimeout(() => dispatch(setPortalMode(urlPortal)), 0);
       } else {
         // Try sessionStorage fallback for browser-close/reopen scenario
         try {
           const saved = JSON.parse(sessionStorage.getItem('ST_lastPage') || '{}');
-          if (saved.portal && validPortals.includes(saved.portal)) {
-            setTimeout(() => dispatch(setPortalMode(saved.portal as ActivePortalMode)), 0);
+          const savedPortal = normalizePortalMode(saved.portal);
+          if (savedPortal && validPortals.includes(savedPortal)) {
+            setTimeout(() => dispatch(setPortalMode(savedPortal)), 0);
           }
         } catch { /* ignore */ }
       }
@@ -147,7 +159,15 @@ export default function App() {
 
   // Helper: read last-saved session page from sessionStorage
   const _getSavedPage = () => {
-    try { return JSON.parse(sessionStorage.getItem('ST_lastPage') || '{}'); } catch { return {}; }
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('ST_lastPage') || '{}');
+      return {
+        ...saved,
+        portal: normalizePortalMode(saved.portal),
+      };
+    } catch {
+      return {};
+    }
   };
 
   // Local UI State — URL params take priority, then sessionStorage fallback, then default
@@ -222,7 +242,8 @@ export default function App() {
       // Read the state object we stored in pushState/replaceState, or fall back to URL params
       const state = event.state as { portal?: string; tab?: string } | null;
       const params = new URLSearchParams(window.location.search);
-      const portal = state?.portal || params.get('portal') || portalMode;
+      const rawPortal = state?.portal || params.get('portal');
+      const portal = normalizePortalMode(rawPortal) || portalMode;
       const tab = state?.tab || params.get('tab') || '';
 
       if (!tab) return;

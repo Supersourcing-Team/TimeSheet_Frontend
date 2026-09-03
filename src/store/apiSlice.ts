@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Mutex } from 'async-mutex';
 import { RootState } from './index';
 import { logout } from './slices/authSlice';
+import { mapBackendUserToFrontendUser } from '../utils/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -33,10 +34,11 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
         if (refreshResult.data) {
           const data = (refreshResult.data as any).data;
           if (data && data.user) {
+            const normalizedUser = mapBackendUserToFrontendUser(data.user);
             api.dispatch({
               type: 'auth/setCredentials',
               payload: {
-                user: data.user,
+                user: normalizedUser,
               },
             });
             result = await baseQuery(args, api, extraOptions);
