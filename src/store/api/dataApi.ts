@@ -9,6 +9,9 @@ import {
   HolidayItem,
   LeaveTypeConfig,
   NotificationsResponse,
+  UtilizationDashboardData,
+  EmployeeUtilizationData,
+  MilestoneUtilizationData,
 } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -770,6 +773,49 @@ export const dataApi = apiSlice.injectEndpoints({
     }),
 
     // -----------------------------------------------------------------------
+    // Employee Utilization
+    // -----------------------------------------------------------------------
+    getUtilizationDashboard: builder.query<UtilizationDashboardData, { project_id?: number; milestone_id?: number; milestone_status?: string } | void>({
+      query: (params) => {
+        const p = params || {};
+        const qs = new URLSearchParams();
+        if (p.project_id) qs.append('project_id', String(p.project_id));
+        if (p.milestone_id) qs.append('milestone_id', String(p.milestone_id));
+        if (p.milestone_status) qs.append('milestone_status', p.milestone_status);
+        const qStr = qs.toString();
+        return `/utilization/dashboard${qStr ? `?${qStr}` : ''}`;
+      },
+      transformResponse: (res: any) => res.data || {},
+      providesTags: ['Project', 'Timesheet'],
+    }),
+    getEmployeeUtilization: builder.query<EmployeeUtilizationData, { project_id?: number; milestone_id?: number; milestone_status?: string } | void>({
+      query: (params) => {
+        const p = params || {};
+        const qs = new URLSearchParams();
+        if (p.project_id) qs.append('project_id', String(p.project_id));
+        if (p.milestone_id) qs.append('milestone_id', String(p.milestone_id));
+        if (p.milestone_status) qs.append('milestone_status', p.milestone_status);
+        const qStr = qs.toString();
+        return `/utilization/employees${qStr ? `?${qStr}` : ''}`;
+      },
+      transformResponse: (res: any) => res.data || {},
+      providesTags: ['Project', 'Timesheet'],
+    }),
+    getMilestoneUtilization: builder.query<MilestoneUtilizationData, { project_id?: number; milestone_id?: number; milestone_status?: string } | void>({
+      query: (params) => {
+        const p = params || {};
+        const qs = new URLSearchParams();
+        if (p.project_id) qs.append('project_id', String(p.project_id));
+        if (p.milestone_id) qs.append('milestone_id', String(p.milestone_id));
+        if (p.milestone_status) qs.append('milestone_status', p.milestone_status);
+        const qStr = qs.toString();
+        return `/utilization/milestones${qStr ? `?${qStr}` : ''}`;
+      },
+      transformResponse: (res: any) => res.data || {},
+      providesTags: ['Project', 'Timesheet'],
+    }),
+
+    // -----------------------------------------------------------------------
     // Notifications
     // -----------------------------------------------------------------------
     getNotifications: builder.query<NotificationsResponse, void>({
@@ -859,6 +905,10 @@ export const {
   useGetProjectFinancialsQuery,
   useGetNotificationsQuery,
   useClearNotificationsMutation,
+  // Employee Utilization
+  useGetUtilizationDashboardQuery,
+  useGetEmployeeUtilizationQuery,
+  useGetMilestoneUtilizationQuery,
 } = dataApi;
 
 

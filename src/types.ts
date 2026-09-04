@@ -284,3 +284,86 @@ declare global {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Employee & Milestone Utilization Types
+// -----------------------------------------------------------------------------
+
+export interface CapacityKPI {
+  total_employees: number;
+  available_hours: number;
+  billable_hours: number;
+  non_billable_hours: number;
+  employee_utilization_pct: number;
+}
+
+export interface CostKPI {
+  employee_cost: number;
+  tool_cost: number;
+  total_actual_cost: number;
+}
+
+export interface BudgetKPI {
+  total_budget: number;
+  budget_utilization_pct: number;
+  remaining_budget: number;
+  cost_variance: number;
+  cost_variance_pct: number;
+}
+
+export interface ForecastKPI {
+  forecasted_final_cost: number;
+  projected_overrun: number;
+}
+
+export interface UtilizationDashboardData {
+  capacity: CapacityKPI;
+  cost: CostKPI;
+  budget: BudgetKPI;
+  forecast: ForecastKPI;
+}
+
+export interface EmployeeUtilizationRow {
+  employee_id: number;
+  employee_name: string;
+  available_hours: number;
+  billable_hours: number;
+  non_billable_hours: number;
+  utilization_pct: number;
+  hourly_cost: number;
+  employee_cost: number;
+}
+
+export interface EmployeeUtilizationData {
+  employees: EmployeeUtilizationRow[];
+  total_count: number;
+}
+
+export interface MilestoneUtilizationRow {
+  milestone_id: number;
+  milestone_name: string;
+  project_id: number;
+  project_name: string;
+  status: string;
+  completion_percentage: number;
+  budget: number;
+  planned_hours: number;
+  billable_hours: number;
+  employee_cost: number;
+  tool_cost: number;
+  total_actual_cost: number;
+  budget_utilization_pct: number;
+  remaining_budget: number;
+  cost_variance: number;
+  forecasted_final_cost: number;
+  projected_overrun: number;
+  planned_duration_days: number;
+  actual_duration_days: number;
+  schedule_variance_days: number;
+  schedule_status: 'early' | 'on_time' | 'late' | 'pending' | string;
+}
+
+export interface MilestoneUtilizationData {
+  milestones: MilestoneUtilizationRow[];
+  total_count: number;
+}
+

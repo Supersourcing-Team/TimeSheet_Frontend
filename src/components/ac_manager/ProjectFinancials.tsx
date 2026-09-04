@@ -51,23 +51,6 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-xs text-slate-500 font-semibold">Total Contract Budget</span>
-          <p className="text-2xl font-black text-slate-900">{formatCr(totalBudget)}</p>
-        </div>
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-xs text-slate-500 font-semibold">Total Earned Value</span>
-          <p className="text-2xl font-black text-emerald-600">{formatCr(totalEarnedValue)}</p>
-        </div>
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-xs text-slate-500 font-semibold">Net Cost Variance</span>
-          <p className={`text-2xl font-black ${totalCostVariance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {formatCr(totalCostVariance)}
-          </p>
-        </div>
-      </div>
-
       <div className="space-y-4">
         {safeProjects.map((p) => {
           const isExpanded = expandedProject === p.id;

@@ -129,26 +129,30 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     return true;
   });
 
-  const top3Projects = safeProjects
+  const activeProjectHealth = safeProjects
     .filter((p) => p.status === 'active')
     .sort((a, b) => (b.budget || 0) - (a.budget || 0))
-    .slice(0, 3)
-    .map((p, index) => {
-      const budget = p.budget || 0;
-      const actualCost = p.actual_cost || 0;
-      const consumedPercent = budget > 0 ? Math.min(100, Math.round((actualCost / budget) * 100)) : 0;
-      const remainingPercent = 100 - consumedPercent;
-
-      const colors = ['bg-blue-600', 'bg-amber-600', 'bg-rose-600'];
-      const statusColor = colors[index % colors.length];
+    .map((p) => {
+      const budgetUtil = p.budget_utilization_percentage || 0;
+      const costUtil = p.cost_utilization_percentage || 0;
+      
+      const isOverBudget = costUtil > 100;
+      const isAtRisk = costUtil > 85 && costUtil > budgetUtil;
+      
+      const statusColor = isOverBudget ? 'bg-rose-600' : isAtRisk ? 'bg-amber-500' : 'bg-emerald-600';
+      const textColor = isOverBudget ? 'text-rose-600' : isAtRisk ? 'text-amber-600' : 'text-emerald-600';
 
       return {
+        id: p.id,
         name: p.name,
         client: p.client,
-        value: formatCr(budget),
-        consumedPercent,
-        remainingPercent,
+        budget: p.budget,
+        actual_cost: p.actual_cost,
+        forecast_cost: p.forecast_cost,
+        budgetUtil,
+        costUtil,
         statusColor,
+        textColor,
       };
     });
 
@@ -302,34 +306,51 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="space-y-6">
-          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900">Top 3 Projects Utilization</h3>
-            <div className="space-y-4">
-              {top3Projects.map((item, i) => (
-                <div key={i} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-slate-900">{item.name}</p>
-                      <p className="text-[11px] text-slate-500">{item.client}</p>
-                    </div>
-                    <span className="font-black text-blue-700">{item.value}</span>
-                  </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
-                    <div
-                      className={`h-full ${item.statusColor}`}
-                      style={{ width: `${item.consumedPercent}%` }}
-                    />
-                  </div>
+        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="sticky top-0 bg-[#f8fafc] pb-2 z-10">
+            <h3 className="text-sm font-bold text-slate-900">Project Burn Rates</h3>
+            <p className="text-[10px] text-slate-500">Active project cost utilization vs earned value</p>
+          </div>
+          {activeProjectHealth.map((p) => (
+            <div key={p.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-bold text-xs text-slate-900">{p.name}</h4>
+                  <p className="text-[10px] text-slate-500">{p.client}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black text-slate-800">{formatCr(p.budget || 0)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-blue-700">{item.consumedPercent}% Consumed</span>
-                    <span className="text-slate-400">{item.remainingPercent}% Remaining</span>
+                    <span className="text-slate-600">Cost Utilization (Burn)</span>
+                    <span className={p.textColor}>{p.costUtil.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${p.statusColor}`} style={{ width: `${Math.min(100, p.costUtil)}%` }} />
                   </div>
                 </div>
-              ))}
+                
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-600">Budget Utilization (Earned)</span>
+                    <span className="text-blue-600">{p.budgetUtil.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600" style={{ width: `${Math.min(100, p.budgetUtil)}%` }} />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-
+          ))}
+          {activeProjectHealth.length === 0 && (
+            <div className="p-4 text-center text-xs text-slate-500 bg-white rounded-xl border border-slate-200">
+              No active projects to display.
+            </div>
+          )}
         </div>
       </div>
       <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">

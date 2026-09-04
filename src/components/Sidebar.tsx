@@ -44,9 +44,8 @@ export type PMTab =
 export type ACManagerTab =
   | 'ac_dashboard'
   | 'project_financials'
-  | 'budget_vs_actual'
   | 'tool_utilization'
-  | 'ac_reports';
+  | 'employee_utilization';
 
 export type AdminTab =
   | 'admin_overview'
@@ -186,33 +185,27 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   }> = [
     {
       id: 'ac_dashboard',
-      label: 'Dashboard',
+      label: 'Portfolio Dashboard',
       icon: LayoutDashboard,
-      desc: 'Portfolio Overview & Financials',
+      desc: 'High-Level KPIs & Trends',
     },
     {
       id: 'project_financials',
       label: 'Project Financials',
       icon: DollarSign,
-      desc: 'Budgets, Costs & Profitability',
+      desc: 'Milestones & Budgets',
     },
     {
-      id: 'budget_vs_actual',
-      label: 'Budget vs Actual',
-      icon: TrendingUp,
-      desc: 'Variance & Burn Rates',
+      id: 'employee_utilization',
+      label: 'Resource Utilization',
+      icon: Users,
+      desc: 'Capacity & Labor Cost',
     },
     {
       id: 'tool_utilization',
       label: 'Tool Utilization',
       icon: Wrench,
       desc: 'SaaS & Cloud Spend',
-    },
-    {
-      id: 'ac_reports',
-      label: 'Financial Reports',
-      icon: FileText,
-      desc: 'P&L, Billing Exports',
     },
   ];
 

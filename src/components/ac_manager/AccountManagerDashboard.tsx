@@ -7,9 +7,8 @@ import { X } from 'lucide-react';
 
 import { PortfolioOverview } from './PortfolioOverview';
 import { ProjectFinancials } from './ProjectFinancials';
-import { BudgetVsActual } from './BudgetVsActual';
 import { ToolUtilization } from './ToolUtilization';
-import { AcReports } from './AcReports';
+import { EmployeeUtilization } from './EmployeeUtilization';
 
 interface AccountManagerDashboardProps {
   currentUser: User;
@@ -114,6 +113,13 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = R
         <ToolUtilization
           projects={safeProjects}
           onAddToolToProject={onAddToolToProject}
+          onShowToast={onShowToast}
+        />
+      )}
+
+      {activeTab === 'employee_utilization' && (
+        <EmployeeUtilization
+          projects={safeProjects}
           onShowToast={onShowToast}
         />
       )}
