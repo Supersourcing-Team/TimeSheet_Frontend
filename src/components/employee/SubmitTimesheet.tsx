@@ -76,6 +76,9 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const [showMarkLeaveModal, setShowMarkLeaveModal] = useState(false);
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
+  const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
+  const displaySidebarProjects = assignedProjects.length > 0 ? assignedProjects : (projects || []).slice(0, 5);
+
   const [rows, setRows] = useState<FormRow[]>(() => {
     if (editingEntry) {
       return [{
@@ -88,7 +91,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }];
     }
     return [{
-      projectId: projects[0]?.id || '',
+      projectId: assignedProjects[0]?.id || projects[0]?.id || '',
       date: defaultDate || today,
       billableHours: 0,
       nonBillableHours: 0,
@@ -96,9 +99,6 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       nonBillableDescription: '',
     }];
   });
-
-  const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
-  const displaySidebarProjects = assignedProjects.length > 0 ? assignedProjects : (projects || []).slice(0, 5);
 
   const handleAddRow = () => {
     setRows([
