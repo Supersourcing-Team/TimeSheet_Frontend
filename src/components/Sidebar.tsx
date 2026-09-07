@@ -24,6 +24,7 @@ import {
   Plus,
   HelpCircle,
   FileText,
+  Layers,
 } from 'lucide-react';
 
 export type EmployeeTab =
@@ -45,7 +46,9 @@ export type ACManagerTab =
   | 'ac_dashboard'
   | 'project_financials'
   | 'tool_utilization'
-  | 'employee_utilization';
+  | 'employee_utilization'
+  | 'budget_vs_actual'
+  | 'ac_reports';
 
 export type AdminTab =
   | 'admin_overview'
@@ -94,47 +97,47 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     desc: string;
     badge?: number;
   }> = [
-    {
-      id: 'my_dashboard',
-      label: 'My Dashboard',
-      icon: LayoutDashboard,
-      desc: 'Weekly Hours & Stats',
-    },
-    {
-      id: 'submit_timesheet',
-      label: 'Submit Daily Timesheet',
-      icon: Clock,
-      desc: 'Separate Billable & Non-Billable Notes',
-    },
-    {
-      id: 'timesheets_history',
-      label: 'Timesheets History',
-      icon: Calendar,
-      desc: 'Calendar & List Log Views',
-    },
-    {
-      id: 'my_projects',
-      label: 'My Assigned Projects',
-      icon: FolderKanban,
-      desc: 'Sprint Projects & Tools',
-    },
-    /* 
-    {
-      id: 'leave_management',
-      label: 'Leave Management',
-      icon: Palmtree,
-      desc: 'Balances & Leave Request Form',
-      badge: pendingLeavesCount > 0 ? pendingLeavesCount : undefined,
-    },
-    */
-    {
-      id: 'weekend_work',
-      label: 'Weekend Work Requests',
-      icon: Moon,
-      desc: 'Overtime & Pre-approvals',
-      badge: pendingWeekendCount > 0 ? pendingWeekendCount : undefined,
-    },
-  ];
+      {
+        id: 'my_dashboard',
+        label: 'My Dashboard',
+        icon: LayoutDashboard,
+        desc: 'Weekly Hours & Stats',
+      },
+      {
+        id: 'submit_timesheet',
+        label: 'Submit Daily Timesheet',
+        icon: Clock,
+        desc: 'Separate Billable & Non-Billable Notes',
+      },
+      {
+        id: 'timesheets_history',
+        label: 'Timesheets History',
+        icon: Calendar,
+        desc: 'Calendar & List Log Views',
+      },
+      {
+        id: 'my_projects',
+        label: 'My Assigned Projects',
+        icon: FolderKanban,
+        desc: 'Sprint Projects & Tools',
+      },
+      /* 
+      {
+        id: 'leave_management',
+        label: 'Leave Management',
+        icon: Palmtree,
+        desc: 'Balances & Leave Request Form',
+        badge: pendingLeavesCount > 0 ? pendingLeavesCount : undefined,
+      },
+      */
+      {
+        id: 'weekend_work',
+        label: 'Weekend Work Requests',
+        icon: Moon,
+        desc: 'Overtime & Pre-approvals',
+        badge: pendingWeekendCount > 0 ? pendingWeekendCount : undefined,
+      },
+    ];
 
   const pmNavItems: Array<{
     id: PMTab;
@@ -143,39 +146,39 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     desc: string;
     badge?: number;
   }> = [
-    {
-      id: 'pm_dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      desc: 'Project KPIs & Overview',
-    },
-    {
-      id: 'pm_my_projects',
-      label: 'My Projects',
-      icon: Briefcase,
-      desc: 'Projects, Team & Tools',
-    },
-    {
-      id: 'pm_resource_allocation',
-      label: 'Resource Allocation',
-      icon: Users,
-      desc: 'Assign Employees & Tools',
-    },
-    {
-      id: 'pm_timesheet_review',
-      label: 'Timesheet Review',
-      icon: CheckSquare,
-      desc: 'Read-Only Team Logs',
-      badge: pendingTimesheetsCount > 0 ? pendingTimesheetsCount : undefined,
-    },
-    {
-      id: 'pm_weekend_work',
-      label: 'Weekend Work Requests',
-      icon: CalendarX,
-      desc: 'Approve Weekend Overtime',
-      badge: pendingWeekendCount > 0 ? pendingWeekendCount : undefined,
-    },
-  ];
+      {
+        id: 'pm_dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        desc: 'Project KPIs & Overview',
+      },
+      {
+        id: 'pm_my_projects',
+        label: 'My Projects',
+        icon: Briefcase,
+        desc: 'Projects, Team & Tools',
+      },
+      {
+        id: 'pm_resource_allocation',
+        label: 'Resource Allocation',
+        icon: Users,
+        desc: 'Assign Employees & Tools',
+      },
+      {
+        id: 'pm_timesheet_review',
+        label: 'Timesheet Review',
+        icon: CheckSquare,
+        desc: 'Read-Only Team Logs',
+        badge: pendingTimesheetsCount > 0 ? pendingTimesheetsCount : undefined,
+      },
+      {
+        id: 'pm_weekend_work',
+        label: 'Weekend Work Requests',
+        icon: CalendarX,
+        desc: 'Approve Weekend Overtime',
+        badge: pendingWeekendCount > 0 ? pendingWeekendCount : undefined,
+      },
+    ];
 
   const acNavItems: Array<{
     id: ACManagerTab;
@@ -203,10 +206,22 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       desc: 'Capacity & Labor Cost',
     },
     {
+      id: 'budget_vs_actual',
+      label: 'Budget vs Actual',
+      icon: TrendingUp,
+      desc: 'Variance & Burn Rates',
+    },
+    {
       id: 'tool_utilization',
       label: 'Tool Utilization',
       icon: Wrench,
       desc: 'SaaS & Cloud Spend',
+    },
+    {
+      id: 'ac_reports',
+      label: 'Financial Reports',
+      icon: FileText,
+      desc: 'P&L, Billing Exports',
     },
   ];
 
@@ -217,55 +232,76 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     desc: string;
     badge?: number;
   }> = [
-    {
-      id: 'admin_overview',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      desc: 'Master KPIs & User Activity',
-    },
-    {
-      id: 'user_management',
-      label: 'User Management',
-      icon: Users,
-      desc: 'Employees, Roles & Status',
-    },
-    {
-      id: 'admin_tools',
-      label: 'Tool Management',
-      icon: Wrench,
-      desc: 'Master Tool Catalog & Categories',
-    },
-    {
-      id: 'admin_holidays',
-      label: 'Holidays',
-      icon: CalendarCheck,
-      desc: 'Organization Holiday Calendar',
-    },
-    {
-      id: 'admin_leave_types',
-      label: 'Leave Types',
-      icon: CalendarX,
-      desc: 'Leave Categories & Entitlements',
-    },
-    {
-      id: 'admin_working_calendar',
-      label: 'Working Calendar',
-      icon: CalendarDays,
-      desc: 'Standard Working Hours & Days',
-    },
-  ];
+      {
+        id: 'admin_overview',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        desc: 'Master KPIs & User Activity',
+      },
+      {
+        id: 'user_management',
+        label: 'User Management',
+        icon: Users,
+        desc: 'Employees, Roles & Status',
+      },
+      {
+        id: 'admin_tools',
+        label: 'Tool Management',
+        icon: Wrench,
+        desc: 'Master Tool Catalog & Categories',
+      },
+      {
+        id: 'admin_holidays',
+        label: 'Holidays',
+        icon: CalendarCheck,
+        desc: 'Organization Holiday Calendar',
+      },
+      {
+        id: 'admin_leave_types',
+        label: 'Leave Types',
+        icon: CalendarX,
+        desc: 'Leave Categories & Entitlements',
+      },
+      {
+        id: 'admin_working_calendar',
+        label: 'Working Calendar',
+        icon: CalendarDays,
+        desc: 'Standard Working Hours & Days',
+      },
+    ];
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)] shadow-xs">
       {/* Mode Indicator Banner */}
-      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase">
-            Active Workspace
-          </span>
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase">
-            {portalMode.replace('_', ' ')} MODE
-          </span>
+      <div className="p-3 border-b border-slate-200 bg-slate-50/60">
+        <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`p-2 rounded-lg text-white font-bold shrink-0 ${portalMode === 'employee'
+                  ? 'bg-blue-600 shadow-xs shadow-blue-600/30'
+                  : portalMode === 'pm'
+                    ? 'bg-purple-600 shadow-xs shadow-purple-600/30'
+                    : portalMode === 'ac_manager'
+                      ? 'bg-emerald-600 shadow-xs shadow-emerald-600/30'
+                      : 'bg-slate-800 shadow-xs shadow-slate-800/30'
+                }`}
+            >
+              <Layers className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 truncate">
+              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">
+                Active Workspace
+              </div>
+              <div className="text-xs font-black text-slate-800 capitalize leading-tight truncate">
+                {portalMode === 'ac_manager' ? 'Account Manager' : portalMode === 'pm' ? 'Project Manager' : portalMode}
+              </div>
+            </div>
+          </div>
+
+          <span
+            className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shrink-0 ml-2"
+            title="Active Workspace"
+          />
         </div>
       </div>
 
@@ -284,19 +320,17 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectEmployeeTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${
-                    isActive
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isActive
+                      className={`p-1.5 rounded-lg transition-colors ${isActive
                           ? 'bg-blue-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -305,9 +339,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                        }`}
+                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
+                          }`}
                       >
                         {item.desc}
                       </div>
@@ -324,7 +357,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           </div>
         ) : portalMode === 'pm' ? (
           <div>
-           
+
             {pmNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePmTab === item.id;
@@ -333,19 +366,17 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${
-                    isActive
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isActive
+                      className={`p-1.5 rounded-lg transition-colors ${isActive
                           ? 'bg-blue-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -354,9 +385,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                        }`}
+                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
+                          }`}
                       >
                         {item.desc}
                       </div>
@@ -384,19 +414,17 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group mb-0.5 ${
-                    isActive
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group mb-0.5 ${isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isActive
+                      className={`p-1.5 rounded-lg transition-colors ${isActive
                           ? 'bg-blue-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -405,9 +433,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                        }`}
+                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
+                          }`}
                       >
                         {item.desc}
                       </div>
@@ -435,19 +462,17 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectAdminTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${
-                    isActive
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isActive
+                      className={`p-1.5 rounded-lg transition-colors ${isActive
                           ? 'bg-blue-500 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -456,9 +481,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                        }`}
+                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
+                          }`}
                       >
                         {item.desc}
                       </div>
@@ -478,7 +502,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
 
       {/* Sidebar Quick Action & Footer Links */}
       <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
-        
+
 
       </div>
     </aside>
