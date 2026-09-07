@@ -1,3 +1,13 @@
+export interface ProjectDocument {
+  id: string;
+  projectId?: string;
+  fileName: string;
+  filePath: string;
+  fileSize?: number;
+  fileType?: string;
+  uploadedAt?: string;
+}
+
 /// <reference types="vite/client" />
 
 export type UserRole = 'employee' | 'pm' | 'ac_manager' | 'admin';
@@ -72,15 +82,26 @@ export interface SystemSettingsConfig {
   primaryColor: string;
 }
 
-export interface ProjectTool {
+export interface MasterTool {
   id: string;
   name: string;
-  category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing';
-  monthlyCost: number; // in INR ₹
-  assignedUsersCount: number;
+  category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing' | string;
+  cost_per_month?: number;
+  status: 'Active' | 'Inactive' | string;
+  created_at?: string;
+}
+
+export interface ProjectTool {
+  id: string;
+  allocationId?: string;
+  name: string;
+  category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing' | string;
+  monthlyCost: number;
+  seats: number;
+  assignedUsersCount?: number;
   allocationDate?: string;
   deallocationDate?: string;
-  status?: 'active' | 'deallocated';
+  status?: 'active' | 'deallocated' | 'Active' | 'Inactive';
 }
 
 export interface MilestoneAssignment {
@@ -124,7 +145,9 @@ export interface Project {
   accountManagerName?: string;
   pmName: string;
   pmAvatar: string;
-  status: 'active' | 'completed' | 'on_hold' | 'planning';
+  status: 'Milestone Planning' | 'Design' | 'Development' | 'UAT' | 'Completed' | 'active' | 'completed' | 'on_hold' | 'planning' | string;
+  isActive?: boolean;
+  is_active?: boolean;
   budget: number; // in INR ₹
   loggedHours: number;
   billableHours: number;
@@ -147,6 +170,7 @@ export interface Project {
   forecast_cost?: number;
   financial_status?: string;
   health?: string;
+  documents?: ProjectDocument[];
 }
 
 export interface TimesheetEntry {
@@ -226,6 +250,10 @@ export interface WeekendWorkRequest {
   projectName: string;
   workDate: string; // YYYY-MM-DD (Sat or Sun)
   plannedHours: number;
+  billableHours?: number;
+  billableWorkSummary?: string;
+  nonBillableHours?: number;
+  nonBillableWorkSummary?: string;
   deliverableObjective: string;
   status: 'pending' | 'approved' | 'rejected';
   requestedOn: string;

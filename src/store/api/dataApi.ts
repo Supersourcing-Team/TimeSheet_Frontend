@@ -171,7 +171,9 @@ export const dataApi = apiSlice.injectEndpoints({
           client: p.client_name || 'Unknown',
           pmName: p.project_manager_name || 'Unknown',
           pmAvatar: '',
-          status: (p.status?.toLowerCase() || 'planning') as Project['status'],
+          status: p.status || 'Milestone Planning',
+            isActive: p.is_active ?? true,
+            is_active: p.is_active ?? true,
           budget: p.budget || 0,
           loggedHours: 0,
           billableHours: 0,
@@ -193,12 +195,22 @@ export const dataApi = apiSlice.injectEndpoints({
           forecast_cost: p.forecast_cost || 0,
           financial_status: p.financial_status,
           health: p.health,
+          documents: p.documents?.map((d: any) => ({
+            id: String(d.id),
+            projectId: String(d.project_id),
+            fileName: d.file_name,
+            filePath: d.file_path,
+            fileSize: d.file_size,
+            fileType: d.file_type,
+            uploadedAt: d.uploaded_at,
+          })) || [],
           tools: p.tools?.map((t: any) => ({ 
             id: String(t.id), 
             allocationId: String(t.allocation_id),
             name: t.name || '', 
             category: t.category || '', 
             monthlyCost: t.monthly_cost || 0,
+            seats: t.seats || 1,
             allocationDate: t.allocation_date || t.allocationDate || '',
             deallocationDate: t.deallocation_date || t.deallocationDate || '',
             status: t.status || 'active'
@@ -212,6 +224,25 @@ export const dataApi = apiSlice.injectEndpoints({
       description?: string; budget?: number; start_date?: string; end_date?: string;
     }>({
       query: (body) => ({ url: '/projects', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    uploadProjectDocument: builder.mutation<any, { projectId: string; file: File }>({
+      query: ({ projectId, file }) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return {
+          url: `/projects/${projectId}/documents`,
+          method: 'POST',
+          body: formData,
+        };
+      },
+      invalidatesTags: ['Project'],
+    }),
+    deleteProjectDocument: builder.mutation<any, { projectId: string; documentId: string }>({
+      query: ({ projectId, documentId }) => ({
+        url: `/projects/${projectId}/documents/${documentId}`,
+        method: 'DELETE',
+      }),
       invalidatesTags: ['Project'],
     }),
     updateProject: builder.mutation<any, { id: string } & Partial<any>>({
@@ -262,13 +293,38 @@ export const dataApi = apiSlice.injectEndpoints({
     }),
 
     // -----------------------------------------------------------------------
-    // Tools
+    // Tools (Admin Master Catalog & Allocation)
     // -----------------------------------------------------------------------
-    createTool: builder.mutation<any, { name: string; category: string; cost_per_month: number }>({
+    getTools: builder.query<import('../../types').MasterTool[], void>({
+      query: () => '/tools',
+      transformResponse: (res: any) => {
+        const items = res.data?.items || res.data || [];
+        return items.map((t: any) => ({
+          id: String(t.id),
+          name: t.name,
+          category: t.category,
+          cost_per_month: t.cost_per_month || 0,
+          status: t.status || 'Active',
+          created_at: t.created_at || '',
+        }));
+      },
+      providesTags: ['Tool' as any],
+    }),
+    createTool: builder.mutation<import('../../types').MasterTool, { name: string; category: string; cost_per_month?: number; status?: string }>({
       query: (body) => ({ url: '/tools', method: 'POST', body }),
       transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Tool' as any],
     }),
-    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; allocation_date: string }>({
+    updateTool: builder.mutation<import('../../types').MasterTool, { id: string; name?: string; category?: string; cost_per_month?: number; status?: string }>({
+      query: ({ id, ...body }) => ({ url: `/tools/${id}`, method: 'PUT', body }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Tool' as any, 'Project'],
+    }),
+    deleteTool: builder.mutation<void, string>({
+      query: (id) => ({ url: `/tools/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Tool' as any, 'Project'],
+    }),
+    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; monthly_cost?: number; seats?: number; allocation_date: string; deallocation_date?: string }>({
       query: (body) => ({ url: '/tool-allocations', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
@@ -490,6 +546,10 @@ export const dataApi = apiSlice.injectEndpoints({
           projectName: w.project_name || '',
           workDate: w.work_date,
           plannedHours: w.planned_hours || 0,
+          billableHours: w.billable_hours || 0,
+          billableWorkSummary: w.billable_work_summary || '',
+          nonBillableHours: w.non_billable_hours || 0,
+          nonBillableWorkSummary: w.non_billable_work_summary || '',
           deliverableObjective: w.reason,
           status: w.status?.toLowerCase(),
           requestedOn: w.created_at ? w.created_at.split('T')[0] : '',
@@ -511,6 +571,10 @@ export const dataApi = apiSlice.injectEndpoints({
           projectName: w.project_name || '',
           workDate: w.work_date,
           plannedHours: w.planned_hours || 0,
+          billableHours: w.billable_hours || 0,
+          billableWorkSummary: w.billable_work_summary || '',
+          nonBillableHours: w.non_billable_hours || 0,
+          nonBillableWorkSummary: w.non_billable_work_summary || '',
           deliverableObjective: w.reason,
           status: w.status?.toLowerCase(),
           requestedOn: w.created_at ? w.created_at.split('T')[0] : '',
@@ -519,13 +583,22 @@ export const dataApi = apiSlice.injectEndpoints({
       },
       providesTags: ['WeekendWork'],
     }),
-    submitWeekendWork: builder.mutation<void, { project_assignment_id: number; work_date: string; planned_hours: number; reason: string }>({
+    submitWeekendWork: builder.mutation<void, {
+      project_assignment_id: number;
+      work_date: string;
+      planned_hours?: number;
+      billable_hours?: number;
+      billable_work_summary?: string;
+      non_billable_hours?: number;
+      non_billable_work_summary?: string;
+      reason: string;
+    }>({
       query: (body) => ({ url: '/weekend-work', method: 'POST', body }),
       invalidatesTags: ['WeekendWork'],
     }),
     approveWeekendWork: builder.mutation<void, { id: string }>({
       query: ({ id }) => ({ url: `/weekend-work/${id}/approve`, method: 'PUT' }),
-      invalidatesTags: ['WeekendWork'],
+      invalidatesTags: ['WeekendWork', 'Timesheet', 'Project'],
     }),
     rejectWeekendWork: builder.mutation<void, { id: string; rejection_reason?: string }>({
       query: ({ id, ...body }) => ({ url: `/weekend-work/${id}/reject`, method: 'PUT', body }),
@@ -626,6 +699,7 @@ export const dataApi = apiSlice.injectEndpoints({
           name: lt.name,
           code: lt.code,
           daysPerYear: lt.days_per_year,
+          allocatedHours: lt.allocated_hours,
           isPaid: lt.is_paid,
           description: lt.description,
           requiresDocument: lt.requires_document,
@@ -642,6 +716,7 @@ export const dataApi = apiSlice.injectEndpoints({
           name: body.name,
           code: body.code,
           days_per_year: body.daysPerYear,
+          allocated_hours: body.allocatedHours,
           is_paid: body.isPaid,
           requires_document: body.requiresDocument,
           description: body.description,
@@ -657,6 +732,7 @@ export const dataApi = apiSlice.injectEndpoints({
           name: body.name,
           code: body.code,
           days_per_year: body.daysPerYear,
+          allocated_hours: body.allocatedHours,
           is_paid: body.isPaid,
           requires_document: body.requiresDocument,
           description: body.description,
@@ -840,6 +916,8 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  useUploadProjectDocumentMutation,
+  useDeleteProjectDocumentMutation,
   // Milestones
   useGetMilestonesByProjectQuery,
   useCreateMilestoneMutation,
@@ -850,7 +928,10 @@ export const {
   useAssignUserToProjectMutation,
   useRemoveUserFromProjectMutation,
   // Tools
+  useGetToolsQuery,
   useCreateToolMutation,
+  useUpdateToolMutation,
+  useDeleteToolMutation,
   useAllocateToolMutation,
   useDeallocateToolMutation,
   // Timesheets

@@ -221,11 +221,12 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => {
-                      onUpdateLeaveType({ ...lt, status: lt.status === 'active' ? 'inactive' : 'active' });
-                      onShowToast('Status Toggled', `Toggled active state for ${lt.name}`, 'info');
+                      const nextStatus = lt.status === 'active' ? 'inactive' : 'active';
+                      onUpdateLeaveType({ ...lt, status: nextStatus });
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                       lt.status === 'active'
                         ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
                         : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'

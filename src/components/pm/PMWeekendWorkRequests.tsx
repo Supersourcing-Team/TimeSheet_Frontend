@@ -1,25 +1,21 @@
 import React, { useState } from 'react';
-import { Project, User, WeekendWorkRequest } from '../../types';
+import { User, WeekendWorkRequest } from '../../types';
 import {
   CalendarX,
-  Moon,
   CheckCircle2,
   XCircle,
   Clock,
   Search,
   Filter,
-  Users,
-  Briefcase,
   AlertCircle,
-  Sparkles,
-  X,
   MessageSquare,
+  X,
+  FileText,
+  Zap,
 } from 'lucide-react';
 
 interface PMWeekendWorkRequestsProps {
   currentUser: User;
-  projects: Project[];
-  allUsers: User[];
   weekendRequests: WeekendWorkRequest[];
   onApproveWeekendWork: (id: string) => void;
   onRejectWeekendWork: (id: string, comment?: string) => void;
@@ -28,141 +24,80 @@ interface PMWeekendWorkRequestsProps {
 
 export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
   currentUser,
-  projects = [],
-  allUsers = [],
   weekendRequests = [],
   onApproveWeekendWork,
   onRejectWeekendWork,
   onShowToast,
 }) => {
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [rejectingRequest, setRejectingRequest] = useState<WeekendWorkRequest | null>(null);
-  const [rejectComment, setRejectComment] = useState('Scope does not justify weekend overtime allocation.');
+  const [rejectComment, setRejectComment] = useState('');
 
-  // PM's project IDs
-  const pmProjects = (projects || []).filter(
-    (p) =>
-      (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
-      currentUser?.role === 'admin' ||
-      currentUser?.role === 'pm'
-  );
-  const pmProjectIds = pmProjects.map((p) => p.id);
-
-  // Filter requests for PM's projects
-  const pmRequests = (weekendRequests || []).filter(
-    (w) => pmProjectIds.length === 0 || pmProjectIds.includes(w.projectId)
-  );
-
-  const filteredRequests = pmRequests.filter((req) => {
+  const filteredRequests = weekendRequests.filter((req) => {
     const matchesSearch =
-      req.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.deliverableObjective.toLowerCase().includes(searchTerm.toLowerCase());
+      (req.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (req.projectName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (req.deliverableObjective || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (req.billableWorkSummary || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = pmRequests.filter((r) => r.status === 'pending').length;
-  const approvedCount = pmRequests.filter((r) => r.status === 'approved').length;
-  const rejectedCount = pmRequests.filter((r) => r.status === 'rejected').length;
-
   const handleConfirmReject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!rejectingRequest) return;
 
     onRejectWeekendWork(rejectingRequest.id, rejectComment);
-    onShowToast('Request Rejected', `Rejected weekend work request for ${rejectingRequest.userName}.`, 'info');
+    onShowToast('Request Declined', `Declined weekend work for ${rejectingRequest.userName}`, 'info');
     setRejectingRequest(null);
+    setRejectComment('');
   };
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
+    <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          
-          <h1 className="text-2xl font-black tracking-tight">Weekend Work Approvals</h1>
-          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
-            Review and approve weekend overtime requests submitted by team members. Pre-approvals ensure proper overtime accounting, sprint capacity planning, and deliverable tracking.
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <CalendarX className="w-6 h-6 text-amber-400" />
+            <span>Weekend Work & Overtime Approvals</span>
+          </h2>
+          <p className="text-xs text-slate-300 mt-1">
+            Review and approve weekend work requests. Approving a request automatically generates and logs the employee's timesheet.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-400/30 font-bold text-xs flex items-center gap-2">
-            <Moon className="w-4 h-4 text-amber-300" />
-            <span>{pendingCount} Pending Requests</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-bold flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>{weekendRequests.filter((r) => r.status === 'pending').length} Pending Review</span>
+          </span>
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <button
-          onClick={() => setStatusFilter('pending')}
-          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'pending'
-              ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-400/20'
-              : 'bg-white border-slate-200 hover:border-amber-300'
-            }`}
-        >
-          <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">
-            Pending Review
-          </span>
-          <div className="text-2xl font-black text-amber-600 mt-1">{pendingCount} Requests</div>
-          <p className="text-[11px] text-amber-800 font-semibold mt-0.5">Requires manager approval</p>
-        </button>
-
-        <button
-          onClick={() => setStatusFilter('approved')}
-          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'approved'
-              ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-400/20'
-              : 'bg-white border-slate-200 hover:border-emerald-300'
-            }`}
-        >
-          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
-            Approved Requests
-          </span>
-          <div className="text-2xl font-black text-emerald-600 mt-1">{approvedCount} Requests</div>
-          <p className="text-[11px] text-emerald-800 font-semibold mt-0.5">Approved overtime work</p>
-        </button>
-
-        <button
-          onClick={() => setStatusFilter('rejected')}
-          className={`p-4 rounded-2xl border text-left transition-all ${statusFilter === 'rejected'
-              ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-400/20'
-              : 'bg-white border-slate-200 hover:border-rose-300'
-            }`}
-        >
-          <span className="text-[10px] font-black uppercase tracking-wider text-rose-800">
-            Rejected Requests
-          </span>
-          <div className="text-2xl font-black text-rose-600 mt-1">{rejectedCount} Requests</div>
-          <p className="text-[11px] text-rose-800 font-semibold mt-0.5">Declined overtime</p>
-        </button>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+      {/* Filter Toolbar */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search employee, project, deliverable..."
+            placeholder="Search employee, project, or task summary..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-bold text-slate-600">Status:</span>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold text-slate-600 shrink-0">Filter:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full sm:w-auto"
           >
             <option value="all">All Requests</option>
             <option value="pending">Pending</option>
@@ -172,7 +107,7 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
         </div>
       </div>
 
-      {/* Request Cards / Table */}
+      {/* Request Cards Grid */}
       <div className="space-y-4">
         {filteredRequests.length === 0 ? (
           <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 space-y-2">
@@ -182,86 +117,126 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredRequests.map((req) => (
-              <div
-                key={req.id}
-                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3.5 hover:border-blue-300 transition-all flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={req.userAvatar}
-                        alt={req.userName}
-                        className="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/20"
-                      />
-                      <div>
-                        <h3 className="font-extrabold text-slate-900 text-sm">{req.userName}</h3>
-                        <p className="text-[11px] font-bold text-blue-600">{req.projectName}</p>
-                      </div>
-                    </div>
+            {filteredRequests.map((req) => {
+              const totalHours = req.plannedHours || (req.billableHours || 0) + (req.nonBillableHours || 0);
 
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black capitalize ${req.status === 'pending'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : req.status === 'approved'
+              return (
+                <div
+                  key={req.id}
+                  className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3.5 hover:border-blue-300 transition-all flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={req.userAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'}
+                          alt={req.userName}
+                          className="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/20"
+                        />
+                        <div>
+                          <h3 className="font-extrabold text-slate-900 text-sm">{req.userName}</h3>
+                          <p className="text-[11px] font-bold text-blue-600">{req.projectName}</p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black capitalize ${
+                          req.status === 'pending'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : req.status === 'approved'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                             : 'bg-rose-100 text-rose-800 border border-rose-200'
                         }`}
-                    >
-                      {req.status}
-                    </span>
+                      >
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                      <div className="flex justify-between items-center text-slate-600 font-medium">
+                        <span>Weekend Work Date:</span>
+                        <span className="font-bold text-slate-900 font-mono">{req.workDate}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-slate-600 font-medium pb-2 border-b border-slate-200">
+                        <span>Total Overtime:</span>
+                        <span className="font-black text-indigo-700 text-xs">
+                          {totalHours.toFixed(1)} Hours ({req.billableHours || 0}h Billable / {req.nonBillableHours || 0}h Non-Billable)
+                        </span>
+                      </div>
+
+                      {/* Billable summary */}
+                      {(req.billableHours || 0) > 0 && (
+                        <div>
+                          <span className="text-[10px] uppercase font-extrabold text-blue-700">
+                            Billable Tasks ({req.billableHours}h):
+                          </span>
+                          <p className="font-medium text-slate-800 mt-0.5 leading-relaxed bg-white p-2 rounded-lg border border-blue-100 text-[11px]">
+                            {req.billableWorkSummary || req.deliverableObjective}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Non-Billable summary */}
+                      {(req.nonBillableHours || 0) > 0 && (
+                        <div>
+                          <span className="text-[10px] uppercase font-extrabold text-slate-600">
+                            Non-Billable Tasks ({req.nonBillableHours}h):
+                          </span>
+                          <p className="font-medium text-slate-700 mt-0.5 leading-relaxed bg-white p-2 rounded-lg border border-slate-200 text-[11px]">
+                            {req.nonBillableWorkSummary}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* General Objective */}
+                      {req.deliverableObjective && (!req.billableWorkSummary || req.deliverableObjective !== req.billableWorkSummary) && (
+                        <div className="pt-1 border-t border-slate-200/80">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">Objective / Justification:</span>
+                          <p className="font-medium text-slate-700 mt-0.5 leading-relaxed text-[11px]">
+                            {req.deliverableObjective}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                    <div className="flex justify-between text-slate-600 font-medium">
-                      <span>Weekend Date:</span>
-                      <span className="font-bold text-slate-900 font-mono">{req.workDate}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600 font-medium">
-                      <span>Planned Overtime:</span>
-                      <span className="font-extrabold text-indigo-700">{req.plannedHours} Hours</span>
-                    </div>
-                    <div className="pt-1 border-t border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-500">Deliverable Objective:</span>
-                      <p className="font-medium text-slate-800 mt-0.5 leading-relaxed">
-                        {req.deliverableObjective}
-                      </p>
-                    </div>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Requested on: {req.requestedOn}
+                    </span>
+
+                    {req.status === 'pending' ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            onApproveWeekendWork(req.id);
+                            onShowToast(
+                              'Request Approved & Timesheet Generated',
+                              `Approved weekend work for ${req.userName}. Timesheet has been automatically created and approved.`,
+                              'success'
+                            );
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs cursor-pointer transition-colors"
+                        >
+                          Approve & Generate Timesheet
+                        </button>
+                        <button
+                          onClick={() => setRejectingRequest(req)}
+                          className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-bold text-slate-500">
+                        Reviewed by: {req.reviewedBy || currentUser.name}
+                      </span>
+                    )}
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    Requested on: {req.requestedOn}
-                  </span>
-
-                  {req.status === 'pending' ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          onApproveWeekendWork(req.id);
-                          onShowToast('Request Approved', `Approved weekend work for ${req.userName}`, 'success');
-                        }}
-                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => setRejectingRequest(req)}
-                        className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-[11px] font-bold text-slate-500">
-                      Reviewed by: {req.reviewedBy || currentUser.name}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -280,7 +255,7 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
               <button
                 type="button"
                 onClick={() => setRejectingRequest(null)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -309,13 +284,13 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
               <button
                 type="button"
                 onClick={() => setRejectingRequest(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer transition-colors"
               >
                 Confirm Decline
               </button>

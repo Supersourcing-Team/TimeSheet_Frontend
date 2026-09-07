@@ -11,6 +11,15 @@ const initialState: AuthState = {
   portalMode: 'employee', // default, will be overridden on login
 };
 
+function sanitizePortalMode(roleOrMode: string | undefined): ActivePortalMode {
+  if (!roleOrMode) return 'employee';
+  const r = String(roleOrMode).toLowerCase();
+  if (r.includes('admin')) return 'admin';
+  if (r.includes('project') || r === 'pm') return 'pm';
+  if (r.includes('account') || r === 'ac_manager') return 'ac_manager';
+  return 'employee';
+}
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -20,16 +29,20 @@ const authSlice = createSlice({
       action: PayloadAction<{ user: User }>
     ) => {
       const { user } = action.payload;
-      state.user = user;
-      state.portalMode = user.role as ActivePortalMode;
+      const normalizedRole = sanitizePortalMode(user.role) as any;
+      state.user = {
+        ...user,
+        role: normalizedRole,
+      };
+      state.portalMode = sanitizePortalMode(user.role);
     },
     logout: (state) => {
       state.user = null;
       state.portalMode = 'employee';
       localStorage.removeItem('SuperTime_current_user'); // cleanup old localstorage
     },
-    setPortalMode: (state, action: PayloadAction<ActivePortalMode>) => {
-      state.portalMode = action.payload;
+    setPortalMode: (state, action: PayloadAction<ActivePortalMode | string>) => {
+      state.portalMode = sanitizePortalMode(action.payload);
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;

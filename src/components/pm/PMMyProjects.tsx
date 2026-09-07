@@ -1,7 +1,21 @@
+const formatFileSize = (bytes?: number) => {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 import React, { useState } from 'react';
 import { Project, User, ProjectTool, TimesheetEntry, Milestone } from '../../types';
 import { formatINR } from '../../utils/formatters';
-import { useCreateMilestoneMutation, useUpdateMilestoneMutation, useDeleteMilestoneMutation } from '../../store/api/dataApi';
+import {
+  useCreateMilestoneMutation,
+  useUpdateMilestoneMutation,
+  useDeleteMilestoneMutation,
+  useGetToolsQuery,
+  useUploadProjectDocumentMutation,
+  useDeleteProjectDocumentMutation,
+} from '../../store/api/dataApi';
 import {
   Briefcase,
   Plus,
@@ -25,6 +39,11 @@ import {
   FileText,
   Building2,
   Loader2,
+  ArrowLeft,
+  Paperclip,
+  Download,
+  UploadCloud,
+  File,
 } from 'lucide-react';
 
 interface PMMyProjectsProps {
@@ -38,10 +57,33 @@ interface PMMyProjectsProps {
   onCreateClient: (name: string, contactInfo?: string) => Promise<any> | void;
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
-  onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
+  onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
+
+
+const getStatusBadgeClass = (status: string) => {
+  const s = (status || '').toLowerCase().replace(/_/g, ' ').trim();
+  if (s === 'active') return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+  if (s === 'milestone planning' || s === 'planning') return 'bg-amber-100 text-amber-800 border border-amber-200';
+  if (s === 'design') return 'bg-purple-100 text-purple-800 border border-purple-200';
+  if (s === 'development') return 'bg-blue-100 text-blue-800 border border-blue-200';
+  if (s === 'uat') return 'bg-cyan-100 text-cyan-800 border border-cyan-200';
+  if (s === 'completed') return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+  return 'bg-slate-100 text-slate-700 border border-slate-200';
+};
+
+const formatStatusName = (status: string) => {
+  const s = (status || '').toLowerCase().replace(/_/g, ' ').trim();
+  if (s === 'planning' || s === 'milestone planning') return 'Milestone Planning';
+  if (s === 'design') return 'Design';
+  if (s === 'development') return 'Development';
+  if (s === 'uat') return 'UAT';
+  if (s === 'completed') return 'Completed';
+  if (s === 'active') return 'Active';
+  return status || 'Milestone Planning';
+};
 
 export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   currentUser,
@@ -68,10 +110,50 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [updateMilestone] = useUpdateMilestoneMutation();
   const [deleteMilestone] = useDeleteMilestoneMutation();
 
+  // Helper to update URL param cleanly
+  const updateUrlProjectId = (projId: string | null) => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (projId) {
+        params.set('projectId', projId);
+      } else {
+        params.delete('projectId');
+      }
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.pushState({ ...window.history.state, projectId: projId || undefined }, '', newUrl);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Sync on mount & popstate
+  React.useEffect(() => {
+    const syncFromUrl = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get('projectId');
+        if (pid) {
+          const match = projects.find((p) => String(p.id) === String(pid));
+          if (match) {
+            setSelectedProject(match);
+          }
+        } else {
+          setSelectedProject(null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, [projects]);
+
   // Keep selected project in sync with upstream changes
   React.useEffect(() => {
     if (selectedProject) {
-      const updated = projects.find((p) => p.id === selectedProject.id);
+      const updated = projects.find((p) => String(p.id) === String(selectedProject.id));
       if (updated && JSON.stringify(updated) !== JSON.stringify(selectedProject)) {
         setSelectedProject(updated);
       }
@@ -91,7 +173,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [newProject, setNewProject] = useState({
     name: '',
     client: '',
-    status: 'active' as const,
+    status: 'Milestone Planning' as any,
     budget: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -148,6 +230,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
   // Achieve Milestone Modal
   const [showAchieveModal, setShowAchieveModal] = useState(false);
+
+  // Supporting documents state
+  const [selectedCreateFiles, setSelectedCreateFiles] = useState<File[]>([]);
+  const [isUploadingDocs, setIsUploadingDocs] = useState(false);
+  const [uploadProjectDoc] = useUploadProjectDocumentMutation();
+  const [deleteProjectDoc] = useDeleteProjectDocumentMutation();
   const [achieveMilestoneId, setAchieveMilestoneId] = useState<number | null>(null);
   const [achieveDate, setAchieveDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -165,7 +253,14 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'active'
+        ? p.isActive !== false && p.is_active !== false
+        : statusFilter === 'inactive'
+        ? p.isActive === false || p.is_active === false
+        : p.status === statusFilter || formatStatusName(p.status) === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -214,59 +309,134 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     return null;
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProject.name || !newProject.client) {
       onShowToast('Validation Error', 'Please fill in all required fields.', 'error');
       return;
     }
 
-    onAddProject({
-      name: newProject.name,
-      code: 'PRJ-' + Math.floor(1000 + Math.random() * 9000),
-      client: newProject.client,
-      accountManagerName: '',
-      pmName: currentUser.name,
-      pmAvatar: currentUser.avatar,
-      status: newProject.status,
-      budget: Number(newProject.budget),
-      loggedHours: 0,
-      billableHours: 0,
-      startDate: newProject.startDate,
-      endDate: newProject.endDate,
-      description: newProject.description,
-      tools: [],
-      assignedUserIds: [currentUser.id],
-    });
+    try {
+      setIsUploadingDocs(true);
+      const res: any = await onAddProject({
+        name: newProject.name,
+        code: 'PRJ-' + Math.floor(1000 + Math.random() * 9000),
+        client: newProject.client,
+        accountManagerName: '',
+        pmName: currentUser.name,
+        pmAvatar: currentUser.avatar,
+        status: newProject.status,
+        budget: Number(newProject.budget),
+        loggedHours: 0,
+        billableHours: 0,
+        startDate: newProject.startDate,
+        endDate: newProject.endDate,
+        description: newProject.description,
+        tools: [],
+        assignedUserIds: [currentUser.id],
+      });
 
-    onShowToast('Project Created', `Successfully created ${newProject.name}`, 'success');
-    setShowCreateModal(false);
-    setNewProject({
-      name: '',
-      client: '',
-      status: 'active',
-      budget: 0,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-      description: '',
-    });
+      const newProjId = res?.id || res?.data?.id;
+      if (newProjId && selectedCreateFiles.length > 0) {
+        for (const file of selectedCreateFiles) {
+          try {
+            await uploadProjectDoc({ projectId: String(newProjId), file }).unwrap();
+          } catch (docErr) {
+            console.error('Failed to upload document:', docErr);
+          }
+        }
+      }
+
+      onShowToast('Project Created', `Successfully created ${newProject.name}`, 'success');
+      setShowCreateModal(false);
+      setSelectedCreateFiles([]);
+      setNewProject({
+        name: '',
+        client: '',
+        status: 'active',
+        budget: 0,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        description: '',
+      });
+    } catch (err) {
+      // toast already handled
+    } finally {
+      setIsUploadingDocs(false);
+    }
+  };
+
+  const handleUploadEditDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !files.length || !editFormData) return;
+    try {
+      setIsUploadingDocs(true);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadProjectDoc({ projectId: editFormData.id, file }).unwrap();
+        const uploadedDoc = res?.data || res;
+        setEditFormData((prev) =>
+          prev
+            ? {
+                ...prev,
+                documents: [
+                  ...(prev.documents || []),
+                  {
+                    id: String(uploadedDoc.id),
+                    projectId: String(editFormData.id),
+                    fileName: uploadedDoc.file_name || file.name,
+                    filePath: uploadedDoc.file_path,
+                    fileSize: uploadedDoc.file_size || file.size,
+                    fileType: uploadedDoc.file_type || file.type,
+                    uploadedAt: uploadedDoc.uploaded_at || new Date().toISOString(),
+                  },
+                ],
+              }
+            : null
+        );
+      }
+      onShowToast('Document Uploaded', 'Supporting document uploaded successfully.', 'success');
+    } catch (err: any) {
+      onShowToast('Upload Failed', err?.data?.detail || 'Failed to upload document', 'error');
+    } finally {
+      setIsUploadingDocs(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteEditDocument = async (documentId: string) => {
+    if (!editFormData) return;
+    try {
+      await deleteProjectDoc({ projectId: editFormData.id, documentId }).unwrap();
+      setEditFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              documents: (prev.documents || []).filter((d) => d.id !== documentId),
+            }
+          : null
+      );
+      onShowToast('Document Deleted', 'Supporting document deleted.', 'info');
+    } catch (err: any) {
+      onShowToast('Delete Failed', err?.data?.detail || 'Failed to delete document', 'error');
+    }
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editFormData) return;
     onUpdateProject(editFormData);
-    if (selectedProject && selectedProject.id === editFormData.id) {
-      setSelectedProject(editFormData);
-    }
     onShowToast('Project Updated', `Updated details for ${editFormData.name}`, 'success');
     setShowEditModal(false);
+    // Redirect back to My Projects grid view
+    setSelectedProject(null);
+    updateUrlProjectId(null);
   };
 
   const handleAssignUser = () => {
     if (!selectedProject || !selectedUserId) return;
     onAssignUserToProject(selectedProject.id, selectedUserId);
-    const assignedUser = allUsers.find((u) => u.id === selectedUserId);
+    const assignedUser = allUsers.find((u) => String(u.id) === String(selectedUserId));
     onShowToast('Employee Assigned', `Assigned ${assignedUser?.name || 'user'} to ${selectedProject.name}`, 'success');
     setShowAssignModal(false);
     setSelectedUserId('');
@@ -274,7 +444,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     // Update selectedProject in local view
     const updated = {
       ...selectedProject,
-      assignedUserIds: [...(selectedProject.assignedUserIds || []), selectedUserId],
+      assignedUserIds: [...(selectedProject.assignedUserIds || []).map(String), String(selectedUserId)],
     };
     setSelectedProject(updated);
   };
@@ -282,12 +452,12 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const handleRemoveUser = (userId: string) => {
     if (!selectedProject) return;
     onRemoveUserFromProject(selectedProject.id, userId);
-    const removedUser = allUsers.find((u) => u.id === userId);
+    const removedUser = allUsers.find((u) => String(u.id) === String(userId));
     onShowToast('Employee Removed', `Removed ${removedUser?.name || 'user'} from ${selectedProject.name}`, 'info');
 
     const updated = {
       ...selectedProject,
-      assignedUserIds: (selectedProject.assignedUserIds || []).filter((id) => id !== userId),
+      assignedUserIds: (selectedProject.assignedUserIds || []).map(String).filter((id) => String(id) !== String(userId)),
     };
     setSelectedProject(updated);
   };
@@ -336,7 +506,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const handleAddMilestoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProject || !newMilestone.name) return;
-    
     const validationError = validateMilestone(newMilestone);
     if (validationError) {
       onShowToast('Validation Error', validationError, 'error');
@@ -405,7 +574,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         setShowAchieveModal(true);
         return;
       }
-      
+
       await updateMilestone({ id: milestoneId, status, ...additionalData }).unwrap();
       onShowToast('Status Updated', 'Milestone status updated successfully.', 'success');
       setShowAchieveModal(false);
@@ -426,185 +595,272 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
-      {/* Top Header & Search Bar */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {!selectedProject && (
+        <>
+          {/* Top Header & Search Bar */}
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-black text-white-900 flex items-center gap-3">
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="relative z-10">
+              <h1 className="text-2xl font-black text-white-900 flex items-center gap-3">
 
-            <span>My Projects Management</span>
-          </h1>
-          <p className="text-xs text-white-500 mt-2 font-medium max-w-xl leading-relaxed">
-            Manage active projects, assign team members, allocate project tools & services, and review project timesheets.
-          </p>
-        </div>
+                <span>My Projects Management</span>
+              </h1>
+              <p className="text-xs text-white-500 mt-2 font-medium max-w-xl leading-relaxed">
+                Manage active projects, assign team members, allocate project tools & services, and review project timesheets.
+              </p>
+            </div>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 relative z-10 self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Project</span>
-        </button>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/70 backdrop-blur-xl p-5 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.03)] relative z-10">
-        <div className="relative w-full sm:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search project name, code, client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-bold text-slate-600">Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="planning">Planning</option>
-            <option value="completed">Completed</option>
-            <option value="on_hold">On Hold</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredProjects.map((proj) => {
-          const assignedCount = (proj.assignedUserIds || []).length;
-          const toolsCount = (proj.tools || []).length;
-
-          const calculatedLoggedHours = timesheets
-            .filter((ts) => ts.projectId === proj.id)
-            .reduce((sum, ts) => sum + ((ts.billableHours || 0) + (ts.nonBillableHours || 0)), 0);
-
-          const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
-
-          return (
-            <div
-              key={proj.id}
-              onClick={() => {
-                setSelectedProject(proj);
-                setActiveTab('details');
-              }}
-              className="p-6 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:border-blue-300/50 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 relative z-10 self-start md:self-auto"
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 opacity-0">
-                  </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${proj.status === 'active'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : proj.status === 'planning'
-                          ? 'bg-amber-100 text-amber-800'
-                          : proj.status === 'completed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-slate-200 text-slate-700'
-                      }`}
-                  >
-                    {proj.status.replace('_', ' ')}
-                  </span>
+              <Plus className="w-4 h-4" />
+              <span>Create New Project</span>
+            </button>
+          </div>
+
+          {/* Filter and Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/70 backdrop-blur-xl p-5 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.03)] relative z-10">
+            <div className="relative w-full sm:w-96">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search project name, code, client..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-bold text-slate-600">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2.5 bg-white/50 border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white transition-all cursor-pointer"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Projects</option>
+                <option value="inactive">Inactive Projects</option>
+                <option value="Milestone Planning">Milestone Planning</option>
+                <option value="Design">Design</option>
+                <option value="Development">Development</option>
+                <option value="UAT">UAT</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Projects Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredProjects.map((proj) => {
+              const assignedCount = (proj.assignedUserIds || []).length;
+              const toolsCount = (proj.tools || []).length;
+              const isMilestoneConfigured = (proj.milestones && proj.milestones.length > 0) || (proj.completion_percentage !== undefined && proj.completion_percentage > 0);
+
+              const calculatedLoggedHours = timesheets
+                .filter((ts) => ts.projectId === proj.id)
+                .reduce((sum, ts) => sum + ((ts.billableHours || 0) + (ts.nonBillableHours || 0)), 0);
+
+              const actualLoggedHours = proj.loggedHours > 0 ? proj.loggedHours : calculatedLoggedHours;
+
+              return (
+                <div
+                  key={proj.id}
+                  onClick={() => {
+                    setSelectedProject(proj);
+                    setActiveTab('details');
+                    updateUrlProjectId(String(proj.id));
+                  }}
+                  className={`p-6 rounded-3xl backdrop-blur-xl border transition-all duration-300 cursor-pointer group flex flex-col justify-between ${isMilestoneConfigured
+                    ? 'bg-gradient-to-b from-indigo-50/30 to-white/90 border-indigo-200 shadow-[0_8px_30px_rgb(99,102,241,0.08)] hover:shadow-[0_8px_30px_rgb(99,102,241,0.18)] hover:-translate-y-1 hover:border-indigo-400'
+                    : 'bg-white/70 border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:border-blue-300/50'
+                    }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-black font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 opacity-0">
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        {proj.isActive !== false && proj.is_active !== false ? (
+                          <>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${getStatusBadgeClass(proj.status)}`}
+                            >
+                              {formatStatusName(proj.status)}
+                            </span>
+                            {isMilestoneConfigured ? (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                                Milestone Configured
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-2xs">
+                                Milestone Not Configured
+                              </span>
+                            )}
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow-2xs bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Active
+                            </span>
+                          </>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow-2xs bg-rose-50 text-rose-700 border border-rose-200">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                        {proj.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">{proj.client}</p>
+                    </div>
+
+                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                      {proj.description || 'No project description available.'}
+                    </p>
+
+                    {/* Hours placeholder if needed later, removing logged hours for now */}
+                    <div className="pt-2 flex justify-between items-center text-xs font-semibold text-slate-700">
+                      <span>Completion:</span>
+                      <span className="font-bold text-emerald-600">
+                        {proj.completion_percentage || 0}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 font-bold text-slate-700">
+                        <Users className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{assignedCount} Team</span>
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-slate-700">
+                        <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                        <span>{toolsCount} Tools</span>
+                      </span>
+                      {(proj.documents || []).length > 0 && (
+                        <span className="flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
+                          <Paperclip className="w-3 h-3 text-indigo-600" />
+                          <span>{(proj.documents || []).length} Docs</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {currentUser?.role === 'ac_manager' && (
+                      <span className="font-extrabold text-slate-900">
+                        {formatINR(proj.budget)}
+                      </span>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
-                    {proj.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">{proj.client}</p>
-                </div>
+      {/* DEDICATED FULL-PAGE PROJECT VIEW */}
+      {selectedProject && (() => {
+        const isMilestoneConfigured =
+          (selectedProject.milestones && selectedProject.milestones.length > 0) ||
+          (selectedProject.completion_percentage !== undefined && selectedProject.completion_percentage > 0);
 
-                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                  {proj.description || 'No project description available.'}
-                </p>
+        return (
+          <div className="space-y-6">
+            {/* Top Breadcrumbs & Back Button */}
+            <div className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProject(null);
+                  updateUrlProjectId(null);
+                }}
+                className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-600 bg-white hover:bg-blue-50/80 border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-2xs transition-all cursor-pointer group"
+              >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-slate-500 group-hover:text-blue-600" />
+                <span>Back to My Projects</span>
+              </button>
 
-                {/* Hours placeholder if needed later, removing logged hours for now */}
-                <div className="pt-2 flex justify-between items-center text-xs font-semibold text-slate-700">
-                  <span>Completion:</span>
-                  <span className="font-bold text-emerald-600">
-                    {proj.completion_percentage || 0}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 font-bold text-slate-700">
-                    <Users className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{assignedCount} Team</span>
-                  </span>
-                  <span className="flex items-center gap-1 font-bold text-slate-700">
-                    <Wrench className="w-3.5 h-3.5 text-amber-600" />
-                    <span>{toolsCount} Tools</span>
-                  </span>
-                </div>
-
-                {currentUser?.role === 'ac_manager' && (
-                  <span className="font-extrabold text-slate-900">
-                    {formatINR(proj.budget)}
-                  </span>
-                )}
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <span
+                  className="hover:text-blue-600 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedProject(null);
+                    updateUrlProjectId(null);
+                  }}
+                >
+                  My Projects
+                </span>
+                <span>/</span>
+                <span className="text-slate-800 font-extrabold">{selectedProject.name}</span>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {/* PROJECT DETAILED MODAL / DRAWER */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-          <div className="w-full max-w-4xl bg-white/95 backdrop-blur-2xl rounded-3xl border border-white/20 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden font-sans">
-            {/* Modal Header */}
-            <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-
-                  <span className="text-xs uppercase font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    {selectedProject.status}
-                  </span>
+            {/* Project Header Hero Card */}
+            <div className="p-6 lg:p-8 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative z-10 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedProject.isActive !== false && selectedProject.is_active !== false ? (
+                    <>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${getStatusBadgeClass(selectedProject.status)}`}
+                      >
+                        {formatStatusName(selectedProject.status)}
+                      </span>
+                      {isMilestoneConfigured ? (
+                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1 shadow-2xs">
+                          Milestone Configured
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-500/20 text-rose-300 border border-rose-400/30 flex items-center gap-1 shadow-2xs">
+                          Milestone Not Configured
+                        </span>
+                      )}
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-2xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                        Active
+                      </span>
+                    </>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-2xs bg-rose-500/20 text-rose-300 border border-rose-400/30">
+                      Inactive
+                    </span>
+                  )}
                 </div>
-                <h2 className="text-xl font-black">{selectedProject.name}</h2>
-                <p className="text-xs text-slate-300">Client: {selectedProject.client}</p>
+
+                <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white">{selectedProject.name}</h1>
+                <p className="text-xs text-slate-300 font-medium">
+                  Client: <span className="font-bold text-white">{selectedProject.client}</span>
+                  {selectedProject.code && <span className="ml-3 text-slate-400 font-mono">({selectedProject.code})</span>}
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="relative z-10 flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => {
                     setEditFormData(selectedProject);
                     setShowEditModal(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-4 h-4" />
                   <span>Edit Details</span>
-                </button>
-                <button
-                  onClick={() => setSelectedProject(null)}
-                  className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Modal Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-50 px-6 shrink-0 text-xs font-bold">
+            {/* Project Navigation Tabs */}
+            <div className="flex border-b border-slate-200 bg-white/80 backdrop-blur-md rounded-2xl px-4 py-1.5 shadow-2xs overflow-x-auto text-xs font-bold gap-1">
               <button
                 onClick={() => setActiveTab('details')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'details'
-                    ? 'border-blue-600 text-blue-600 font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'details'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
               >
                 <Briefcase className="w-4 h-4" />
@@ -612,29 +868,29 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('team')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'team'
-                    ? 'border-blue-600 text-blue-600 font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'team'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
               >
                 <Users className="w-4 h-4" />
-                <span>Team ({selectedProject.assignedUserIds?.length || 0})</span>
+                <span>Team ({(selectedProject.assignedUserIds || []).length})</span>
               </button>
               <button
                 onClick={() => setActiveTab('tools')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'tools'
-                    ? 'border-blue-600 text-blue-600 font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'tools'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
               >
                 <Wrench className="w-4 h-4" />
-                <span>Tools & Services ({selectedProject.tools?.length || 0})</span>
+                <span>Tools & Services ({(selectedProject.tools || []).length})</span>
               </button>
               <button
                 onClick={() => setActiveTab('timesheets')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'timesheets'
-                    ? 'border-blue-600 text-blue-600 font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'timesheets'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
               >
                 <Clock className="w-4 h-4" />
@@ -642,19 +898,18 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('milestones')}
-                className={`py-3 px-4 border-b-2 transition-all flex items-center gap-1.5 ${
-                  activeTab === 'milestones'
-                    ? 'border-blue-600 text-blue-600 font-extrabold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'milestones'
+                  ? 'bg-blue-600 text-white font-extrabold shadow-sm shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
               >
                 <Layers className="w-4 h-4" />
-                <span>Milestones ({selectedProject.milestones?.length || 0})</span>
+                <span>Milestones ({(selectedProject.milestones || []).length})</span>
               </button>
             </div>
 
-            {/* Modal Content Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800">
+            {/* Tab Content Container */}
+            <div className="p-6 lg:p-8 bg-white/95 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-lg space-y-6 text-xs text-slate-800">
               {/* TAB 1: DETAILS */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
@@ -689,6 +944,65 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                       <p className="font-bold text-slate-900 mt-0.5">{selectedProject.endDate}</p>
                     </div>
                   </div>
+
+                  {/* Supporting Documents Section in Details Tab */}
+                  <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                        <Paperclip className="w-4 h-4 text-indigo-600" />
+                        <span>Supporting Documents ({(selectedProject.documents || []).length})</span>
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditFormData(selectedProject);
+                          setShowEditModal(true);
+                        }}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add / Manage Documents</span>
+                      </button>
+                    </div>
+
+                    {(selectedProject.documents || []).length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(selectedProject.documents || []).map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-blue-400 hover:shadow-sm transition-all group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                <File className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-extrabold text-xs text-slate-900 truncate group-hover:text-blue-600 transition-colors" title={doc.fileName}>
+                                  {doc.fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                  {formatFileSize(doc.fileSize)}
+                                  {doc.uploadedAt && ` ? ${new Date(doc.uploadedAt).toLocaleDateString()}`}
+                                </p>
+                              </div>
+                            </div>
+                            <a
+                              href={doc.filePath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={doc.fileName}
+                              className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all shrink-0 cursor-pointer"
+                              title="Download document"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No supporting documents uploaded for this project.</p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -711,11 +1025,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
                   <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden bg-white">
                     {(selectedProject.assignedUserIds || []).map((userId) => {
-                      const userObj = allUsers.find((u) => u.id === userId);
+                      const userObj = allUsers.find((u) => String(u.id) === String(userId));
                       if (!userObj) return null;
 
                       return (
-                        <div key={userId} className="p-3.5 flex items-center justify-between hover:bg-slate-50">
+                        <div key={String(userId)} className="p-3.5 flex items-center justify-between hover:bg-slate-50">
                           <div className="flex items-center gap-3">
                             <img
                               src={userObj.avatar}
@@ -731,7 +1045,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                           </div>
 
                           <div className="flex items-center gap-4">
-                            {userId !== currentUser.id && (
+                            {String(userId) !== String(currentUser.id) && (
                               <button
                                 onClick={() => handleRemoveUser(userId)}
                                 className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
@@ -780,8 +1094,10 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                           <tr>
                             <th className="py-2.5 px-3">Tool Name</th>
                             <th className="py-2.5 px-3">Category</th>
-                            <th className="py-2.5 px-3">Monthly Cost</th>
-                            <th className="py-2.5 px-3">Allocation Date</th>
+                            <th className="py-2.5 px-3">Seats (Qty)</th>
+                            <th className="py-2.5 px-3">Monthly Rate</th>
+                            <th className="py-2.5 px-3">Total Cost</th>
+                            <th className="py-2.5 px-3">Allocation Period</th>
                             <th className="py-2.5 px-3">Status</th>
                             <th className="py-2.5 px-3 text-right">Actions</th>
                           </tr>
@@ -795,12 +1111,16 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                                   {t.category}
                                 </span>
                               </td>
-                              <td className="py-3 px-3 font-extrabold text-slate-800">{formatINR(t.monthlyCost)}/mo</td>
-                              <td className="py-3 px-3 text-slate-600 font-mono text-[11px]">
-                                {t.allocationDate || 'N/A'}
+                              <td className="py-3 px-3">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  {t.seats || 1} {t.seats === 1 ? 'Seat' : 'Seats'}
+                                </span>
                               </td>
-                              <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
-                                {t.deallocationDate || 'N/A'}
+                              <td className="py-3 px-3 font-medium text-slate-700">${t.monthlyCost}/mo</td>
+                              <td className="py-3 px-3 font-extrabold text-emerald-600">${(t.monthlyCost || 0) * (t.seats || 1)}/mo</td>
+                              <td className="py-3 px-3 text-slate-600 text-[11px]">
+                                <span>{t.allocationDate || 'Immediate'}</span>
+                                {t.deallocationDate && <span className="text-slate-400"> → {t.deallocationDate}</span>}
                               </td>
                               <td className="py-3 px-3">
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
@@ -810,7 +1130,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                               <td className="py-3 px-3 text-right">
                                 <button
                                   onClick={() => handleRemoveTool(t.id)}
-                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold"
+                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold cursor-pointer"
                                   title="Deallocate tool"
                                 >
                                   Deallocate
@@ -922,11 +1242,10 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                                 <select
                                   value={m.status}
                                   onChange={(e) => handleUpdateMilestoneStatus(m.id, e.target.value)}
-                                  className={`px-2 py-1 rounded border text-[10px] font-bold ${
-                                    m.status === 'achieved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                  className={`px-2 py-1 rounded border text-[10px] font-bold ${m.status === 'achieved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                     m.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                    'bg-slate-50 text-slate-700 border-slate-200'
-                                  }`}
+                                      'bg-slate-50 text-slate-700 border-slate-200'
+                                    }`}
                                 >
                                   <option value="planned">Planned</option>
                                   <option value="in_progress">In Progress</option>
@@ -971,8 +1290,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* CREATE PROJECT MODAL */}
       {showCreateModal && (
@@ -1114,12 +1433,13 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <select
                   value={newProject.status}
                   onChange={(e) => setNewProject({ ...newProject, status: e.target.value as any })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="active">Active</option>
-                  <option value="planning">Planning</option>
-                  <option value="completed">Completed</option>
-                  <option value="on_hold">On Hold</option>
+                  <option value="Milestone Planning">Milestone Planning</option>
+                  <option value="Design">Design</option>
+                  <option value="Development">Development</option>
+                  <option value="UAT">UAT</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
 
@@ -1170,6 +1490,65 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               />
             </div>
 
+            {/* Supporting Documents Upload Field */}
+            <div className="space-y-1.5 pt-1">
+              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                <span>Supporting Documents</span>
+                <span className="text-[10px] text-slate-400 font-normal">PDF, DOCX, XLSX, Images (Max 10MB)</span>
+              </label>
+              <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50/70 rounded-2xl p-4 transition-all text-center">
+                <input
+                  type="file"
+                  id="create_project_docs_input"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xlsx,.csv,.png,.jpg,.jpeg,.txt,.zip"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setSelectedCreateFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                    }
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="create_project_docs_input"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-1.5"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <UploadCloud className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-extrabold text-blue-600 hover:underline">
+                    Click to browse or upload documents
+                  </span>
+                  <span className="text-[10px] text-slate-400">Attach project specs, contracts, or reference files</span>
+                </label>
+              </div>
+
+              {selectedCreateFiles.length > 0 && (
+                <div className="space-y-1.5 pt-2 max-h-36 overflow-y-auto">
+                  {selectedCreateFiles.map((f, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-100/80 border border-slate-200 text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Paperclip className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span className="font-bold text-slate-800 truncate">{f.name}</span>
+                        <span className="text-[10px] text-slate-400 shrink-0">({formatFileSize(f.size)})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCreateFiles((prev) => prev.filter((_, i) => i !== idx))}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
               <button
                 type="button"
@@ -1208,6 +1587,38 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Active / Inactive Radio Buttons */}
+              <div className="space-y-1.5 sm:col-span-2 pb-1 border-b border-slate-100">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Project State</label>
+                <div className="flex items-center gap-6 pt-0.5">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800 text-xs">
+                    <input
+                      type="radio"
+                      name="edit_project_is_active"
+                      checked={editFormData.isActive !== false && editFormData.is_active !== false}
+                      onChange={() => setEditFormData({ ...editFormData, isActive: true, is_active: true })}
+                      className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 accent-emerald-600"
+                    />
+                    <span className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200 font-extrabold">
+                      Active
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800 text-xs">
+                    <input
+                      type="radio"
+                      name="edit_project_is_active"
+                      checked={editFormData.isActive === false || editFormData.is_active === false}
+                      onChange={() => setEditFormData({ ...editFormData, isActive: false, is_active: false })}
+                      className="w-4 h-4 text-rose-600 focus:ring-rose-500 accent-rose-600"
+                    />
+                    <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 font-extrabold">
+                      Inactive
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Project Name</label>
                 <input
@@ -1222,14 +1633,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Status</label>
                 <select
-                  value={editFormData.status}
+                  value={formatStatusName(editFormData.status)}
                   onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as any })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold"
                 >
-                  <option value="active">Active</option>
-                  <option value="planning">Planning</option>
-                  <option value="completed">Completed</option>
-                  <option value="on_hold">On Hold</option>
+                  <option value="Milestone Planning">Milestone Planning</option>
+                  <option value="Design">Design</option>
+                  <option value="Development">Development</option>
+                  <option value="UAT">UAT</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
 
@@ -1257,6 +1669,71 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
               />
+            </div>
+
+            {/* Supporting Documents Section in Edit Modal */}
+            <div className="space-y-2 pt-1 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Supporting Documents ({(editFormData.documents || []).length})
+                </label>
+                <label
+                  htmlFor="edit_project_docs_input"
+                  className="cursor-pointer text-[11px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Attach Document</span>
+                  <input
+                    type="file"
+                    id="edit_project_docs_input"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xlsx,.csv,.png,.jpg,.jpeg,.txt,.zip"
+                    onChange={handleUploadEditDocument}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {(editFormData.documents || []).length > 0 ? (
+                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  {(editFormData.documents || []).map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Paperclip className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span className="font-bold text-slate-800 truncate">{doc.fileName}</span>
+                        {doc.fileSize && (
+                          <span className="text-[10px] text-slate-400 shrink-0">({formatFileSize(doc.fileSize)})</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={doc.filePath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={doc.fileName}
+                          className="p-1 rounded-lg text-blue-600 hover:bg-blue-50"
+                          title="Download document"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEditDocument(doc.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Delete document"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic py-1">No supporting documents attached yet.</p>
+              )}
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
@@ -1303,7 +1780,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <option value="">-- Select an employee --</option>
                 {allUsers
                   .filter((u) => u.role === 'employee')
-                  .filter((u) => !(selectedProject.assignedUserIds || []).includes(u.id))
+                  .filter((u) => !(selectedProject.assignedUserIds || []).map(String).includes(String(u.id)))
                   .map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name} ({u.title} • {u.department})
@@ -1332,7 +1809,6 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
           </div>
         </div>
       )}
-
       {/* ALLOCATE TOOL MODAL */}
       {showAddToolModal && selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
@@ -1341,11 +1817,14 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
           >
             <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
-              <h3 className="text-base font-black text-slate-900">Allocate Tool/Service to Project</h3>
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-indigo-600" />
+                <span>Allocate Tool from Catalog</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowAddToolModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1353,52 +1832,97 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Tool / Service Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Claude Enterprise, GCP Vertex AI, Postman"
-                  value={newTool.name}
-                  onChange={(e) => setNewTool({ ...newTool, name: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Select Tool (Configured by Admin) *
+                </label>
+                {masterTools.filter((t) => t.status !== 'Inactive').length === 0 ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs">
+                    No tools configured by Admin in the master catalog.
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={newTool.masterToolId}
+                    onChange={(e) => setNewTool({ ...newTool, masterToolId: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
+                  >
+                    <option value="">-- Select Tool from Catalog --</option>
+                    {masterTools
+                      .filter((t) => t.status !== 'Inactive')
+                      .map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.category})
+                        </option>
+                      ))}
+                  </select>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Category</label>
-                <select
-                  value={newTool.category}
-                  onChange={(e) => setNewTool({ ...newTool, category: e.target.value as any })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                >
-                  <option value="AI">AI Subscription</option>
-                  <option value="Cloud">Cloud Services</option>
-                  <option value="Dev">Development Tools</option>
-                  <option value="Design">Design Tools</option>
-                  <option value="SaaS">SaaS Platform</option>
-                  <option value="Testing">Testing Tools</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Monthly Cost ($/mo) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="e.g. 50"
+                    value={newTool.monthlyCost === 0 ? '' : newTool.monthlyCost}
+                    onChange={(e) => setNewTool({ ...newTool, monthlyCost: e.target.value === '' ? 0 : Number(e.target.value) })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Seats (Qty) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="1"
+                    value={newTool.seats}
+                    onChange={(e) => setNewTool({ ...newTool, seats: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Monthly Cost (₹ INR)</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={newTool.monthlyCost === 0 ? '' : newTool.monthlyCost}
-                  onChange={(e) => setNewTool({ ...newTool, monthlyCost: e.target.value === '' ? 0 : Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between">
+                <span className="text-indigo-900 font-bold text-xs">Total Monthly Cost:</span>
+                <span className="text-emerald-700 font-black text-sm">
+                  ${((Number(newTool.monthlyCost) || 0) * (Number(newTool.seats) || 1)).toFixed(2)}/mo
+                </span>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Allocation Date</label>
-                <input
-                  type="date"
-                  value={newTool.allocationDate}
-                  onChange={(e) => setNewTool({ ...newTool, allocationDate: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={newTool.allocationDate}
+                    onChange={(e) => setNewTool({ ...newTool, allocationDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    End Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={newTool.deallocationDate}
+                    onChange={(e) => setNewTool({ ...newTool, deallocationDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1406,13 +1930,14 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddToolModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                disabled={masterTools.filter((t) => t.status !== 'Inactive').length === 0}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
               >
                 Allocate Tool
               </button>
@@ -1522,7 +2047,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <h3 className="text-lg font-black text-slate-900">Mark as Achieved</h3>
             <p className="text-xs text-slate-500 font-medium">Please confirm the actual completion date for this milestone. This is used to calculate the actual cost (AC).</p>
-            
+
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Completion Date</label>
               <input
@@ -1532,7 +2057,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             <div className="flex items-center justify-end gap-3 pt-3">
               <button
                 type="button"
@@ -1545,8 +2070,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 type="button"
                 onClick={() => {
                   if (achieveMilestoneId) {
-                    handleUpdateMilestoneStatus(achieveMilestoneId, 'achieved', { 
-                      actual_achievement_date: achieveDate 
+                    handleUpdateMilestoneStatus(achieveMilestoneId, 'achieved', {
+                      actual_achievement_date: achieveDate
                     });
                   }
                 }}

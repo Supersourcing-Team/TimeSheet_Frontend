@@ -50,6 +50,7 @@ export type ACManagerTab =
 export type AdminTab =
   | 'admin_overview'
   | 'user_management'
+  | 'admin_tools'
   | 'admin_leave_approvals'
   | 'admin_holidays'
   | 'admin_leave_types'
@@ -227,6 +228,12 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       label: 'User Management',
       icon: Users,
       desc: 'Employees, Roles & Status',
+    },
+    {
+      id: 'admin_tools',
+      label: 'Tool Management',
+      icon: Wrench,
+      desc: 'Master Tool Catalog & Categories',
     },
     {
       id: 'admin_holidays',
