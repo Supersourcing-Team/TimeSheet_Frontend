@@ -103,11 +103,11 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 shadow-xl space-y-3">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-xl font-black text-white flex items-center gap-2.5">
-              <Moon className="w-6 h-6 text-amber-400" />
+            <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+              <Moon className="w-6 h-6 text-indigo-300" />
               <span>Weekend Work & Overtime Timesheet</span>
             </h2>
             <p className="text-xs text-slate-300">
@@ -115,15 +115,15 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
             </p>
           </div>
 
-          <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold w-max flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-500/30 text-xs font-bold w-max flex items-center gap-1.5 backdrop-blur-xs">
+            <Zap className="w-3.5 h-3.5 text-indigo-300" />
             <span>Auto-Timesheet on PM Approval</span>
           </span>
         </div>
 
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-xs text-slate-200">
+        <div className="p-3.5 rounded-xl bg-white/10 border border-white/15 flex items-start gap-3 text-xs text-slate-200 backdrop-blur-xs">
           <p className="leading-relaxed">
-            <strong className="text-amber-300 font-extrabold">Streamlined Flow:</strong> Fill in your weekend hours and task breakdown below. Once approved by your PM, you will <strong className="underline">not need to submit a separate timesheet</strong>—it will automatically populate in your timesheet history and logs.
+            <strong className="text-blue-200 font-extrabold">Streamlined Flow:</strong> Fill in your weekend hours and task breakdown below. Once approved by your PM, you will <strong className="underline decoration-blue-300/50 text-white">not need to submit a separate timesheet</strong>—it will automatically populate in your timesheet history and logs.
           </p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
         <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-slate-200 shadow-md space-y-4 text-xs">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-200 flex items-center justify-between">
             <span>Submit Weekend Work & Timesheet Details</span>
-            <span className="text-xs font-black text-amber-600">Total: {totalHours.toFixed(1)} hrs</span>
+            <span className="text-xs font-black text-blue-600">Total: {totalHours.toFixed(1)} hrs</span>
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -147,7 +147,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   required
                 >
                   {assignedProjects.length === 0 ? (
@@ -171,7 +171,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                   type="date"
                   value={workDate}
                   onChange={(e) => setWorkDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   required
                 />
               </div>
@@ -249,7 +249,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
                 placeholder="e.g. Critical release deployment and performance tuning for milestone delivery"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 required
               />
             </div>
@@ -258,7 +258,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
               <button
                 type="submit"
                 disabled={assignedProjects.length === 0}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-600/30 transition-all hover:scale-105 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-105 cursor-pointer disabled:opacity-50"
               >
                 <Plus className="w-4 h-4" />
                 <span>Submit Weekend Work Request</span>
@@ -274,9 +274,9 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
               Weekend Work Stats
             </h4>
 
-            <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 space-y-1">
+            <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1">
               <p className="text-[10px] font-bold text-slate-600">Approved Weekend Hours</p>
-              <p className="text-2xl font-black text-amber-600">{approvedHours.toFixed(1)} hrs</p>
+              <p className="text-2xl font-black text-blue-600">{approvedHours.toFixed(1)} hrs</p>
               <p className="text-[10px] text-slate-500">Automatically reflected in your timesheet</p>
             </div>
 
