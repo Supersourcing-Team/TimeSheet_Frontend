@@ -121,11 +121,13 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [newMilestone, setNewMilestone] = useState<{
     name: string;
     description: string;
+    start_date: string;
     expected_completion_date: string;
     weight_percentage: number;
   }>({
     name: '',
     description: '',
+    start_date: new Date().toISOString().split('T')[0],
     expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
     weight_percentage: 10,
   });
@@ -291,6 +293,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         project_id: Number(selectedProject.id),
         name: newMilestone.name,
         description: newMilestone.description,
+        start_date: newMilestone.start_date,
         expected_completion_date: newMilestone.expected_completion_date,
         weight_percentage: Number(newMilestone.weight_percentage),
         status: 'planned'
@@ -300,6 +303,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       setNewMilestone({
         name: '',
         description: '',
+        start_date: new Date().toISOString().split('T')[0],
         expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
         weight_percentage: 10,
       });
@@ -816,6 +820,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                           <tr>
                             <th className="py-2.5 px-3">Name</th>
                             <th className="py-2.5 px-3">Expected Date</th>
+                            <th className="py-2.5 px-3">Start Date</th>
                             <th className="py-2.5 px-3">Weight</th>
                             <th className="py-2.5 px-3">Status</th>
                             <th className="py-2.5 px-3 text-right">Actions</th>
@@ -829,6 +834,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                                 {m.description && <p className="text-[10px] text-slate-500 truncate w-48">{m.description}</p>}
                               </td>
                               <td className="py-3 px-3 font-mono text-[11px] text-slate-600">{m.expected_completion_date}</td>
+                              <td className="py-3 px-3 font-mono text-[11px] text-slate-600">{m.start_date || '-'}</td>
                               <td className="py-3 px-3 font-extrabold text-slate-800">{m.weight_percentage}%</td>
                               <td className="py-3 px-3">
                                 <select
@@ -1349,6 +1355,16 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   placeholder="Details of the milestone..."
                   value={newMilestone.description}
                   onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Start Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={newMilestone.start_date}
+                  onChange={(e) => setNewMilestone({ ...newMilestone, start_date: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
                 />
               </div>
