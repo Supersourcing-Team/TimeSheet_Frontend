@@ -89,6 +89,7 @@ import { AccountManagerDashboard } from './components/ac_manager/AccountManagerD
 
 const AdminOverview = React.lazy(() => import('./components/admin/AdminOverview').then(m => ({ default: m.AdminOverview })));
 const UserManagement = React.lazy(() => import('./components/admin/UserManagement').then(m => ({ default: m.UserManagement })));
+const ToolsManagement = React.lazy(() => import('./components/admin/ToolsManagement').then(m => ({ default: m.ToolsManagement })));
 const AdminLeaveApprovals = React.lazy(() => import('./components/admin/AdminLeaveApprovals').then(m => ({ default: m.AdminLeaveApprovals })));
 const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysManagement').then(m => ({ default: m.HolidaysManagement })));
 const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
@@ -536,9 +537,13 @@ export default function App() {
         project_assignment_id: assignmentId,
         work_date: req.workDate,
         planned_hours: req.plannedHours,
+        billable_hours: req.billableHours || 0,
+        billable_work_summary: req.billableWorkSummary || undefined,
+        non_billable_hours: req.nonBillableHours || 0,
+        non_billable_work_summary: req.nonBillableWorkSummary || undefined,
         reason: req.deliverableObjective,
       }).unwrap();
-      showToast('Success', 'Weekend work request submitted successfully', 'success');
+      showToast('Success', 'Weekend work request submitted with work summary', 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to submit weekend work request'), 'error');
     }
@@ -591,7 +596,7 @@ export default function App() {
   const handleAddProject = React.useCallback(async (newProj: Omit<Project, 'id'>) => {
     if (!currentUser) return;
     try {
-      await createProjectMutation({
+      const res = await createProjectMutation({
         client_id: Number(newProj.client), // using client field to pass client_id
         project_manager_id: Number(currentUser.id),
         project_name: newProj.name,
@@ -601,8 +606,10 @@ export default function App() {
         end_date: newProj.endDate,
       }).unwrap();
       showToast('Success', 'Project created successfully', 'success');
+      return res?.data || res;
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to create project'), 'error');
+      throw e;
     }
   }, [currentUser, createProjectMutation, showToast]);
 
@@ -611,10 +618,12 @@ export default function App() {
       await updateProjectMutation({
         id: updatedProj.id,
         project_name: updatedProj.name,
+        description: updatedProj.description,
         status: updatedProj.status,
         budget: updatedProj.budget,
         start_date: updatedProj.startDate,
         end_date: updatedProj.endDate,
+        is_active: updatedProj.is_active !== undefined ? updatedProj.is_active : updatedProj.isActive,
       }).unwrap();
       showToast('Success', 'Project updated successfully', 'success');
     } catch (e: any) {
@@ -643,15 +652,21 @@ export default function App() {
     }
   }, [removeUserMutation, showToast]);
 
-  const handleAddToolToProject = React.useCallback(async (projectId: string, tool: Omit<import('./types').ProjectTool, 'id'>) => {
+  const handleAddToolToProject = React.useCallback(async (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => {
     try {
-      const newTool = await createTool({ name: tool.name, category: tool.category, cost_per_month: tool.monthlyCost }).unwrap();
-      await allocateTool({ tool_id: newTool.id, project_id: Number(projectId), allocation_date: tool.allocationDate }).unwrap();
-      showToast('Success', 'Tool added and allocated to project', 'success');
+      await allocateTool({
+        project_id: Number(projectId),
+        tool_id: toolData.toolId,
+        monthly_cost: toolData.monthlyCost,
+        seats: toolData.seats,
+        allocation_date: toolData.allocationDate,
+        deallocation_date: toolData.deallocationDate || undefined,
+      }).unwrap();
+      showToast('Success', 'Tool allocated to project successfully', 'success');
     } catch (e: any) {
-      showToast('Action Failed', getErrorMessage(e, 'Failed to add tool'), 'error');
+      showToast('Action Failed', getErrorMessage(e, 'Failed to allocate tool'), 'error');
     }
-  }, [createTool, allocateTool, showToast]);
+  }, [allocateTool, showToast]);
 
   const handleRemoveToolFromProject = React.useCallback(async (projectId: string, toolId: string) => {
     try {
@@ -714,11 +729,13 @@ export default function App() {
         name: updated.name,
         code: updated.code,
         daysPerYear: updated.daysPerYear,
+        allocatedHours: updated.allocatedHours,
         isPaid: updated.isPaid,
         requiresDocument: updated.requiresDocument,
         description: updated.description,
+        status: updated.status,
       }).unwrap();
-      showToast('Success', 'Leave type updated', 'success');
+      showToast('Success', `Leave type ${updated.status === 'inactive' ? 'deactivated' : 'updated'}`, 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to update leave type'), 'error');
     }
@@ -1018,6 +1035,12 @@ export default function App() {
                 {activeAdminTab === 'user_management' && (
                   <UserManagement
                     currentUser={currentUser}
+                    onShowToast={showToast}
+                  />
+                )}
+
+                {activeAdminTab === 'admin_tools' && (
+                  <ToolsManagement
                     onShowToast={showToast}
                   />
                 )}

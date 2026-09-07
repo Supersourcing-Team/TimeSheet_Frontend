@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Project, User, ProjectTool } from '../../types';
+import { Project, User, ProjectTool, MasterTool } from '../../types';
 import { formatINR } from '../../utils/formatters';
-import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
+import { useGetUpcomingLeavesQuery, useGetToolsQuery } from '../../store/api/dataApi';
 import {
   Users,
   Wrench,
@@ -19,6 +19,7 @@ import {
   DollarSign,
   Calendar,
   X,
+  Layers2,
 } from 'lucide-react';
 
 interface PMResourceAllocationProps {
@@ -27,7 +28,7 @@ interface PMResourceAllocationProps {
   allUsers: User[];
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
-  onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
+  onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -43,6 +44,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   onShowToast,
 }) => {
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+  const { data: masterTools = [] } = useGetToolsQuery();
   const [activeSubTab, setActiveSubTab] = useState<'employees' | 'tools'>('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('all');
@@ -55,12 +57,13 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   const [assignProjectId, setAssignProjectId] = useState<string>('');
   const [assignUserId, setAssignUserId] = useState<string>('');
 
-  // Form states for Tool Allocation
+  // Form states for Tool Allocation (Select from Master Tools configured by Admin)
   const [toolProjectId, setToolProjectId] = useState<string>('');
-  const [toolName, setToolName] = useState('');
-  const [toolCategory, setToolCategory] = useState<'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing'>('AI');
+  const [selectedMasterToolId, setSelectedMasterToolId] = useState<string>('');
   const [toolMonthlyCost, setToolMonthlyCost] = useState<number>(0);
+  const [toolSeats, setToolSeats] = useState<number>(1);
   const [toolAllocationDate, setToolAllocationDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [toolDeallocationDate, setToolDeallocationDate] = useState<string>('');
 
   // PM's projects
   const pmProjects = React.useMemo(() => {
@@ -81,7 +84,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
     const targetUser = allUsers.find((u) => u.id === assignUserId);
 
     if (targetProject && targetUser) {
-      if ((targetProject.assignedUserIds || []).includes(assignUserId)) {
+      if ((targetProject.assignedUserIds || []).map(String).includes(String(assignUserId))) {
         onShowToast('Already Assigned', `${targetUser.name} is already assigned to ${targetProject.name}.`, 'info');
         return;
       }
@@ -103,330 +106,393 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   // Handle add tool submission
   const handleConfirmAddTool = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toolProjectId || !toolName) {
-      onShowToast('Validation Error', 'Please specify a tool name and project.', 'error');
+    if (!toolProjectId || !selectedMasterToolId) {
+      onShowToast('Validation Error', 'Please select both a project and a tool from the catalog.', 'error');
       return;
     }
 
     const targetProject = pmProjects.find((p) => p.id === toolProjectId);
+    const selectedMasterTool = masterTools.find((t) => String(t.id) === String(selectedMasterToolId));
 
-    onAddToolToProject(toolProjectId, {
-      name: toolName,
-      category: toolCategory,
-      monthlyCost: Number(toolMonthlyCost) || 0,
-      assignedUsersCount: (targetProject?.assignedUserIds || []).length || 0,
-      allocationDate: toolAllocationDate,
-      status: 'active',
-    });
+    if (targetProject && selectedMasterTool) {
+      // Check if tool already allocated
+      const isAlreadyAllocated = (targetProject.tools || []).some(
+        (t) => String(t.id) === String(selectedMasterTool.id) && t.status !== 'Inactive' && t.status !== 'deallocated'
+      );
+      if (isAlreadyAllocated) {
+        onShowToast('Already Allocated', `${selectedMasterTool.name} is already allocated to ${targetProject.name}.`, 'error');
+        return;
+      }
 
-    onShowToast('Tool Added', `Allocated ${toolName} to project.`, 'success');
-    setShowToolModal(false);
-    setToolProjectId('');
-    setToolName('');
-    setToolMonthlyCost(0);
+      onAddToolToProject(toolProjectId, {
+        toolId: Number(selectedMasterTool.id),
+        monthlyCost: Number(toolMonthlyCost) || 0,
+        seats: Number(toolSeats) || 1,
+        allocationDate: toolAllocationDate,
+        deallocationDate: toolDeallocationDate || undefined,
+      });
+
+      setShowToolModal(false);
+      setToolProjectId('');
+      setSelectedMasterToolId('');
+      setToolMonthlyCost(0);
+      setToolSeats(1);
+      setToolDeallocationDate('');
+    }
   };
 
-  // Handle tool deallocation
-  const handleRemoveTool = (projectId: string, toolId: string, toolName: string) => {
-    onRemoveToolFromProject(projectId, toolId);
-    onShowToast('Tool Deallocated', `Deallocated ${toolName} from project.`, 'info');
+  // Handle remove tool submission
+  const handleRemoveTool = (projectId: string, allocationIdOrToolId: string, toolName: string, projectName: string) => {
+    onRemoveToolFromProject(projectId, allocationIdOrToolId);
+    onShowToast('Tool Deallocated', `Deallocated ${toolName} from ${projectName}.`, 'info');
   };
 
-  // Filtered list of users
-  const filteredUsers = React.useMemo(() => {
-    const term = (searchTerm || '').toLowerCase();
-    return (allUsers || []).filter((u) => {
-      if (u.role !== 'employee') return false;
+  // Build employee rows
+  const employeeAllocations = React.useMemo(() => {
+    const list: Array<{
+      projectId: string;
+      projectName: string;
+      projectCode: string;
+      userId: string;
+      userName: string;
+      userEmail: string;
+      userRole: string;
+      userAvatar: string;
+      userTitle: string;
+      userDept: string;
+      leaveStatus?: string;
+    }> = [];
 
-      const matchesSearch =
-        (u.name || '').toLowerCase().includes(term) ||
-        (u.department || '').toLowerCase().includes(term) ||
-        (u.title || '').toLowerCase().includes(term);
-
-      if (selectedProjectFilter === 'all') return matchesSearch;
-
-      const targetProj = pmProjects.find((p) => p.id === selectedProjectFilter);
-      return matchesSearch && (targetProj?.assignedUserIds || []).includes(u.id);
+    pmProjects.forEach((proj) => {
+      (proj.assignedUserIds || []).forEach((uId) => {
+        const userObj = allUsers.find((u) => u.id === uId);
+        if (userObj) {
+          const userLeave = upcomingLeaves.find((l) => String(l.userId) === String(userObj.id));
+          list.push({
+            projectId: proj.id,
+            projectName: proj.name,
+            projectCode: proj.code,
+            userId: userObj.id,
+            userName: userObj.name,
+            userEmail: userObj.email,
+            userRole: userObj.role,
+            userAvatar: userObj.avatar,
+            userTitle: userObj.title,
+            userDept: userObj.department,
+            leaveStatus: userLeave ? `On Leave: ${userLeave.startDate} to ${userLeave.endDate}` : undefined,
+          });
+        }
+      });
     });
-  }, [allUsers, searchTerm, selectedProjectFilter, pmProjects]);
 
-  // Flat list of allocated tools across PM's projects
-  const allAllocatedTools = React.useMemo(() => {
-    return pmProjects.flatMap((p) =>
-      (p.tools || []).map((t) => ({
-        ...t,
-        projectId: p.id,
-        projectName: p.name,
-        projectCode: p.code,
-      }))
-    );
+    return list;
+  }, [pmProjects, allUsers, upcomingLeaves]);
+
+  // Build tool rows
+  const toolAllocations = React.useMemo(() => {
+    const list: Array<{
+      projectId: string;
+      projectName: string;
+      projectCode: string;
+      toolId: string;
+      allocationId?: string;
+      toolName: string;
+      category: string;
+      monthlyCost: number;
+      seats: number;
+      allocationDate?: string;
+      deallocationDate?: string;
+      status?: string;
+    }> = [];
+
+    pmProjects.forEach((proj) => {
+      (proj.tools || []).forEach((t) => {
+        list.push({
+          projectId: proj.id,
+          projectName: proj.name,
+          projectCode: proj.code,
+          toolId: t.id,
+          allocationId: t.allocationId,
+          toolName: t.name,
+          category: t.category,
+          monthlyCost: t.monthlyCost || 0,
+          seats: t.seats || 1,
+          allocationDate: t.allocationDate,
+          deallocationDate: t.deallocationDate,
+          status: t.status,
+        });
+      });
+    });
+
+    return list;
   }, [pmProjects]);
 
-  const filteredTools = React.useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    return allAllocatedTools.filter((t) => {
-      const matchesSearch =
-        t.name.toLowerCase().includes(term) ||
-        t.projectName.toLowerCase().includes(term) ||
-        t.category.toLowerCase().includes(term);
+  // Filters
+  const filteredEmployees = employeeAllocations.filter((row) => {
+    const matchesProject = selectedProjectFilter === 'all' || row.projectId === selectedProjectFilter;
+    const matchesSearch =
+      row.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.userDept.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesProject && matchesSearch;
+  });
 
-      const matchesProject = selectedProjectFilter === 'all' || t.projectId === selectedProjectFilter;
+  const filteredTools = toolAllocations.filter((row) => {
+    const matchesProject = selectedProjectFilter === 'all' || row.projectId === selectedProjectFilter;
+    const matchesSearch =
+      row.toolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.category.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesProject && matchesSearch;
+  });
 
-      return matchesSearch && matchesProject;
-    });
-  }, [allAllocatedTools, searchTerm, selectedProjectFilter]);
+  const activeMasterTools = masterTools.filter((t) => t.status !== 'Inactive');
+  const selectedToolObj = masterTools.find((t) => String(t.id) === String(selectedMasterToolId));
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
+    <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-         
-          <h1 className="text-2xl font-black">Resource Allocation Hub</h1>
-          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
-            Assign employees to active projects and allocate shared project tools (AI Subscriptions, Cloud Infrastructure, APIs, Testing Suite). Tools allocated to a project are automatically accessible to all assigned team members.
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-900 to-slate-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Users className="w-6 h-6 text-indigo-400" />
+            <span>Project Resource Allocation</span>
+          </h2>
+          <p className="text-xs text-slate-300 mt-1">
+            Assign team engineers & allocate software tools configured in the master catalog.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowAssignModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-2"
+            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Assign Employee</span>
           </button>
           <button
             onClick={() => setShowToolModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-bold text-xs shadow-xs transition-all flex items-center gap-2"
+            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
           >
-            <Wrench className="w-4 h-4 text-blue-700" />
-            <span>Allocate Tool / Service</span>
+            <Wrench className="w-4 h-4" />
+            <span>Allocate Tool</span>
           </button>
         </div>
       </div>
 
-      {/* Primary Sub-Tab Selector */}
-      <div className="flex border-b border-slate-200 bg-white p-2 rounded-2xl border shadow-2xs gap-2 text-xs font-bold">
-        <button
-          onClick={() => setActiveSubTab('employees')}
-          className={`flex-1 py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 ${activeSubTab === 'employees'
-              ? 'bg-blue-600 text-white shadow-sm font-extrabold'
-              : 'text-slate-600 hover:bg-slate-100'
-            }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Employee Assignment ({allUsers.filter(u => u.role === 'employee').length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('tools')}
-          className={`flex-1 py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 ${activeSubTab === 'tools'
-              ? 'bg-blue-600 text-white shadow-sm font-extrabold'
-              : 'text-slate-600 hover:bg-slate-100'
-            }`}
-        >
-          <Wrench className="w-4 h-4" />
-          <span>Project Tools & Services Allocation ({allAllocatedTools.length})</span>
-        </button>
-      </div>
-
-      {/* Filter and Search Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder={
+      {/* Tabs & Filters */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Toggle sub-tab */}
+        <div className="flex p-1 rounded-2xl bg-slate-100 border border-slate-200 w-full md:w-auto">
+          <button
+            onClick={() => setActiveSubTab('employees')}
+            className={`flex-1 md:flex-initial px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeSubTab === 'employees'
-                ? 'Search employee name, title, department...'
-                : 'Search tool name, category, project...'
-            }
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Assigned Team ({employeeAllocations.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('tools')}
+            className={`flex-1 md:flex-initial px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeSubTab === 'tools'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            <span>Allocated Tools ({toolAllocations.length})</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs font-bold text-slate-600">Filter Project:</span>
-          <select
-            value={selectedProjectFilter}
-            onChange={(e) => setSelectedProjectFilter(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Managed Projects</option>
-            {pmProjects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.code})
-              </option>
-            ))}
-          </select>
+        {/* Filter controls */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder={`Search ${activeSubTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="w-48">
+            <select
+              value={selectedProjectFilter}
+              onChange={(e) => setSelectedProjectFilter(e.target.value)}
+              className="w-full py-2 px-3 text-xs rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="all">All Projects</option>
+              {pmProjects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* SECTION 1: EMPLOYEE ASSIGNMENT VIEW */}
+      {/* SUB-TAB 1: EMPLOYEES LIST */}
       {activeSubTab === 'employees' && (
-        <div className="space-y-4">
-          
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.map((user) => {
-              // Find all projects this user is assigned to
-              const assignedProjects = pmProjects.filter((p) =>
-                (p.assignedUserIds || []).includes(user.id)
-              );
-
-              const userLeaves = upcomingLeaves.filter((l: any) => l.user_id === user.id);
-              const todayStr = new Date().toISOString().split('T')[0];
-              const isCurrentlyOnLeave = userLeaves.some((l: any) => l.start_date <= todayStr && l.end_date >= todayStr);
-              const upcomingLeave = userLeaves.find((l: any) => l.start_date > todayStr);
-
-              return (
-                <div
-                  key={user.id}
-                  className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 hover:border-blue-300 transition-all flex flex-col justify-between h-full"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-11 h-11 rounded-full object-cover ring-2 ring-blue-500/20 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-slate-900 text-sm truncate">{user.name}</h3>
-                          {isCurrentlyOnLeave && (
-                            <span className="shrink-0 px-1.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-[9px] font-bold uppercase rounded-md">On Leave</span>
-                          )}
-                          {!isCurrentlyOnLeave && upcomingLeave && (
-                            <span className="shrink-0 px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold uppercase rounded-md">Leave: {new Date(upcomingLeave.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                          )}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-4">Designation & Dept</th>
+                  <th className="py-3 px-4">Assigned Project</th>
+                  <th className="py-3 px-4">Availability</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {filteredEmployees.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                      No team members assigned matching your search criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEmployees.map((row) => (
+                    <tr key={`${row.projectId}-${row.userId}`} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={row.userAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'}
+                            alt={row.userName}
+                            className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                          />
+                          <div>
+                            <p className="font-extrabold text-slate-900">{row.userName}</p>
+                            <p className="text-[10px] text-slate-400">{row.userEmail}</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-blue-600 font-semibold truncate">{user.title}</p>
-                        <p className="text-[10px] text-slate-500 truncate">{user.department}</p>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-slate-600 text-[11px]">Assigned Projects:</span>
-                        <span className="font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10px] border border-blue-100 whitespace-nowrap">
-                          {assignedProjects.length} Projects
-                        </span>
-                      </div>
-
-                      {assignedProjects.length === 0 ? (
-                        <p className="text-[11px] text-slate-400 italic">Not currently assigned to any of your managed projects.</p>
-                      ) : (
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                          {assignedProjects.map((proj) => (
-                            <div
-                              key={proj.id}
-                              className="p-2 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs"
-                            >
-                              <div className="min-w-0 pr-2">
-                                <p className="font-bold text-slate-800 text-[11px] truncate">{proj.name}</p>
-                                <p className="text-[10px] font-mono text-slate-500">{proj.code}</p>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveUser(proj.id, user.id, user.name, proj.name)}
-                                className="p-1 rounded text-rose-600 hover:bg-rose-50 shrink-0"
-                                title="Remove employee from this project"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-slate-800">{row.userTitle}</span>
+                        <p className="text-[10px] text-slate-400 font-medium">{row.userDept}</p>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {row.projectCode}
+                          </span>
+                          <span className="font-bold text-slate-800">{row.projectName}</span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-auto border-t border-slate-100 flex items-center justify-end text-xs">
-                    <button
-                      onClick={() => {
-                        setAssignUserId(user.id);
-                        if (pmProjects.length > 0) setAssignProjectId(pmProjects[0].id);
-                        setShowAssignModal(true);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs border border-blue-200 flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Assign to Project</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {row.leaveStatus ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 flex items-center gap-1 w-max">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>{row.leaveStatus}</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1 w-max">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Active / Available</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleRemoveUser(row.projectId, row.userId, row.userName, row.projectName)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Remove from project"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* SECTION 2: TOOL & SERVICE ALLOCATION VIEW */}
+      {/* SUB-TAB 2: TOOLS ALLOCATED LIST */}
       {activeSubTab === 'tools' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 flex items-start gap-3">
-            <Wrench className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-extrabold text-amber-950">Project Tool Share Model</p>
-              <p className="text-amber-900 mt-0.5 leading-relaxed">
-                Tools are allocated directly to projects. Every employee assigned to a project can use the project's allocated tools (e.g., Figma Enterprise, AWS Cloud, OpenAI Gateway, Vanta, Datadog).
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-2xs">
-            <table className="w-full text-left font-sans text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black text-slate-500 tracking-wider">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-3 px-4">Tool / Service Name</th>
-                  <th className="py-3 px-4">Allocated Project</th>
+                  <th className="py-3 px-4">Tool / Software</th>
                   <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Monthly Cost</th>
-                  <th className="py-3 px-4">Allocation Date</th>
-                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Allocated Project</th>
+                  <th className="py-3 px-4">Seats (Qty)</th>
+                  <th className="py-3 px-4">Monthly Rate</th>
+                  <th className="py-3 px-4">Total Cost/mo</th>
+                  <th className="py-3 px-4">Allocation Period</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-xs">
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {filteredTools.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
-                      No tools allocated matching current criteria.
+                    <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                      No software tools allocated matching your search criteria.
                     </td>
                   </tr>
                 ) : (
-                  filteredTools.map((tool) => (
-                    <tr key={tool.id + tool.projectId} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3.5 px-4 font-extrabold text-slate-900">{tool.name}</td>
+                  filteredTools.map((row) => (
+                    <tr key={`${row.projectId}-${row.toolId}`} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
-                          {tool.projectName} ({tool.projectCode})
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-xs shrink-0">
+                            {row.category ? row.category[0] : 'T'}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{row.toolName}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {row.category}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-slate-100 text-slate-700">
-                          {tool.category}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-black text-slate-900">{formatINR(tool.monthlyCost)}/mo</td>
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
-                        {tool.allocationDate || 'N/A'}
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {row.projectCode}
+                          </span>
+                          <span className="font-bold text-slate-800">{row.projectName}</span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                          {tool.status || 'Active'}
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          {row.seats || 1} {row.seats === 1 ? 'Seat' : 'Seats'}
                         </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700">
+                        ${row.monthlyCost}/mo
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-emerald-600">
+                        ${(row.monthlyCost || 0) * (row.seats || 1)}/mo
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                        <span>{row.allocationDate || 'Immediate'}</span>
+                        {row.deallocationDate && (
+                          <span className="text-slate-400"> → {row.deallocationDate}</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <button
-                          onClick={() => handleRemoveTool(tool.projectId, tool.id, tool.name)}
-                          className="px-3 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold text-xs border border-rose-200"
+                          onClick={() => handleRemoveTool(row.projectId, row.allocationId || row.toolId, row.toolName, row.projectName)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Deallocate tool"
                         >
-                          Deallocate
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -450,7 +516,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -463,7 +529,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                   required
                   value={assignProjectId}
                   onChange={(e) => setAssignProjectId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
                 >
                   <option value="">-- Select Project --</option>
                   {pmProjects.map((p) => (
@@ -480,7 +546,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                   required
                   value={assignUserId}
                   onChange={(e) => setAssignUserId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
                 >
                   <option value="">-- Select Employee --</option>
                   {allUsers
@@ -488,7 +554,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                     .filter((u) => {
                       if (!assignProjectId) return true;
                       const proj = pmProjects.find(p => p.id === assignProjectId);
-                      return !(proj?.assignedUserIds || []).includes(u.id);
+                      return !(proj?.assignedUserIds || []).map(String).includes(String(u.id));
                     })
                     .map((u) => (
                       <option key={u.id} value={u.id}>
@@ -503,22 +569,22 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               <button
                 type="button"
                 onClick={() => setShowAssignModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm"
               >
-                Assign
+                Assign Employee
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* MODAL 2: ALLOCATE TOOL */}
+      {/* MODAL 2: ALLOCATE TOOL (FROM ADMIN-CONFIGURED MASTER TOOLS) */}
       {showToolModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <form
@@ -526,24 +592,28 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
             className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-base font-black text-slate-900">Allocate Tool / Service to Project</h3>
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-indigo-600" />
+                <span>Allocate Tool from Master Catalog</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowToolModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3">
+              {/* Project Select */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Target Project *</label>
                 <select
                   required
                   value={toolProjectId}
                   onChange={(e) => setToolProjectId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
                 >
                   <option value="">-- Select Project --</option>
                   {pmProjects.map((p) => (
@@ -554,53 +624,105 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                 </select>
               </div>
 
+              {/* Master Tool Select */}
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Tool / Service Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. OpenAI GPT-4 API Gateway, Postman Enterprise"
-                  value={toolName}
-                  onChange={(e) => setToolName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Select Tool (Configured by Admin) *
+                </label>
+                {activeMasterTools.length === 0 ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs">
+                    No tools currently configured by Admin. Please contact Admin to add tools to the master catalog.
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={selectedMasterToolId}
+                    onChange={(e) => setSelectedMasterToolId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
+                  >
+                    <option value="">-- Select Tool from Catalog --</option>
+                    {activeMasterTools.map((tool) => (
+                      <option key={tool.id} value={tool.id}>
+                        {tool.name} ({tool.category})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {selectedToolObj && (
+                  <p className="text-[11px] text-indigo-600 font-bold mt-1">
+                    Category: {selectedToolObj.category}
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Category</label>
-                <select
-                  value={toolCategory}
-                  onChange={(e) => setToolCategory(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                >
-                  <option value="AI">AI Subscription</option>
-                  <option value="Cloud">Cloud Services</option>
-                  <option value="Dev">Development Tools</option>
-                  <option value="Design">Design Tools</option>
-                  <option value="SaaS">SaaS Platform</option>
-                  <option value="Testing">Testing Tools</option>
-                </select>
+              {/* Cost & Seats Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Monthly Cost ($/mo) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    placeholder="e.g. 50"
+                    value={toolMonthlyCost === 0 ? '' : toolMonthlyCost}
+                    onChange={(e) => setToolMonthlyCost(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Seats to be Allotted *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="1"
+                    value={toolSeats}
+                    onChange={(e) => setToolSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Monthly Cost (₹ INR)</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={toolMonthlyCost === 0 ? '' : toolMonthlyCost}
-                  onChange={(e) => setToolMonthlyCost(e.target.value === '' ? 0 : Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+              {/* Real-time total calculation box */}
+              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between">
+                <span className="text-indigo-900 font-bold text-xs">Total Monthly Allocation:</span>
+                <span className="text-emerald-700 font-black text-sm">
+                  ${((Number(toolMonthlyCost) || 0) * (Number(toolSeats) || 1)).toFixed(2)}/mo
+                </span>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Allocation Date</label>
-                <input
-                  type="date"
-                  value={toolAllocationDate}
-                  onChange={(e) => setToolAllocationDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                />
+              {/* Dates Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={toolAllocationDate}
+                    onChange={(e) => setToolAllocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    End Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={toolDeallocationDate}
+                    onChange={(e) => setToolDeallocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 
@@ -608,15 +730,16 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               <button
                 type="button"
                 onClick={() => setShowToolModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                disabled={activeMasterTools.length === 0}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
               >
-                Allocate Resource
+                Allocate Tool
               </button>
             </div>
           </form>
@@ -626,5 +749,3 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   );
 });
 PMResourceAllocation.displayName = 'PMResourceAllocation';
-
-
