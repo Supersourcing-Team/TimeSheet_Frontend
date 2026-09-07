@@ -108,11 +108,17 @@ export default function App() {
   // in a single render, preventing useGetCurrentUserQuery from re-firing.
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const authAttemptedRef = React.useRef(false);
+
   // Attempt to restore session on load.
   // Skip if we already have a user OR if we're in the middle of logging out.
-  const { data: userProfile, isLoading: isAuthLoading } = useGetCurrentUserQuery(undefined, {
-    skip: !!currentUser || isLoggingOut,
+  const { data: userProfile, isLoading: isAuthLoading, isError } = useGetCurrentUserQuery(undefined, {
+    skip: !!currentUser || isLoggingOut || authAttemptedRef.current,
   });
+
+  if (isError) {
+    authAttemptedRef.current = true;
+  }
 
   function normalizePortalMode(portal: string | null | undefined): ActivePortalMode | null {
     if (!portal) return null;
