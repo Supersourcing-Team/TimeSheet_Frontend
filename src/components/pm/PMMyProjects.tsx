@@ -128,9 +128,20 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     name: '',
     description: '',
     start_date: new Date().toISOString().split('T')[0],
-    expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+    expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().split('T')[0],
     weight_percentage: 10,
   });
+
+  // Edit Milestone Form
+  const [showEditMilestoneModal, setShowEditMilestoneModal] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<{
+    id: number;
+    name: string;
+    description: string;
+    start_date: string;
+    expected_completion_date: string;
+    weight_percentage: number;
+  } | null>(null);
 
   // Selected User for Assignment
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -157,6 +168,51 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const validateMilestone = (
+    milestone: { start_date: string; expected_completion_date: string; weight_percentage: number },
+    milestoneIdToIgnore?: number
+  ): string | null => {
+    if (!selectedProject) return 'No project selected.';
+
+    const start = new Date(milestone.start_date);
+    const end = new Date(milestone.expected_completion_date);
+    const projStart = new Date(selectedProject.startDate);
+    const projEnd = new Date(selectedProject.endDate);
+
+    if (start > end) {
+      return 'Start date must be before or equal to expected completion date.';
+    }
+
+    if (start < projStart || end > projEnd) {
+      return `Milestone dates must fall within the project timeline (${selectedProject.startDate} to ${selectedProject.endDate}).`;
+    }
+
+    // Weight check
+    const currentWeight = (selectedProject.milestones || [])
+      .filter((m) => m.id !== milestoneIdToIgnore)
+      .reduce((sum, m) => sum + m.weight_percentage, 0);
+
+    if (currentWeight + Number(milestone.weight_percentage) > 100) {
+      return 'Total milestone weights cannot exceed 100%.';
+    }
+
+    // Overlap check
+    for (const m of selectedProject.milestones || []) {
+      if (m.id === milestoneIdToIgnore) continue;
+      if (!m.start_date || !m.expected_completion_date) continue; // Ignore old milestones with no dates
+
+      const mStart = new Date(m.start_date);
+      const mEnd = new Date(m.expected_completion_date);
+
+      // Overlap logic: (Start A <= End B) and (End A >= Start B)
+      if (start <= mEnd && end >= mStart) {
+        return `Milestone dates overlap with existing milestone "${m.name}".`;
+      }
+    }
+
+    return null;
+  };
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,10 +337,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     e.preventDefault();
     if (!selectedProject || !newMilestone.name) return;
     
-    // Check total weight
-    const currentWeight = (selectedProject.milestones || []).reduce((sum, m) => sum + m.weight_percentage, 0);
-    if (currentWeight + Number(newMilestone.weight_percentage) > 100) {
-      onShowToast('Weight Error', 'Total milestone weights cannot exceed 100%.', 'error');
+    const validationError = validateMilestone(newMilestone);
+    if (validationError) {
+      onShowToast('Validation Error', validationError, 'error');
       return;
     }
 
@@ -304,7 +359,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         name: '',
         description: '',
         start_date: new Date().toISOString().split('T')[0],
-        expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+        expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().split('T')[0],
         weight_percentage: 10,
       });
       // We don't locally update selectedProject here, rely on RTK query invalidation which refreshes the project list.
@@ -312,6 +367,33 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       // Note: In a real app we'd trigger a project refetch or local update.
     } catch (err: any) {
       onShowToast('Error', err?.data?.detail || 'Failed to create milestone', 'error');
+    }
+  };
+
+  const handleEditMilestoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProject || !editingMilestone || !editingMilestone.name) return;
+
+    const validationError = validateMilestone(editingMilestone, editingMilestone.id);
+    if (validationError) {
+      onShowToast('Validation Error', validationError, 'error');
+      return;
+    }
+
+    try {
+      await updateMilestone({
+        id: editingMilestone.id,
+        name: editingMilestone.name,
+        description: editingMilestone.description,
+        start_date: editingMilestone.start_date,
+        expected_completion_date: editingMilestone.expected_completion_date,
+        weight_percentage: Number(editingMilestone.weight_percentage)
+      }).unwrap();
+      onShowToast('Milestone Updated', 'Successfully updated milestone', 'success');
+      setShowEditMilestoneModal(false);
+      setEditingMilestone(null);
+    } catch (err: any) {
+      onShowToast('Error', err?.data?.detail || 'Failed to update milestone', 'error');
     }
   };
 
@@ -852,13 +934,32 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                                 </select>
                               </td>
                               <td className="py-3 px-3 text-right">
-                                <button
-                                  onClick={() => handleDeleteMilestone(m.id)}
-                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold"
-                                  title="Delete milestone"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingMilestone({
+                                        id: m.id,
+                                        name: m.name,
+                                        description: m.description || '',
+                                        start_date: m.start_date || new Date().toISOString().split('T')[0],
+                                        expected_completion_date: m.expected_completion_date || new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().split('T')[0],
+                                        weight_percentage: m.weight_percentage,
+                                      });
+                                      setShowEditMilestoneModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 font-bold"
+                                    title="Edit milestone"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteMilestone(m.id)}
+                                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold"
+                                    title="Delete milestone"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1363,6 +1464,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <input
                   type="date"
                   required
+                  min={selectedProject?.startDate}
+                  max={selectedProject?.endDate}
                   value={newMilestone.start_date}
                   onChange={(e) => setNewMilestone({ ...newMilestone, start_date: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
@@ -1373,6 +1476,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 <input
                   type="date"
                   required
+                  min={selectedProject?.startDate}
+                  max={selectedProject?.endDate}
                   value={newMilestone.expected_completion_date}
                   onChange={(e) => setNewMilestone({ ...newMilestone, expected_completion_date: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
@@ -1451,6 +1556,108 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* EDIT MILESTONE MODAL */}
+      {showEditMilestoneModal && editingMilestone && selectedProject && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <form
+            onSubmit={handleEditMilestoneSubmit}
+            className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl p-7 space-y-5 text-xs font-sans"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+              <h3 className="text-base font-black text-slate-900">Edit Milestone</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditMilestoneModal(false);
+                  setEditingMilestone(null);
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Milestone Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Phase 1 - Design Complete"
+                  value={editingMilestone.name}
+                  onChange={(e) => setEditingMilestone({ ...editingMilestone, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Description</label>
+                <textarea
+                  placeholder="Details of the milestone..."
+                  value={editingMilestone.description}
+                  onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Start Date *</label>
+                <input
+                  type="date"
+                  required
+                  min={selectedProject?.startDate}
+                  max={selectedProject?.endDate}
+                  value={editingMilestone.start_date}
+                  onChange={(e) => setEditingMilestone({ ...editingMilestone, start_date: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Expected Completion Date *</label>
+                <input
+                  type="date"
+                  required
+                  min={selectedProject?.startDate}
+                  max={selectedProject?.endDate}
+                  value={editingMilestone.expected_completion_date}
+                  onChange={(e) => setEditingMilestone({ ...editingMilestone, expected_completion_date: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Weight Percentage (%) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                  value={editingMilestone.weight_percentage}
+                  onChange={(e) => setEditingMilestone({ ...editingMilestone, weight_percentage: Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditMilestoneModal(false);
+                  setEditingMilestone(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
