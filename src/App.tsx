@@ -319,7 +319,7 @@ export default function App() {
 
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
-  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || (!isPm && !isAdmin && portalMode !== 'ac_manager') });
+  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || (!isPm && !isAdmin) });
   const { data: myTimesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
   const { data: managedTimesheets = [] } = useGetManagedTimesheetsQuery(undefined, { skip: skip || !isPm });
 
