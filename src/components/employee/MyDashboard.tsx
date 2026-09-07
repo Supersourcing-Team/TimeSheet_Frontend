@@ -29,6 +29,7 @@ interface MyDashboardProps {
   leaveRequests: LeaveRequest[];
   holidays: HolidayItem[];
   onNavigateTab: (tab: EmployeeTab) => void;
+  onOpenMarkLeave?: () => void;
 }
 
 export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
@@ -39,6 +40,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
   leaveRequests = [],
   holidays = [],
   onNavigateTab,
+  onOpenMarkLeave,
 }) => {
   const userTimesheets = React.useMemo(() => {
     return (timesheets || []).filter((t) => t.userId === currentUser.id);
@@ -132,13 +134,6 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           >
             <Plus className="w-4 h-4 text-blue-600" />
             <span>Log Daily Hours</span>
-          </button>
-          <button
-            onClick={() => onNavigateTab('leave_management')}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition-all"
-          >
-            <Palmtree className="w-4 h-4 text-emerald-300" />
-            <span>Apply Leave</span>
           </button>
           <button
             onClick={() => onNavigateTab('weekend_work')}
@@ -248,7 +243,11 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onNavigateTab('leave_management');
+              if (onOpenMarkLeave) {
+                onOpenMarkLeave();
+              } else {
+                onNavigateTab('submit_timesheet');
+              }
             }}
             className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
           >
@@ -402,10 +401,16 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
                 Recent Leave Requests
               </h4>
               <button
-                onClick={() => onNavigateTab('leave_management')}
-                className="text-[11px] text-emerald-700 hover:underline font-bold"
+                onClick={() => {
+                  if (onOpenMarkLeave) {
+                    onOpenMarkLeave();
+                  } else {
+                    onNavigateTab('submit_timesheet');
+                  }
+                }}
+                className="text-[11px] text-rose-600 hover:underline font-bold"
               >
-                Apply New
+                Mark Leave
               </button>
             </div>
 

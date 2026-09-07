@@ -317,6 +317,7 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
   const [defaultSubmitDate, setDefaultSubmitDate] = useState<string | null>(null);
+  const [openMarkLeaveModal, setOpenMarkLeaveModal] = useState(false);
 
   // RTK Queries (Skipped if not logged in)
   const skip = !currentUser;
@@ -325,7 +326,7 @@ export default function App() {
 
   const { data: users = [] } = useGetUsersQuery(undefined, { skip });
   const { data: projects = [] } = useGetProjectsQuery(undefined, { skip });
-  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || (!isPm && !isAdmin && portalMode !== 'ac_manager') });
+  const { data: clients = [] } = useGetClientsQuery(undefined, { skip: skip || (!isPm && !isAdmin) });
   const { data: myTimesheets = [] } = useGetTimesheetsQuery(undefined, { skip });
   const { data: managedTimesheets = [] } = useGetManagedTimesheetsQuery(undefined, { skip: skip || !isPm });
 
@@ -867,6 +868,10 @@ export default function App() {
                       setDefaultSubmitDate(null);
                     }
                   }}
+                  onOpenMarkLeave={() => {
+                    setOpenMarkLeaveModal(true);
+                    setActiveEmployeeTab('submit_timesheet');
+                  }}
                 />
               )}
 
@@ -881,6 +886,8 @@ export default function App() {
                   onUpdateTimesheet={handleUpdateTimesheet}
                   editingEntry={editingTimesheet}
                   defaultDate={defaultSubmitDate}
+                  initialOpenMarkLeave={openMarkLeaveModal}
+                  onCloseMarkLeaveModal={() => setOpenMarkLeaveModal(false)}
                   onClearEditing={() => setEditingTimesheet(null)}
                   onShowToast={showToast}
                 />

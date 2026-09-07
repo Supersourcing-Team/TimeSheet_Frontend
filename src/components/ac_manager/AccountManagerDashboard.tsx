@@ -9,6 +9,8 @@ import { PortfolioOverview } from './PortfolioOverview';
 import { ProjectFinancials } from './ProjectFinancials';
 import { ToolUtilization } from './ToolUtilization';
 import { EmployeeUtilization } from './EmployeeUtilization';
+import { BudgetVsActual } from './BudgetVsActual';
+import { AcReports } from './AcReports';
 
 interface AccountManagerDashboardProps {
   currentUser: User;
