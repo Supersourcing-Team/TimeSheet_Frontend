@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
 import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery } from '../../store/api/dataApi';
 import { MarkLeaveModal } from './MarkLeaveModal';
@@ -23,8 +23,8 @@ import {
   Database,
   Layers,
   Bot,
-  FolderKanban,
   CalendarX,
+  ExternalLink,
 } from 'lucide-react';
 
 interface SubmitTimesheetProps {
@@ -37,6 +37,8 @@ interface SubmitTimesheetProps {
   onUpdateTimesheet?: (entry: TimesheetEntry) => void;
   editingEntry?: TimesheetEntry | null;
   defaultDate?: string | null;
+  initialOpenMarkLeave?: boolean;
+  onCloseMarkLeaveModal?: () => void;
   onClearEditing?: () => void;
   onSubmitTimesheet: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -70,11 +72,23 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   onUpdateTimesheet,
   editingEntry,
   defaultDate,
+  initialOpenMarkLeave,
+  onCloseMarkLeaveModal,
   onClearEditing,
   onShowToast,
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [showMarkLeaveModal, setShowMarkLeaveModal] = useState(false);
+
+  useEffect(() => {
+    if (initialOpenMarkLeave) {
+      setShowMarkLeaveModal(true);
+      if (onCloseMarkLeaveModal) {
+        onCloseMarkLeaveModal();
+      }
+    }
+  }, [initialOpenMarkLeave, onCloseMarkLeaveModal]);
+  
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
   const displaySidebarProjects = assignedProjects.length > 0 ? assignedProjects : (projects || []).slice(0, 5);
