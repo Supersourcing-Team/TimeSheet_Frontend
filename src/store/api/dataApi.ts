@@ -324,8 +324,12 @@ export const dataApi = apiSlice.injectEndpoints({
       query: (id) => ({ url: `/tools/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Tool' as any, 'Project'],
     }),
-    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; monthly_cost?: number; seats?: number; allocation_date: string; deallocation_date?: string }>({
+    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; monthly_cost?: number; seats?: number; allocation_date: string; deallocation_date: string; allocation_basis?: string }>({
       query: (body) => ({ url: '/tool-allocations', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    updateToolAllocation: builder.mutation<any, { id: string | number; monthly_cost?: number; seats?: number; allocation_date?: string; deallocation_date?: string; allocation_basis?: string; status?: string }>({
+      query: ({ id, ...body }) => ({ url: `/tool-allocations/${id}`, method: 'PUT', body }),
       invalidatesTags: ['Project'],
     }),
     deallocateTool: builder.mutation<void, string>({
@@ -933,6 +937,7 @@ export const {
   useUpdateToolMutation,
   useDeleteToolMutation,
   useAllocateToolMutation,
+  useUpdateToolAllocationMutation,
   useDeallocateToolMutation,
   // Timesheets
   useGetTimesheetsQuery,

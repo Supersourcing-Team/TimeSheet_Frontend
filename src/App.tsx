@@ -46,6 +46,7 @@ import {
   useRemoveUserFromProjectMutation,
   useCreateToolMutation,
   useAllocateToolMutation,
+  useUpdateToolAllocationMutation,
   useDeallocateToolMutation,
 } from './store/api/dataApi';
 import { useGetCurrentUserQuery, useLogoutMutation } from './store/api/authApi';
@@ -363,6 +364,7 @@ export default function App() {
   const [removeUserMutation] = useRemoveUserFromProjectMutation();
   const [createTool] = useCreateToolMutation();
   const [allocateTool] = useAllocateToolMutation();
+  const [updateToolAllocation] = useUpdateToolAllocationMutation();
   const [removeToolMutation] = useDeallocateToolMutation();
 
   // Fallbacks for data not yet wired up
@@ -658,6 +660,22 @@ export default function App() {
       showToast('Action Failed', getErrorMessage(e, 'Failed to remove user'), 'error');
     }
   }, [removeUserMutation, showToast]);
+
+  const handleUpdateToolInProject = React.useCallback(async (allocationId: string | number, toolData: { monthlyCost?: number; seats?: number; allocationDate?: string; deallocationDate?: string; allocationBasis?: string }) => {
+    try {
+      await updateToolAllocation({
+        id: allocationId,
+        monthly_cost: toolData.monthlyCost,
+        seats: toolData.seats,
+        allocation_date: toolData.allocationDate,
+        deallocation_date: toolData.deallocationDate,
+        allocation_basis: toolData.allocationBasis,
+      }).unwrap();
+      showToast('Success', 'Tool allocation updated successfully', 'success');
+    } catch (e: any) {
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update tool allocation'), 'error');
+    }
+  }, [updateToolAllocation, showToast]);
 
   const handleAddToolToProject = React.useCallback(async (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => {
     try {
@@ -974,6 +992,7 @@ export default function App() {
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
                   onAddToolToProject={handleAddToolToProject}
+                  onUpdateToolInProject={handleUpdateToolInProject}
                   onRemoveToolFromProject={handleRemoveToolFromProject}
                   onShowToast={showToast}
                 />
@@ -987,6 +1006,7 @@ export default function App() {
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
                   onAddToolToProject={handleAddToolToProject}
+                  onUpdateToolInProject={handleUpdateToolInProject}
                   onRemoveToolFromProject={handleRemoveToolFromProject}
                   onShowToast={showToast}
                 />

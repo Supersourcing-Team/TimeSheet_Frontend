@@ -9,6 +9,7 @@ import {
   Filter,
   Plus,
   Trash2,
+  Edit2,
   Briefcase,
   UserPlus,
   CheckCircle2,
@@ -29,6 +30,7 @@ interface PMResourceAllocationProps {
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
   onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
+  onUpdateToolInProject?: (allocationId: string | number, toolData: { monthlyCost?: number; seats?: number; allocationDate?: string; deallocationDate?: string; allocationBasis?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -40,6 +42,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   onAssignUserToProject,
   onRemoveUserFromProject,
   onAddToolToProject,
+  onUpdateToolInProject,
   onRemoveToolFromProject,
   onShowToast,
 }) => {
@@ -52,6 +55,53 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   // Modal states for allocation
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showToolModal, setShowToolModal] = useState(false);
+  const [showEditToolModal, setShowEditToolModal] = useState(false);
+  const [editingAllocation, setEditingAllocation] = useState<any | null>(null);
+
+  // Form states for Tool Edit
+  const [editMonthlyCost, setEditMonthlyCost] = useState<number>(0);
+  const [editSeats, setEditSeats] = useState<number>(1);
+  const [editAllocationDate, setEditAllocationDate] = useState<string>('');
+  const [editDeallocationDate, setEditDeallocationDate] = useState<string>('');
+  const [editAllocationBasis, setEditAllocationBasis] = useState<string>('working_day');
+
+  const handleOpenEditModal = (row: any) => {
+    setEditingAllocation(row);
+    setEditMonthlyCost(row.monthlyCost || 0);
+    setEditSeats(row.seats || 1);
+    setEditAllocationDate(row.allocationDate || new Date().toISOString().split('T')[0]);
+    setEditDeallocationDate(row.deallocationDate || '');
+    setEditAllocationBasis(row.allocationBasis || 'working_day');
+    setShowEditToolModal(true);
+  };
+
+  const handleEditToolSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAllocation) return;
+
+    if (!editDeallocationDate) {
+      onShowToast('Validation Error', 'End Date (Deallocation Date) is required.', 'error');
+      return;
+    }
+
+    if (editAllocationDate && editDeallocationDate && editDeallocationDate < editAllocationDate) {
+      onShowToast('Invalid Dates', 'End Date cannot be earlier than Start Date.', 'error');
+      return;
+    }
+
+    if (onUpdateToolInProject) {
+      onUpdateToolInProject(editingAllocation.allocationId || editingAllocation.toolId, {
+        monthlyCost: Number(editMonthlyCost) || 0,
+        seats: Number(editSeats) || 1,
+        allocationDate: editAllocationDate,
+        deallocationDate: editDeallocationDate,
+        allocationBasis: editAllocationBasis,
+      });
+    }
+
+    setShowEditToolModal(false);
+    setEditingAllocation(null);
+  };
 
   // Form states for Employee Assignment
   const [assignProjectId, setAssignProjectId] = useState<string>('');
@@ -478,7 +528,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                         ${row.monthlyCost}/mo
                       </td>
                       <td className="py-3.5 px-4 font-bold text-emerald-600">
-                        ${(row.monthlyCost || 0) * (row.seats || 1)}/mo
+                        ${row.monthlyCost || 0}/mo
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 text-[11px]">
                         <span>{row.allocationDate || 'Immediate'}</span>
@@ -487,13 +537,24 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleRemoveTool(row.projectId, row.allocationId || row.toolId, row.toolName, row.projectName)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="Deallocate tool"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(row)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Edit Tool Allocation"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTool(row.projectId, row.allocationId || row.toolId, row.toolName, row.projectName)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Deallocate tool"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -693,7 +754,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between">
                 <span className="text-indigo-900 font-bold text-xs">Total Monthly Allocation:</span>
                 <span className="text-emerald-700 font-black text-sm">
-                  ${((Number(toolMonthlyCost) || 0) * (Number(toolSeats) || 1)).toFixed(2)}/mo
+                  ${(Number(toolMonthlyCost) || 0).toFixed(2)}/mo
                 </span>
               </div>
 
@@ -714,10 +775,12 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
 
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                    End Date (Optional)
+                    End Date *
                   </label>
                   <input
                     type="date"
+                    required
+                    min={toolAllocationDate}
                     value={toolDeallocationDate}
                     onChange={(e) => setToolDeallocationDate(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
@@ -740,6 +803,136 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
               >
                 Allocate Tool
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* EDIT TOOL ALLOCATION MODAL */}
+      {showEditToolModal && editingAllocation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <form
+            onSubmit={handleEditToolSubmit}
+            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-blue-600" />
+                <span>Edit Tool Allocation</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditToolModal(false);
+                  setEditingAllocation(null);
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tool & Project</span>
+                <p className="font-extrabold text-slate-900 text-sm">{editingAllocation.toolName}</p>
+                <p className="text-xs text-slate-500 font-medium">Project: {editingAllocation.projectName} ({editingAllocation.projectCode})</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Monthly Plan Cost ($/mo) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={editMonthlyCost === 0 ? '' : editMonthlyCost}
+                    onChange={(e) => setEditMonthlyCost(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Seats / Capacity (Qty) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editSeats}
+                    onChange={(e) => setEditSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Allocation Basis
+                </label>
+                <select
+                  value={editAllocationBasis}
+                  onChange={(e) => setEditAllocationBasis(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold cursor-pointer"
+                >
+                  <option value="working_day">Working Day (Default)</option>
+                  <option value="calendar_day">Calendar Day</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly Flat</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editAllocationDate}
+                    onChange={(e) => setEditAllocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={editAllocationDate}
+                    value={editDeallocationDate}
+                    onChange={(e) => setEditDeallocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditToolModal(false);
+                  setEditingAllocation(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm"
+              >
+                Save Changes
               </button>
             </div>
           </form>

@@ -58,6 +58,7 @@ interface PMMyProjectsProps {
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
   onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
+  onUpdateToolInProject?: (allocationId: string | number, toolData: { monthlyCost?: number; seats?: number; allocationDate?: string; deallocationDate?: string; allocationBasis?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -97,6 +98,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   onAssignUserToProject,
   onRemoveUserFromProject,
   onAddToolToProject,
+  onUpdateToolInProject,
   onRemoveToolFromProject,
   onShowToast,
 }) => {
@@ -104,6 +106,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'team' | 'tools' | 'timesheets' | 'milestones'>('details');
+
+  // Master Tools Query
+  const { data: masterTools = [] } = useGetToolsQuery();
 
   // Milestone Mutations
   const [createMilestone] = useCreateMilestoneMutation();
@@ -185,16 +190,22 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
   // Add Tool Form
   const [newTool, setNewTool] = useState<{
+    masterToolId: string;
     name: string;
     category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing';
     monthlyCost: number;
+    seats: number;
     allocationDate: string;
+    deallocationDate: string;
     status: 'active' | 'deallocated';
   }>({
+    masterToolId: '',
     name: '',
     category: 'AI',
     monthlyCost: 0,
+    seats: 1,
     allocationDate: new Date().toISOString().split('T')[0],
+    deallocationDate: '',
     status: 'active',
   });
 
@@ -462,36 +473,104 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     setSelectedProject(updated);
   };
 
+  // Tool Edit State
+  const [showEditToolModal, setShowEditToolModal] = useState(false);
+  const [editingTool, setEditingTool] = useState<any | null>(null);
+  const [editToolMonthlyCost, setEditToolMonthlyCost] = useState<number>(0);
+  const [editToolSeats, setEditToolSeats] = useState<number>(1);
+  const [editToolAllocationDate, setEditToolAllocationDate] = useState<string>('');
+  const [editToolDeallocationDate, setEditToolDeallocationDate] = useState<string>('');
+  const [editToolAllocationBasis, setEditToolAllocationBasis] = useState<string>('working_day');
+
+  const handleOpenEditToolModal = (t: any) => {
+    setEditingTool(t);
+    setEditToolMonthlyCost(t.monthlyCost || 0);
+    setEditToolSeats(t.seats || 1);
+    setEditToolAllocationDate(t.allocationDate || new Date().toISOString().split('T')[0]);
+    setEditToolDeallocationDate(t.deallocationDate || '');
+    setEditToolAllocationBasis(t.allocationBasis || 'working_day');
+    setShowEditToolModal(true);
+  };
+
+  const handleEditToolSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTool) return;
+
+    if (!editToolDeallocationDate) {
+      onShowToast('Validation Error', 'End Date (Deallocation Date) is required.', 'error');
+      return;
+    }
+
+    if (editToolAllocationDate && editToolDeallocationDate && editToolDeallocationDate < editToolAllocationDate) {
+      onShowToast('Invalid Dates', 'End Date cannot be earlier than Start Date.', 'error');
+      return;
+    }
+
+    if (onUpdateToolInProject) {
+      onUpdateToolInProject(editingTool.allocationId || editingTool.id, {
+        monthlyCost: Number(editToolMonthlyCost) || 0,
+        seats: Number(editToolSeats) || 1,
+        allocationDate: editToolAllocationDate,
+        deallocationDate: editToolDeallocationDate,
+        allocationBasis: editToolAllocationBasis,
+      });
+    }
+
+    setShowEditToolModal(false);
+    setEditingTool(null);
+  };
+
   const handleAddToolSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject || !newTool.name) return;
+    if (!selectedProject) return;
 
-    const toolPayload: Omit<ProjectTool, 'id'> = {
-      name: newTool.name,
-      category: newTool.category,
-      monthlyCost: Number(newTool.monthlyCost),
-      assignedUsersCount: (selectedProject.assignedUserIds || []).length,
+    if (!newTool.masterToolId) {
+      onShowToast('Validation Error', 'Please select a tool from the catalog.', 'error');
+      return;
+    }
+
+    if (!newTool.allocationDate || !newTool.deallocationDate) {
+      onShowToast('Validation Error', 'Both Start Date and End Date are required.', 'error');
+      return;
+    }
+
+    if (newTool.deallocationDate < newTool.allocationDate) {
+      onShowToast('Validation Error', 'End Date cannot be earlier than Start Date.', 'error');
+      return;
+    }
+
+    const targetMasterTool = masterTools.find((t) => String(t.id) === String(newTool.masterToolId));
+    const toolName = targetMasterTool?.name || newTool.name || 'Tool';
+
+    // Check if tool is already allocated to this project
+    const isAlreadyAllocated = (selectedProject.tools || []).some(
+      (t: any) => (String(t.toolId) === String(newTool.masterToolId) || String(t.id) === String(newTool.masterToolId)) && t.status !== 'Inactive' && t.status !== 'deallocated'
+    );
+    if (isAlreadyAllocated) {
+      onShowToast('Already Allocated', `${toolName} is already allocated to ${selectedProject.name}.`, 'error');
+      return;
+    }
+
+    onAddToolToProject(selectedProject.id, {
+      toolId: Number(newTool.masterToolId),
+      monthlyCost: Number(newTool.monthlyCost) || 0,
+      seats: Number(newTool.seats) || 1,
       allocationDate: newTool.allocationDate,
-      status: newTool.status,
-    };
+      deallocationDate: newTool.deallocationDate,
+    });
 
-    onAddToolToProject(selectedProject.id, toolPayload);
-    onShowToast('Tool Allocated', `Allocated ${newTool.name} to ${selectedProject.name}`, 'success');
+    onShowToast('Tool Allocated', `Allocated ${toolName} to ${selectedProject.name}`, 'success');
     setShowAddToolModal(false);
     setNewTool({
+      masterToolId: '',
       name: '',
       category: 'AI',
       monthlyCost: 0,
+      seats: 1,
       allocationDate: new Date().toISOString().split('T')[0],
+      deallocationDate: '',
       status: 'active',
     });
-
-    // Update selectedProject
-    const updatedTools = [
-      ...(selectedProject.tools || []),
-      { ...toolPayload, id: 't-' + Date.now() },
-    ];
-    setSelectedProject({ ...selectedProject, tools: updatedTools });
   };
 
   const handleRemoveTool = (toolId: string) => {
@@ -1117,7 +1196,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                                 </span>
                               </td>
                               <td className="py-3 px-3 font-medium text-slate-700">${t.monthlyCost}/mo</td>
-                              <td className="py-3 px-3 font-extrabold text-emerald-600">${(t.monthlyCost || 0) * (t.seats || 1)}/mo</td>
+                              <td className="py-3 px-3 font-extrabold text-emerald-600">${t.monthlyCost || 0}/mo</td>
                               <td className="py-3 px-3 text-slate-600 text-[11px]">
                                 <span>{t.allocationDate || 'Immediate'}</span>
                                 {t.deallocationDate && <span className="text-slate-400"> → {t.deallocationDate}</span>}
@@ -1843,7 +1922,17 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                   <select
                     required
                     value={newTool.masterToolId}
-                    onChange={(e) => setNewTool({ ...newTool, masterToolId: e.target.value })}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const toolObj = masterTools.find((t) => String(t.id) === String(selectedId));
+                      setNewTool({
+                        ...newTool,
+                        masterToolId: selectedId,
+                        name: toolObj?.name || '',
+                        category: (toolObj?.category as any) || 'AI',
+                        monthlyCost: toolObj?.monthlyCost || 0,
+                      });
+                    }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
                   >
                     <option value="">-- Select Tool from Catalog --</option>
@@ -1914,13 +2003,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                    End Date (Optional)
+                    End Date *
                   </label>
                   <input
                     type="date"
+                    required
+                    min={newTool.allocationDate}
                     value={newTool.deallocationDate}
                     onChange={(e) => setNewTool({ ...newTool, deallocationDate: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer font-medium"
                   />
                 </div>
               </div>
@@ -2178,6 +2269,136 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               <button
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* EDIT TOOL ALLOCATION MODAL */}
+      {showEditToolModal && editingTool && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
+          <form
+            onSubmit={handleEditToolSubmit}
+            className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-indigo-600" />
+                <span>Edit Tool Allocation</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditToolModal(false);
+                  setEditingTool(null);
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tool & Project</span>
+                <p className="font-extrabold text-slate-900 text-sm">{editingTool.name}</p>
+                <p className="text-xs text-slate-500 font-medium">Category: {editingTool.category || 'General'}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Monthly Plan Cost ($/mo) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={editToolMonthlyCost === 0 ? '' : editToolMonthlyCost}
+                    onChange={(e) => setEditToolMonthlyCost(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Seats / Capacity (Qty) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editToolSeats}
+                    onChange={(e) => setEditToolSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Allocation Basis
+                </label>
+                <select
+                  value={editToolAllocationBasis}
+                  onChange={(e) => setEditToolAllocationBasis(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-semibold cursor-pointer"
+                >
+                  <option value="working_day">Working Day (Default)</option>
+                  <option value="calendar_day">Calendar Day</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly Flat</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editToolAllocationDate}
+                    onChange={(e) => setEditToolAllocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={editToolAllocationDate}
+                    value={editToolDeallocationDate}
+                    onChange={(e) => setEditToolDeallocationDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 cursor-pointer font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditToolModal(false);
+                  setEditingTool(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm"
               >
                 Save Changes
               </button>
