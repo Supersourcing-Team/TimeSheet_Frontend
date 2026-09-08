@@ -6,6 +6,7 @@ import {
   LeaveRequest,
   WeekendWorkRequest,
   User,
+  Department,
   HolidayItem,
   LeaveTypeConfig,
   NotificationsResponse,
@@ -616,6 +617,60 @@ export const dataApi = apiSlice.injectEndpoints({
     // -----------------------------------------------------------------------
     // Users
     // -----------------------------------------------------------------------
+    
+    // -----------------------------------------------------------------------
+    // Departments
+    // -----------------------------------------------------------------------
+    getDepartments: builder.query<Department[], boolean | void>({
+      query: (activeOnly = true) => `/departments?active_only=${activeOnly !== false}`,
+      transformResponse: (res: any) => {
+        const items = res.data || [];
+        return items.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          code: d.code,
+          description: d.description,
+          isActive: d.is_active,
+          employeeCount: d.employee_count || 0,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at,
+        }));
+      },
+      providesTags: ['Department'],
+    }),
+    createDepartment: builder.mutation<Department, Partial<Department>>({
+      query: (body) => ({
+        url: '/departments',
+        method: 'POST',
+        body: {
+          name: body.name,
+          code: body.code,
+          description: body.description,
+        },
+      }),
+      invalidatesTags: ['Department', 'User'],
+    }),
+    updateDepartment: builder.mutation<Department, { id: number; data: Partial<Department> }>({
+      query: ({ id, data }) => ({
+        url: `/departments/${id}`,
+        method: 'PUT',
+        body: {
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          is_active: data.isActive,
+        },
+      }),
+      invalidatesTags: ['Department', 'User'],
+    }),
+    deleteDepartment: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/departments/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Department', 'User'],
+    }),
+
     getUsers: builder.query<User[], void>({
       query: () => '/users',
       transformResponse: (res: any) => {
@@ -912,6 +967,10 @@ export const dataApi = apiSlice.injectEndpoints({
 });
 
 export const {
+  useGetDepartmentsQuery,
+  useCreateDepartmentMutation,
+  useUpdateDepartmentMutation,
+  useDeleteDepartmentMutation,
   // Clients
   useGetClientsQuery,
   useCreateClientMutation,

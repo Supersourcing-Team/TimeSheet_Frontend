@@ -14,7 +14,20 @@ export type UserRole = 'employee' | 'pm' | 'ac_manager' | 'admin';
 export type ActivePortalMode = 'employee' | 'pm' | 'ac_manager' | 'admin';
 
 
+export interface Department {
+  id: number;
+  name: string;
+  code?: string;
+  description?: string;
+  isActive: boolean;
+  employeeCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface User {
+  departmentId?: number;
+  departmentName?: string;
   id: string;
   employee_id?: string;
   name: string;

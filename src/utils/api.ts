@@ -135,8 +135,21 @@ export async function logoutApi(): Promise<void> {
 // Users API
 // ---------------------------------------------------------------------------
 
+export interface BackendDepartment {
+  id: number;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  is_active: boolean;
+  employee_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface BackendUser {
   id: number;
+  department_id?: number | null;
+  department?: BackendDepartment | null;
   email: string;
   first_name: string;
   last_name: string;
@@ -160,6 +173,7 @@ export interface PaginatedUsersResponse {
 
 export interface UserCreatePayload {
   email: string;
+  department_id?: number | null;
   first_name: string;
   last_name: string;
   employee_id?: string;
@@ -171,6 +185,7 @@ export interface UserCreatePayload {
 
 export interface UserUpdatePayload {
   email?: string;
+  department_id?: number | null;
   first_name?: string;
   last_name?: string;
   employee_id?: string;
@@ -255,4 +270,55 @@ export interface BackendRole {
 export async function fetchRolesApi(): Promise<BackendRole[]> {
   const res = await fetch(`${API_BASE_URL}/roles`, { credentials: 'include', headers: authHeader() });
   return handleResponse<BackendRole[]>(res);
+}
+
+// ---------------------------------------------------------------------------
+// Departments API
+// ---------------------------------------------------------------------------
+
+export interface DepartmentCreatePayload {
+  name: string;
+  code?: string;
+  description?: string;
+}
+
+export interface DepartmentUpdatePayload {
+  name?: string;
+  code?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export async function fetchDepartmentsApi(activeOnly: boolean = true): Promise<BackendDepartment[]> {
+  const res = await fetch(`${API_BASE_URL}/departments?active_only=${activeOnly}`, { credentials: 'include', headers: authHeader() });
+  return handleResponse<BackendDepartment[]>(res);
+}
+
+export async function createDepartmentApi(payload: DepartmentCreatePayload): Promise<BackendDepartment> {
+  const res = await fetch(`${API_BASE_URL}/departments`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: authHeader(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<BackendDepartment>(res);
+}
+
+export async function updateDepartmentApi(deptId: number, payload: DepartmentUpdatePayload): Promise<BackendDepartment> {
+  const res = await fetch(`${API_BASE_URL}/departments/${deptId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: authHeader(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<BackendDepartment>(res);
+}
+
+export async function deleteDepartmentApi(deptId: number): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/departments/${deptId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: authHeader(),
+  });
+  await handleResponse<any>(res);
 }
