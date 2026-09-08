@@ -39,6 +39,8 @@ export type PMTab =
   | 'pm_dashboard'
   | 'pm_my_projects'
   | 'pm_resource_allocation'
+  | 'pm_submit_timesheet'
+  | 'pm_timesheets_history'
   | 'pm_timesheet_review'
   | 'pm_weekend_work';
 
@@ -163,6 +165,18 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         label: 'Resource Allocation',
         icon: Users,
         desc: 'Assign Employees & Tools',
+      },
+      {
+        id: 'pm_submit_timesheet',
+        label: 'Submit My Timesheet',
+        icon: Clock,
+        desc: 'Log Your Own Hours',
+      },
+      {
+        id: 'pm_timesheets_history',
+        label: 'My Timesheet History',
+        icon: Calendar,
+        desc: 'View & Edit My Logs',
       },
       {
         id: 'pm_timesheet_review',

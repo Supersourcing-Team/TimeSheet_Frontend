@@ -992,6 +992,47 @@ export default function App() {
                 />
               )}
 
+              {/* PM submits their own timesheets */}
+              {activePmTab === 'pm_submit_timesheet' && (
+                <SubmitTimesheet
+                  currentUser={currentUser}
+                  projects={projects}
+                  timesheets={myTimesheets}
+                  onNavigateTab={(tab) => setActivePmTab(tab as PMTab)}
+                  projectAssignments={myProjectAssignments}
+                  onSubmitTimesheet={handleTimesheetSubmit}
+                  onUpdateTimesheet={handleUpdateTimesheet}
+                  editingEntry={editingTimesheet}
+                  defaultDate={defaultSubmitDate}
+                  initialOpenMarkLeave={false}
+                  onCloseMarkLeaveModal={() => {}}
+                  onClearEditing={() => setEditingTimesheet(null)}
+                  onShowToast={showToast}
+                />
+              )}
+
+              {/* PM views and edits their own timesheet history */}
+              {activePmTab === 'pm_timesheets_history' && (
+                <TimesheetsHistory
+                  currentUser={currentUser}
+                  timesheets={myTimesheets}
+                  projects={projects}
+                  holidays={holidays || []}
+                  onDeleteTimesheet={handleDeleteTimesheet}
+                  onUpdateTimesheet={handleUpdateTimesheet}
+                  onSubmitTimesheets={handleTimesheetSubmit}
+                  onEditRequest={(entry) => {
+                    setEditingTimesheet(entry);
+                    setActivePmTab('pm_submit_timesheet');
+                  }}
+                  onNavigateToSubmit={(date) => {
+                    setDefaultSubmitDate(date);
+                    setActivePmTab('pm_submit_timesheet');
+                  }}
+                  onShowToast={showToast}
+                />
+              )}
+
               {activePmTab === 'pm_timesheet_review' && (
                 <PMTimesheetReview
                   currentUser={currentUser}
