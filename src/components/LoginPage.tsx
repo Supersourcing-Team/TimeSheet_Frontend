@@ -203,14 +203,16 @@ export const LoginPage: React.FC = () => {
                   )}
 
                   <div className="flex flex-col items-center space-y-4 relative z-10 min-h-[60px]">
-                     {isGoogleSigningIn ? (
-                        <div className="w-full h-[60px] rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center gap-3 animate-pulse">
+                     {isGoogleSigningIn && (
+                        <div className="w-full h-[60px] rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center gap-3 animate-pulse absolute top-0 left-0 z-20">
                            <div className="w-5 h-5 border-[2.5px] border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                            <span className="text-blue-700 font-semibold text-[15px]">Connecting...</span>
                         </div>
-                     ) : (
-                        <div id="google-sso-btn-container" className="flex justify-center w-full hover:scale-[1.02] transition-transform duration-200"></div>
                      )}
+                     <div 
+                        id="google-sso-btn-container" 
+                        className={`flex justify-center w-full hover:scale-[1.02] transition-transform duration-200 ${isGoogleSigningIn ? 'opacity-0 pointer-events-none absolute' : ''}`}
+                     ></div>
                   </div>
 
                   <div className="mt-10 relative">
