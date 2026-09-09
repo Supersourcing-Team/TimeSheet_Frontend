@@ -56,6 +56,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   const [activeSubTab, setActiveSubTab] = useState<'employees' | 'tools'>('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState<string>('all');
+  const [toolStatusFilter, setToolStatusFilter] = useState<'all' | 'active' | 'deallocated'>('active');
 
   // Modal states for allocation
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -283,7 +284,15 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   }, [pmProjects]);
 
   // Filters
-  useEffect(() => { setEmpPage(1); setToolPage(1); }, [searchTerm, selectedProjectFilter]);
+  useEffect(() => { setEmpPage(1); setToolPage(1); }, [searchTerm, selectedProjectFilter, toolStatusFilter]);
+
+  const activeToolsCount = React.useMemo(() => {
+    return toolAllocations.filter((t) => t.status?.toLowerCase() !== 'deallocated' && t.status?.toLowerCase() !== 'inactive').length;
+  }, [toolAllocations]);
+
+  const deallocatedToolsCount = React.useMemo(() => {
+    return toolAllocations.filter((t) => t.status?.toLowerCase() === 'deallocated' || t.status?.toLowerCase() === 'inactive').length;
+  }, [toolAllocations]);
 
   const filteredEmployees = employeeAllocations.filter((row) => {
     const matchesProject = selectedProjectFilter === 'all' || row.projectId === selectedProjectFilter;
@@ -300,7 +309,14 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
       row.toolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       row.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       row.category.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesProject && matchesSearch;
+    
+    const isDeallocated = row.status?.toLowerCase() === 'deallocated' || row.status?.toLowerCase() === 'inactive';
+    const matchesStatus =
+      toolStatusFilter === 'all' ||
+      (toolStatusFilter === 'active' && !isDeallocated) ||
+      (toolStatusFilter === 'deallocated' && isDeallocated);
+
+    return matchesProject && matchesSearch && matchesStatus;
   });
 
   const paginatedEmployees = filteredEmployees.slice((empPage - 1) * empPerPage, empPage * empPerPage);
@@ -368,7 +384,45 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
         </div>
 
         {/* Filter controls */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {activeSubTab === 'tools' && (
+            <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setToolStatusFilter('active')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  toolStatusFilter === 'active'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Active ({activeToolsCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setToolStatusFilter('deallocated')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  toolStatusFilter === 'deallocated'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Deallocated ({deallocatedToolsCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setToolStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  toolStatusFilter === 'all'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All ({toolAllocations.length})
+              </button>
+            </div>
+          )}
+
           <div className="relative flex-1 md:w-64">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -501,13 +555,14 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                   <th className="py-3 px-4">Monthly Rate</th>
                   <th className="py-3 px-4">Total Cost/mo</th>
                   <th className="py-3 px-4">Allocation Period</th>
+                  <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {filteredTools.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                    <td colSpan={9} className="py-8 text-center text-slate-400 italic">
                       No software tools allocated matching your search criteria.
                     </td>
                   </tr>
@@ -554,6 +609,19 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                           <span className="text-slate-400"> → {row.deallocationDate}</span>
                         )}
                       </td>
+                      <td className="py-3.5 px-4">
+                        {row.status?.toLowerCase() === 'deallocated' || row.status?.toLowerCase() === 'inactive' ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1 w-max">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Deallocated</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1 w-max">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Active</span>
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -581,13 +649,13 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
             </table>
           </div>
           <Pagination
-            currentPage={empPage}
-            totalItems={filteredEmployees.length}
-            itemsPerPage={empPerPage}
-            onPageChange={setEmpPage}
+            currentPage={toolPage}
+            totalItems={filteredTools.length}
+            itemsPerPage={toolPerPage}
+            onPageChange={setToolPage}
             onItemsPerPageChange={(val) => {
-              setEmpPerPage(val);
-              setEmpPage(1);
+              setToolPerPage(val);
+              setToolPage(1);
             }}
           />
         </div>
