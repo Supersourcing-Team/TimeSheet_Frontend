@@ -268,10 +268,10 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       statusFilter === 'all'
         ? true
         : statusFilter === 'active'
-        ? p.isActive !== false && p.is_active !== false
-        : statusFilter === 'inactive'
-        ? p.isActive === false || p.is_active === false
-        : p.status === statusFilter || formatStatusName(p.status) === statusFilter;
+          ? p.isActive !== false && p.is_active !== false
+          : statusFilter === 'inactive'
+            ? p.isActive === false || p.is_active === false
+            : p.status === statusFilter || formatStatusName(p.status) === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -389,20 +389,20 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         setEditFormData((prev) =>
           prev
             ? {
-                ...prev,
-                documents: [
-                  ...(prev.documents || []),
-                  {
-                    id: String(uploadedDoc.id),
-                    projectId: String(editFormData.id),
-                    fileName: uploadedDoc.file_name || file.name,
-                    filePath: uploadedDoc.file_path,
-                    fileSize: uploadedDoc.file_size || file.size,
-                    fileType: uploadedDoc.file_type || file.type,
-                    uploadedAt: uploadedDoc.uploaded_at || new Date().toISOString(),
-                  },
-                ],
-              }
+              ...prev,
+              documents: [
+                ...(prev.documents || []),
+                {
+                  id: String(uploadedDoc.id),
+                  projectId: String(editFormData.id),
+                  fileName: uploadedDoc.file_name || file.name,
+                  filePath: uploadedDoc.file_path,
+                  fileSize: uploadedDoc.file_size || file.size,
+                  fileType: uploadedDoc.file_type || file.type,
+                  uploadedAt: uploadedDoc.uploaded_at || new Date().toISOString(),
+                },
+              ],
+            }
             : null
         );
       }
@@ -422,9 +422,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       setEditFormData((prev) =>
         prev
           ? {
-              ...prev,
-              documents: (prev.documents || []).filter((d) => d.id !== documentId),
-            }
+            ...prev,
+            documents: (prev.documents || []).filter((d) => d.id !== documentId),
+          }
           : null
       );
       onShowToast('Document Deleted', 'Supporting document deleted.', 'info');

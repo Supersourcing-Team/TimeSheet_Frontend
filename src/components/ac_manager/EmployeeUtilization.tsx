@@ -368,7 +368,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
             </div>
             <div className="col-span-2 text-[10px] text-slate-400 flex items-center gap-1 mt-1">
               <Info className="w-3 h-3 text-slate-400" />
-              <span>Calculated from rate cards & tool duration</span>
+              <span>Calculated from rate cards & tool hourly rates (Cost / 22 / 8 × Logged Hours)</span>
             </div>
           </div>
         </div>
