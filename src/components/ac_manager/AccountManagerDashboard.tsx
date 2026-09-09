@@ -20,7 +20,7 @@ interface AccountManagerDashboardProps {
   activeTab?: ACManagerTab;
   onNavigateTab?: (tab: ACManagerTab) => void;
   onUpdateProjectBudget: (projectId: string, newBudget: number) => Promise<void> | void;
-  onAddToolToProject: (projectId: string, tool: any) => void;
+  onAddToolToMilestone: (milestoneId: string, tool: any) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -32,7 +32,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = R
   activeTab = 'ac_dashboard',
   onNavigateTab,
   onUpdateProjectBudget,
-  onAddToolToProject,
+  onAddToolToMilestone,
   onShowToast,
 }) => {
   // Shared Modals state
@@ -114,7 +114,7 @@ export const AccountManagerDashboard: React.FC<AccountManagerDashboardProps> = R
       {activeTab === 'tool_utilization' && (
         <ToolUtilization
           projects={safeProjects}
-          onAddToolToProject={onAddToolToProject}
+          onAddToolToMilestone={onAddToolToMilestone}
           onShowToast={onShowToast}
         />
       )}

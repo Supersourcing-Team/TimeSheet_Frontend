@@ -14,7 +14,7 @@ interface PortfolioOverviewProps {
   totalCostVariance: number;
   totalForecastCost: number;
   activeProjectsCount: number;
-  onUpdateProjectBudget: (projectId: string, newBudget: number, newRate: number) => void;
+  onUpdateProjectBudget: (projectId: string, newBudget: number) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
   setEditingProject: (p: Project | null) => void;
   setEditBudget: (b: number) => void;
@@ -453,6 +453,13 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredSnapshotProjects.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+        />
       </div>
     </div>
   );

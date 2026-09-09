@@ -58,7 +58,7 @@ interface PMMyProjectsProps {
   onCreateClient: (name: string, contactInfo?: string) => Promise<any> | void;
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
-  onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
+  onAddToolToMilestone: (milestoneId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
   onUpdateToolInProject?: (allocationId: string | number, toolData: { monthlyCost?: number; seats?: number; allocationDate?: string; deallocationDate?: string; allocationBasis?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -100,7 +100,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   onCreateClient,
   onAssignUserToProject,
   onRemoveUserFromProject,
-  onAddToolToProject,
+  onAddToolToMilestone,
   onUpdateToolInProject,
   onRemoveToolFromProject,
   onShowToast,
@@ -194,8 +194,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   // Add Tool Form
   const [newTool, setNewTool] = useState<{
     masterToolId: string;
+    milestoneId: string;
     name: string;
-    category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing';
+    category: string;
     monthlyCost: number;
     seats: number;
     allocationDate: string;
@@ -203,6 +204,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     status: 'active' | 'deallocated';
   }>({
     masterToolId: '',
+    milestoneId: '',
     name: '',
     category: 'AI',
     monthlyCost: 0,
@@ -538,6 +540,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       return;
     }
 
+    if (!newTool.milestoneId) {
+      onShowToast('Validation Error', 'Please select a milestone.', 'error');
+      return;
+    }
+
     if (!newTool.allocationDate || !newTool.deallocationDate) {
       onShowToast('Validation Error', 'Both Start Date and End Date are required.', 'error');
       return;
@@ -550,17 +557,18 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
     const targetMasterTool = masterTools.find((t) => String(t.id) === String(newTool.masterToolId));
     const toolName = targetMasterTool?.name || newTool.name || 'Tool';
+    const targetMilestone = selectedProject.milestones?.find(m => String(m.id) === String(newTool.milestoneId));
 
-    // Check if tool is already allocated to this project
+    // Check if tool is already allocated to this milestone
     const isAlreadyAllocated = (selectedProject.tools || []).some(
-      (t: any) => (String(t.toolId) === String(newTool.masterToolId) || String(t.id) === String(newTool.masterToolId)) && t.status !== 'Inactive' && t.status !== 'deallocated'
+      (t: any) => (String(t.toolId) === String(newTool.masterToolId) || String(t.id) === String(newTool.masterToolId)) && String(t.milestone_id || t.milestoneId) === String(newTool.milestoneId) && t.status !== 'Inactive' && t.status !== 'deallocated'
     );
     if (isAlreadyAllocated) {
-      onShowToast('Already Allocated', `${toolName} is already allocated to ${selectedProject.name}.`, 'error');
+      onShowToast('Already Allocated', `${toolName} is already allocated to ${targetMilestone?.name || 'this milestone'}.`, 'error');
       return;
     }
 
-    onAddToolToProject(selectedProject.id, {
+    onAddToolToMilestone(newTool.milestoneId, {
       toolId: Number(newTool.masterToolId),
       monthlyCost: Number(newTool.monthlyCost) || 0,
       seats: Number(newTool.seats) || 1,
@@ -568,10 +576,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       deallocationDate: newTool.deallocationDate,
     });
 
-    onShowToast('Tool Allocated', `Allocated ${toolName} to ${selectedProject.name}`, 'success');
+    onShowToast('Tool Allocated', `Allocated ${toolName} to ${targetMilestone?.name || 'milestone'}`, 'success');
     setShowAddToolModal(false);
     setNewTool({
       masterToolId: '',
+      milestoneId: '',
       name: '',
       category: 'AI',
       monthlyCost: 0,
@@ -1919,6 +1928,25 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             </div>
 
             <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Select Milestone *
+                </label>
+                <select
+                  required
+                  value={newTool.milestoneId}
+                  onChange={(e) => setNewTool({ ...newTool, milestoneId: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
+                >
+                  <option value="">-- Select Milestone --</option>
+                  {selectedProject.milestones?.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                   Select Tool (Configured by Admin) *

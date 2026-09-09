@@ -30,7 +30,7 @@ interface PMResourceAllocationProps {
   allUsers: User[];
   onAssignUserToProject: (projectId: string, userId: string) => void;
   onRemoveUserFromProject: (projectId: string, userId: string) => void;
-  onAddToolToProject: (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
+  onAddToolToMilestone: (milestoneId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => void;
   onUpdateToolInProject?: (allocationId: string | number, toolData: { monthlyCost?: number; seats?: number; allocationDate?: string; deallocationDate?: string; allocationBasis?: string }) => void;
   onRemoveToolFromProject: (projectId: string, toolId: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
@@ -42,7 +42,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   allUsers = [],
   onAssignUserToProject,
   onRemoveUserFromProject,
-  onAddToolToProject,
+  onAddToolToMilestone,
   onUpdateToolInProject,
   onRemoveToolFromProject,
   onShowToast,
@@ -166,20 +166,21 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
       return;
     }
 
-    const targetProject = pmProjects.find((p) => p.id === toolProjectId);
+    const targetProject = pmProjects.find((p) => (p.milestones || []).some(m => String(m.id) === String(toolProjectId)));
+    const targetMilestone = targetProject?.milestones?.find(m => String(m.id) === String(toolProjectId));
     const selectedMasterTool = masterTools.find((t) => String(t.id) === String(selectedMasterToolId));
 
-    if (targetProject && selectedMasterTool) {
-      // Check if tool already allocated
+    if (targetProject && targetMilestone && selectedMasterTool) {
+      // Check if tool already allocated to this milestone
       const isAlreadyAllocated = (targetProject.tools || []).some(
-        (t) => String(t.id) === String(selectedMasterTool.id) && t.status !== 'Inactive' && t.status !== 'deallocated'
+        (t) => String(t.id) === String(selectedMasterTool.id) && String(t.milestone_id || t.milestoneId) === String(targetMilestone.id) && t.status !== 'Inactive' && t.status !== 'deallocated'
       );
       if (isAlreadyAllocated) {
-        onShowToast('Already Allocated', `${selectedMasterTool.name} is already allocated to ${targetProject.name}.`, 'error');
+        onShowToast('Already Allocated', `${selectedMasterTool.name} is already allocated to ${targetMilestone.name}.`, 'error');
         return;
       }
 
-      onAddToolToProject(toolProjectId, {
+      onAddToolToMilestone(toolProjectId, {
         toolId: Number(selectedMasterTool.id),
         monthlyCost: Number(toolMonthlyCost) || 0,
         seats: Number(toolSeats) || 1,
@@ -695,20 +696,24 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
             </div>
 
             <div className="space-y-3">
-              {/* Project Select */}
+              {/* Milestone Select */}
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Target Project *</label>
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Target Milestone *</label>
                 <select
                   required
                   value={toolProjectId}
                   onChange={(e) => setToolProjectId(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
                 >
-                  <option value="">-- Select Project --</option>
+                  <option value="">-- Select Milestone --</option>
                   {pmProjects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.code})
-                    </option>
+                    <optgroup key={p.id} label={`${p.name} (${p.code})`}>
+                      {p.milestones?.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>

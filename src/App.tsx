@@ -677,17 +677,17 @@ export default function App() {
     }
   }, [updateToolAllocation, showToast]);
 
-  const handleAddToolToProject = React.useCallback(async (projectId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => {
+  const handleAddToolToMilestone = React.useCallback(async (milestoneId: string, toolData: { toolId: number; monthlyCost: number; seats: number; allocationDate: string; deallocationDate?: string }) => {
     try {
       await allocateTool({
-        project_id: Number(projectId),
+        milestone_id: Number(milestoneId),
         tool_id: toolData.toolId,
         monthly_cost: toolData.monthlyCost,
         seats: toolData.seats,
         allocation_date: toolData.allocationDate,
         deallocation_date: toolData.deallocationDate || undefined,
       }).unwrap();
-      showToast('Success', 'Tool allocated to project successfully', 'success');
+      showToast('Success', 'Tool allocated to milestone successfully', 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to allocate tool'), 'error');
     }
@@ -991,7 +991,7 @@ export default function App() {
                   onCreateClient={handleCreateClient}
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
-                  onAddToolToProject={handleAddToolToProject}
+                  onAddToolToMilestone={handleAddToolToMilestone}
                   onUpdateToolInProject={handleUpdateToolInProject}
                   onRemoveToolFromProject={handleRemoveToolFromProject}
                   onShowToast={showToast}
@@ -1005,7 +1005,7 @@ export default function App() {
                   allUsers={users}
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
-                  onAddToolToProject={handleAddToolToProject}
+                  onAddToolToProject={handleAddToolToMilestone}
                   onUpdateToolInProject={handleUpdateToolInProject}
                   onRemoveToolFromProject={handleRemoveToolFromProject}
                   onShowToast={showToast}
@@ -1085,7 +1085,7 @@ export default function App() {
               activeTab={activeAcTab}
               onNavigateTab={(tab) => setActiveAcTab(tab)}
               onUpdateProjectBudget={handleUpdateProjectBudget}
-              onAddToolToProject={handleAddToolToProject}
+              onAddToolToMilestone={handleAddToolToMilestone}
               onShowToast={showToast}
             />
           )}

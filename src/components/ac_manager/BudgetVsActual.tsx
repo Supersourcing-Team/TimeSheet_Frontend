@@ -2,7 +2,7 @@ import { Pagination } from '../common/Pagination';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Project } from '../../types';
 import { formatINR } from '../../utils/formatters';
-import { TrendingUp, AlertTriangle, CheckCircle2, Search, DollarSign, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, Search, DollarSign, PieChart, ArrowUpRight, ArrowDownRight, BarChart2 } from 'lucide-react';
 
 interface BudgetVsActualProps {
   projects: Project[];
@@ -325,6 +325,13 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredProjects.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+        />
       </div>
     </div>
   );

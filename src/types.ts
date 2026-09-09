@@ -107,6 +107,8 @@ export interface MasterTool {
 export interface ProjectTool {
   id: string;
   allocationId?: string;
+  milestoneId?: string;
+  milestoneName?: string;
   name: string;
   category: 'Cloud' | 'Design' | 'Dev' | 'AI' | 'SaaS' | 'Testing' | string;
   monthlyCost: number;
@@ -401,6 +403,7 @@ export interface MilestoneUtilizationRow {
   actual_duration_days: number;
   schedule_variance_days: number;
   schedule_status: 'early' | 'on_time' | 'late' | 'pending' | string;
+  cpi: number;
 }
 
 export interface MilestoneUtilizationData {

@@ -206,14 +206,16 @@ export const dataApi = apiSlice.injectEndpoints({
             uploadedAt: d.uploaded_at,
           })) || [],
           tools: p.tools?.map((t: any) => ({ 
-            id: String(t.id), 
-            allocationId: String(t.allocation_id),
+            id: String(t.toolId || t.id), 
+            allocationId: String(t.allocationId || t.allocation_id),
+            milestoneId: String(t.milestoneId || t.milestone_id || ''),
+            milestoneName: t.milestoneName || t.milestone_name || '',
             name: t.name || '', 
             category: t.category || '', 
-            monthlyCost: t.monthly_cost || 0,
+            monthlyCost: t.monthlyCost || t.monthly_cost || 0,
             seats: t.seats || 1,
-            allocationDate: t.allocation_date || t.allocationDate || '',
-            deallocationDate: t.deallocation_date || t.deallocationDate || '',
+            allocationDate: t.allocationDate || t.allocation_date || '',
+            deallocationDate: t.deallocationDate || t.deallocation_date || '',
             status: t.status || 'active'
           })) || [],
         }));
@@ -325,7 +327,7 @@ export const dataApi = apiSlice.injectEndpoints({
       query: (id) => ({ url: `/tools/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Tool' as any, 'Project'],
     }),
-    allocateTool: builder.mutation<any, { tool_id: number; project_id: number; monthly_cost?: number; seats?: number; allocation_date: string; deallocation_date: string; allocation_basis?: string }>({
+    allocateTool: builder.mutation<any, { tool_id: number; milestone_id: number; monthly_cost?: number; seats?: number; allocation_date: string; deallocation_date: string; allocation_basis?: string }>({
       query: (body) => ({ url: '/tool-allocations', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
