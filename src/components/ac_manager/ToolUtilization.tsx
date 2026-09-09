@@ -31,6 +31,7 @@ export const ToolUtilization: React.FC<ToolUtilizationProps> = ({
       category: newToolCategory,
       monthlyCost: newToolCost,
       assignedUsersCount: newToolUsersCount,
+      seats: 1,
     });
     onShowToast('SaaS Tool Added', `Added ${newToolName} to project.`, 'success');
     setShowAddToolModal(false);

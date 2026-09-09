@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
 import { User, TimesheetEntry, Project, LeaveRequest, HolidayItem } from '../../types';
 import { useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
 import {
@@ -52,6 +53,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [editNonBillableDesc, setEditNonBillableDesc] = useState<string>('');
 
@@ -136,6 +139,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   }
 
   // Filtered List View items
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedProjectFilter, selectedStatusFilter]);
+
   const filteredTimesheets = userTimesheets.filter((ts) => {
     if (selectedProjectFilter !== 'all' && ts.projectId !== selectedProjectFilter) return false;
     if (selectedStatusFilter !== 'all' && ts.status !== selectedStatusFilter) return false;
@@ -148,6 +153,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
     }
     return true;
   });
+
+  const paginatedTimesheets = filteredTimesheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleExportCSV = () => {
     const headers = 'ID,Date,Project,Category,Hours,Billable,Status,BillableDescription,NonBillableDescription\n';
@@ -527,7 +534,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       <td className="py-3.5 px-3 text-right text-slate-400 text-[10px] italic">—</td>
                     </tr>
                   ))}
-                {filteredTimesheets.map((ts) => (
+                {paginatedTimesheets.map((ts) => (
                   <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>
                     <td className="py-3.5 px-3 font-bold text-blue-600">{ts.projectName}</td>

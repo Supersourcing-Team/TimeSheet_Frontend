@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Project } from '../../types';
 import {
   useGetUtilizationDashboardQuery,
@@ -36,6 +37,8 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Query milestones for the dropdown when a project is selected
   const numericProjectId = selectedProjectId ? Number(selectedProjectId) : undefined;
@@ -114,6 +117,8 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
   const employees = employeeData?.employees || [];
 
   // Filtered employee rows
+  useEffect(() => { setCurrentPage(1); }, [selectedProjectId, selectedMilestoneId, selectedStatus, searchQuery]);
+
   const filteredEmployees = useMemo(() => {
     if (!searchQuery.trim()) return employees;
     const q = searchQuery.toLowerCase();
@@ -156,6 +161,8 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
     if (pct >= 30) return 'text-amber-700 bg-amber-50 border-amber-200';
     return 'text-rose-700 bg-rose-50 border-rose-200';
   };
+
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 text-slate-800 pb-12">
@@ -538,7 +545,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredEmployees.map((emp) => (
+                  {paginatedEmployees.map((emp) => (
                     <tr key={emp.employee_id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3 px-4 font-bold text-slate-900">
                         <div className="flex items-center gap-2.5">

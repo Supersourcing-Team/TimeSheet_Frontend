@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import React, { useState } from 'react';
 import { User, Project } from '../../types';
 import {
@@ -29,8 +30,11 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
   allUsers = [],
 }) => {
   const [selectedProjectModal, setSelectedProjectModal] = useState<Project | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const myProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
+  const paginatedProjects = myProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '0 B';
@@ -59,7 +63,7 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
 
       {/* Projects Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {myProjects.map((project) => {
+        {paginatedProjects.map((project) => {
           return (
             <div
               key={project.id}

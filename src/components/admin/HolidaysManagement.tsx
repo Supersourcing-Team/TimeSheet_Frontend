@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
 import { HolidayItem } from '../../types';
 import {
   CalendarCheck,
@@ -30,6 +31,8 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterType, setFilterType] = useState<string>('all');
 
   // Modals
@@ -51,6 +54,8 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   const [editDescription, setEditDescription] = useState('');
 
 
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType]);
+
   const filteredHolidays = (holidays || []).filter((h) => {
     if (filterType !== 'all' && h.type !== filterType) return false;
     if (
@@ -62,6 +67,8 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
     }
     return true;
   });
+
+  const paginatedHolidays = filteredHolidays.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +238,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  filteredHolidays.map((holiday) => (
+                  paginatedHolidays.map((holiday) => (
                     <tr key={holiday.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-2.5">
@@ -330,7 +337,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredHolidays.map((holiday) => (
+              {paginatedHolidays.map((holiday) => (
               <div
                 key={holiday.id}
                 className="p-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 to-white shadow-xs space-y-3 relative group hover:border-blue-400 transition-all"

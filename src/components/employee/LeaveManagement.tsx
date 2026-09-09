@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import React from 'react';
 import { User, LeaveBalance, LeaveRequest, LeaveTypeConfig } from '../../types';
 import {
@@ -21,6 +22,9 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   onShowToast,
 }) => {
   const userRequests = (leaveRequests || []).filter((r) => r.userId === currentUser.id);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const paginatedRequests = userRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const getLeaveStatus = (req: LeaveRequest) => {
     const start = new Date(req.startDate);
@@ -71,7 +75,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/70">
-              {userRequests.map((req) => {
+              {paginatedRequests.map((req) => {
                 const status = getLeaveStatus(req);
                 return (
                   <tr key={req.id} className="hover:bg-slate-50/40 transition-colors">
@@ -122,6 +126,16 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={userRequests.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(val) => {
+            setItemsPerPage(val);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

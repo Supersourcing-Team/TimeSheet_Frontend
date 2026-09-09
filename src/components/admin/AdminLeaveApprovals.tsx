@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
 import { User, LeaveRequest } from '../../types';
 import {
   Palmtree,
@@ -45,6 +46,8 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'days_desc'>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal states
   const [reviewingRequest, setReviewingRequest] = useState<LeaveRequest | null>(null);
@@ -71,6 +74,8 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
   const departments = Array.from(new Set(users.map((u) => u.department).filter(Boolean)));
 
   // Filtered requests
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedStatusTab, selectedTypeFilter, selectedDepartment, sortBy]);
+
   const filteredRequests = leaveRequests.filter((req) => {
     // Status filter
     if (selectedStatusTab !== 'all' && req.status !== selectedStatusTab) return false;
@@ -96,6 +101,8 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
 
     return true;
   });
+
+  const paginatedRequests = filteredRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Sorted requests
   const sortedRequests = [...filteredRequests].sort((a, b) => {

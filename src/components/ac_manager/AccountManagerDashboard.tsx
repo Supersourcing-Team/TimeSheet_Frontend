@@ -20,7 +20,7 @@ interface AccountManagerDashboardProps {
   activeTab?: ACManagerTab;
   onNavigateTab?: (tab: ACManagerTab) => void;
   onUpdateProjectBudget: (projectId: string, newBudget: number) => Promise<void> | void;
-  onAddToolToProject: (projectId: string, tool: Omit<ProjectTool, 'id'>) => void;
+  onAddToolToProject: (projectId: string, tool: any) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 

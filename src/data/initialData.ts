@@ -126,9 +126,9 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2025-09-30',
     description: 'Next-gen mobile banking interface redesign with UPI payments, multi-currency support and fraud alerts.',
     tools: [
-      { id: 't-1', name: 'Figma Enterprise', category: 'Design', monthlyCost: 15000, assignedUsersCount: 4 },
-      { id: 't-2', name: 'AWS Cloud Infrastructure', category: 'Cloud', monthlyCost: 65000, assignedUsersCount: 6 },
-      { id: 't-3', name: 'OpenAI API Gateway', category: 'AI', monthlyCost: 32000, assignedUsersCount: 3 },
+      { id: 't-1', name: 'Figma Enterprise', category: 'Design', monthlyCost: 15000, seats: 1, assignedUsersCount: 4 },
+      { id: 't-2', name: 'AWS Cloud Infrastructure', category: 'Cloud', monthlyCost: 65000, seats: 1, assignedUsersCount: 6 },
+      { id: 't-3', name: 'OpenAI API Gateway', category: 'AI', monthlyCost: 32000, seats: 1, assignedUsersCount: 3 },
     ],
     assignedUserIds: ['usr-101', 'usr-102', 'usr-104', 'usr-105'],
     milestones: [],
@@ -150,8 +150,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2025-11-15',
     description: 'High-throughput microservices architecture migration to Kubernetes cluster with zerotrust security.',
     tools: [
-      { id: 't-4', name: 'Datadog Enterprise APM', category: 'SaaS', monthlyCost: 48000, assignedUsersCount: 5 },
-      { id: 't-5', name: 'GitHub Copilot Enterprise', category: 'AI', monthlyCost: 22000, assignedUsersCount: 8 },
+      { id: 't-4', name: 'Datadog Enterprise APM', category: 'SaaS', monthlyCost: 48000, seats: 1, assignedUsersCount: 5 },
+      { id: 't-5', name: 'GitHub Copilot Enterprise', category: 'AI', monthlyCost: 22000, seats: 1, assignedUsersCount: 8 },
     ],
     assignedUserIds: ['usr-101', 'usr-103', 'usr-105'],
     milestones: [],
@@ -173,8 +173,8 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2025-08-31',
     description: 'Embedding generative AI workflows, automated document summarization, and natural language query tools.',
     tools: [
-      { id: 't-6', name: 'Google Cloud Vertex AI', category: 'AI', monthlyCost: 85000, assignedUsersCount: 4 },
-      { id: 't-7', name: 'JetBrains All Products', category: 'Dev', monthlyCost: 25000, assignedUsersCount: 5 },
+      { id: 't-6', name: 'Google Cloud Vertex AI', category: 'AI', monthlyCost: 85000, seats: 1, assignedUsersCount: 4 },
+      { id: 't-7', name: 'JetBrains All Products', category: 'Dev', monthlyCost: 25000, seats: 1, assignedUsersCount: 5 },
     ],
     assignedUserIds: ['usr-101', 'usr-102', 'usr-106'],
     milestones: [],
@@ -196,7 +196,7 @@ export const INITIAL_PROJECTS: Project[] = [
     endDate: '2026-03-31',
     description: 'HIPAA-compliant patient record management system with encrypted file storage and audit trails.',
     tools: [
-      { id: 't-8', name: 'Vanta Compliance Automator', category: 'SaaS', monthlyCost: 70000, assignedUsersCount: 3 },
+      { id: 't-8', name: 'Vanta Compliance Automator', category: 'SaaS', monthlyCost: 70000, seats: 1, assignedUsersCount: 3 },
     ],
     assignedUserIds: ['usr-103', 'usr-105', 'usr-106'],
     milestones: [],

@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import { getErrorMessage } from '../../utils/errorHandler';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
@@ -114,7 +115,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   const [selectedDeptId, setSelectedDeptId] = useState<number | ''>('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // ── Modals ────────────────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
@@ -679,31 +680,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         </div>
 
         {/* Pagination bar */}
-        {totalPages > 1 && (
-          <div className="p-3 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>
-              Page {currentPage} of {totalPages} ({total} total)
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalItems={total}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
       {/* ── EDIT USER MODAL ─────────────────────────────────────────────── */}
