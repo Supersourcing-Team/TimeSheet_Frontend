@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { User, WeekendWorkRequest } from '../../types';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
+import { User, WeekendWorkRequest, Project } from '../../types';
 import {
   CalendarX,
   CheckCircle2,
@@ -16,6 +17,8 @@ import {
 
 interface PMWeekendWorkRequestsProps {
   currentUser: User;
+  projects?: Project[];
+  allUsers?: User[];
   weekendRequests: WeekendWorkRequest[];
   onApproveWeekendWork: (id: string) => void;
   onRejectWeekendWork: (id: string, comment?: string) => void;
@@ -33,6 +36,10 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [rejectingRequest, setRejectingRequest] = useState<WeekendWorkRequest | null>(null);
   const [rejectComment, setRejectComment] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, searchTerm]);
 
   const filteredRequests = weekendRequests.filter((req) => {
     const matchesSearch =
@@ -45,6 +52,8 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
 
     return matchesSearch && matchesStatus;
   });
+
+  const paginatedRequests = filteredRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleConfirmReject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +126,7 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredRequests.map((req) => {
+            {paginatedRequests.map((req) => {
               const totalHours = req.plannedHours || (req.billableHours || 0) + (req.nonBillableHours || 0);
 
               return (

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
 import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import { Project, User, TimesheetEntry } from '../../types';
 import {
@@ -35,6 +36,8 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [viewingDesc, setViewingDesc] = useState<{ billable: string; nonBillable: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // PM's project IDs
   const pmProjects = React.useMemo(() => {
@@ -56,6 +59,8 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   }, [timesheets, pmProjectIds]);
 
   // Apply filters
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedProject, selectedUser, dateFilter]);
+
   const filteredTimesheets = React.useMemo(() => {
     const search = searchTerm.toLowerCase();
     return pmTimesheets.filter((t) => {
@@ -87,6 +92,8 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
       billableRatio: ratio,
     };
   }, [filteredTimesheets]);
+
+  const paginatedTimesheets = filteredTimesheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 text-slate-900 font-sans">
@@ -247,7 +254,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredTimesheets.map((ts) => {
+                {paginatedTimesheets.map((ts) => {
                   const userLeaves = upcomingLeaves.filter((l: any) => l.user_id.toString() === ts.userId.toString());
                   const isOnLeaveThisDay = userLeaves.some((l: any) => l.start_date <= ts.date && l.end_date >= ts.date);
                   

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useEffect } from 'react';
 import { Project, User, ProjectTool, MasterTool } from '../../types';
 import { formatINR } from '../../utils/formatters';
 import { useGetUpcomingLeavesQuery, useGetToolsQuery } from '../../store/api/dataApi';
@@ -47,6 +48,10 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   onShowToast,
 }) => {
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+  const [empPage, setEmpPage] = useState(1);
+  const [empPerPage, setEmpPerPage] = useState(10);
+  const [toolPage, setToolPage] = useState(1);
+  const [toolPerPage, setToolPerPage] = useState(10);
   const { data: masterTools = [] } = useGetToolsQuery();
   const [activeSubTab, setActiveSubTab] = useState<'employees' | 'tools'>('employees');
   const [searchTerm, setSearchTerm] = useState('');
@@ -278,6 +283,8 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   }, [pmProjects]);
 
   // Filters
+  useEffect(() => { setEmpPage(1); setToolPage(1); }, [searchTerm, selectedProjectFilter]);
+
   const filteredEmployees = employeeAllocations.filter((row) => {
     const matchesProject = selectedProjectFilter === 'all' || row.projectId === selectedProjectFilter;
     const matchesSearch =
@@ -295,6 +302,9 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
       row.category.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesProject && matchesSearch;
   });
+
+  const paginatedEmployees = filteredEmployees.slice((empPage - 1) * empPerPage, empPage * empPerPage);
+  const paginatedTools = filteredTools.slice((toolPage - 1) * toolPerPage, toolPage * toolPerPage);
 
   const activeMasterTools = masterTools.filter((t) => t.status !== 'Inactive');
   const selectedToolObj = masterTools.find((t) => String(t.id) === String(selectedMasterToolId));
@@ -409,7 +419,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                     </td>
                   </tr>
                 ) : (
-                  filteredEmployees.map((row) => (
+                  paginatedEmployees.map((row) => (
                     <tr key={`${row.projectId}-${row.userId}`} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
@@ -464,6 +474,16 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={empPage}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={empPerPage}
+            onPageChange={setEmpPage}
+            onItemsPerPageChange={(val) => {
+              setEmpPerPage(val);
+              setEmpPage(1);
+            }}
+          />
         </div>
       )}
 
@@ -492,7 +512,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                     </td>
                   </tr>
                 ) : (
-                  filteredTools.map((row) => (
+                  paginatedTools.map((row) => (
                     <tr key={`${row.projectId}-${row.toolId}`} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
@@ -560,6 +580,16 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={empPage}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={empPerPage}
+            onPageChange={setEmpPage}
+            onItemsPerPageChange={(val) => {
+              setEmpPerPage(val);
+              setEmpPage(1);
+            }}
+          />
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import React, { useState } from 'react';
 import { User, Project, WeekendWorkRequest } from '../../types';
 import {

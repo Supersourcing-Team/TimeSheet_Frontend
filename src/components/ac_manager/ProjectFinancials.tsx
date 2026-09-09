@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import React, { useState } from 'react';
 import { Project, Milestone } from '../../types';
 import { formatINR } from '../../utils/formatters';
@@ -21,6 +22,9 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
   setEditBudget,
 }) => {
   const safeProjects = projects || [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const paginatedProjects = safeProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   const formatCr = (amount: number): string => {
@@ -52,7 +56,7 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
       </div>
 
       <div className="space-y-4">
-        {safeProjects.map((p) => {
+        {paginatedProjects.map((p) => {
           const isExpanded = expandedProject === p.id;
           const health = p.health || 'GREEN';
           
@@ -184,6 +188,13 @@ export const ProjectFinancials: React.FC<ProjectFinancialsProps> = ({
           );
         })}
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalItems={safeProjects.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
     </div>
   );
 };

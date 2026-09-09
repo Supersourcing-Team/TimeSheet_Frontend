@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 const formatFileSize = (bytes?: number) => {
   if (!bytes) return '';
   if (bytes < 1024) return `${bytes} B`;
@@ -5,7 +6,7 @@ const formatFileSize = (bytes?: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Project, User, ProjectTool, TimesheetEntry, Milestone } from '../../types';
 import { formatINR } from '../../utils/formatters';
 import {
@@ -87,6 +88,8 @@ const formatStatusName = (status: string) => {
 };
 
 export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
+  // Pagination
+
   currentUser,
   projects = [],
   allUsers = [],
@@ -249,6 +252,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   const [deleteProjectDoc] = useDeleteProjectDocumentMutation();
   const [achieveMilestoneId, setAchieveMilestoneId] = useState<number | null>(null);
   const [achieveDate, setAchieveDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // PM's projects
   const pmProjects = (projects || []).filter(
@@ -259,6 +264,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
   );
 
   // Filtered projects
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
+
   const filteredProjects = pmProjects.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -274,6 +281,8 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             : p.status === statusFilter || formatStatusName(p.status) === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const paginatedProjects = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const validateMilestone = (
     milestone: { start_date: string; expected_completion_date: string; weight_percentage: number },
@@ -734,7 +743,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
           {/* Projects Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredProjects.map((proj) => {
+            {paginatedProjects.map((proj) => {
               const assignedCount = (proj.assignedUserIds || []).length;
               const toolsCount = (proj.tools || []).length;
               const isMilestoneConfigured = (proj.milestones && proj.milestones.length > 0) || (proj.completion_percentage !== undefined && proj.completion_percentage > 0);
@@ -1930,7 +1939,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                         masterToolId: selectedId,
                         name: toolObj?.name || '',
                         category: (toolObj?.category as any) || 'AI',
-                        monthlyCost: toolObj?.monthlyCost || 0,
+                        monthlyCost: (toolObj as any)?.default_cost_per_month ?? (toolObj as any)?.monthlyCost ?? 0,
                       });
                     }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"

@@ -1,3 +1,4 @@
+import { Pagination } from '../common/Pagination';
 import React, { useState } from 'react';
 import { MasterTool } from '../../types';
 import {
@@ -53,6 +54,8 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTool, setEditingTool] = useState<MasterTool | null>(null);
   const [deletingToolId, setDeletingToolId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Form State
   const [toolName, setToolName] = useState('');
@@ -130,6 +133,8 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
   };
 
   // Filter tools
+  React.useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedCategory]);
+
   const filteredTools = tools.filter((tool) => {
     const matchesSearch =
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,6 +142,8 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
     const matchesCat = selectedCategory === 'all' || tool.category === selectedCategory;
     return matchesSearch && matchesCat;
   });
+
+  const paginatedTools = filteredTools.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -308,6 +315,13 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredTools.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </div>
 
       {/* ADD NEW TOOL MODAL */}

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Project, TimesheetEntry } from '../../types';
 import { formatINR } from '../../utils/formatters';
 import { Calendar, Download, CreditCard, DollarSign, TrendingUp, ShieldCheck, UserCheck, Rocket, Landmark } from 'lucide-react';
@@ -41,6 +42,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
   const [chartInterval, setChartInterval] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [snapshotFilter, setSnapshotFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const safeProjects = projects || [];
   const safeTimesheets = timesheets || [];
@@ -116,6 +119,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     return data;
   }, [safeProjects, chartInterval]);
 
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, snapshotFilter]);
+
   const filteredSnapshotProjects = safeProjects.filter((p) => {
     if (snapshotFilter === 'active' && p.status !== 'active') return false;
     if (snapshotFilter === 'completed' && p.status !== 'completed') return false;
@@ -128,6 +133,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
     }
     return true;
   });
+
+  const paginatedSnapshotProjects = filteredSnapshotProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const activeProjectHealth = safeProjects
     .filter((p) => p.status === 'active')
@@ -388,7 +395,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredSnapshotProjects.map((p) => {
+              {paginatedSnapshotProjects.map((p) => {
                 const cost = p.actual_cost || 0;
                 const earned_value = p.earned_value || 0;
                 const cpi = p.cpi || 0;

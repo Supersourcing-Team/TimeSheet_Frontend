@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { Pagination } from '../common/Pagination';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Project } from '../../types';
 import { formatINR } from '../../utils/formatters';
 import { TrendingUp, AlertTriangle, CheckCircle2, Search, DollarSign, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -11,6 +12,8 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
   const safeProjects = projects || [];
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'under' | 'over' | 'warning'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const formatCr = (amount: number): string => {
     if (Math.abs(amount) >= 10000000) {
@@ -43,6 +46,8 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
   }, [safeProjects]);
 
   // Filtered Projects
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
+
   const filteredProjects = useMemo(() => {
     return safeProjects.filter((p) => {
       const matchesSearch =
@@ -62,6 +67,8 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
       return true;
     });
   }, [safeProjects, searchTerm, statusFilter]);
+
+  const paginatedProjects = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 text-slate-800">
@@ -255,7 +262,7 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
                   </td>
                 </tr>
               ) : (
-                filteredProjects.map((p) => {
+                paginatedProjects.map((p) => {
                   const budget = p.budget || 0;
                   const actual = p.actual_cost || 0;
                   const variance = budget - actual;
