@@ -52,7 +52,7 @@ Required variables:
 
 ```env
 VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
-VITE_API_BASE_URL=/api/v1
+BASE_URL=/api/v1
 ```
 
 ### 4. Start the development server

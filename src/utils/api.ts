@@ -1,9 +1,9 @@
 import { User, UserRole } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.BASE_URL;
 if (!API_BASE_URL) {
   throw new Error(
-    '[api] VITE_API_BASE_URL is not set. ' +
+    '[api] BASE_URL is not set. ' +
     'Set it in .env (local) or Vercel environment variables (production).'
   );
 }
