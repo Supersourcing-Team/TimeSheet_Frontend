@@ -4,11 +4,11 @@ import { RootState } from './index';
 import { logout } from './slices/authSlice';
 import { mapBackendUserToFrontendUser } from '../utils/api';
 
-const API_BASE_URL = import.meta.env.BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 if (!API_BASE_URL) {
   throw new Error(
-    '[apiSlice] BASE_URL is not set. ' +
-    'Set it in .env (local) or Vercel environment variables (production).'
+    '[apiSlice] VITE_API_BASE_URL is not set. ' +
+    'Set it in Vercel environment variables (production) to your Render URL.'
   );
 }
 
