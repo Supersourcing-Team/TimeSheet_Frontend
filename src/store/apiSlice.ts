@@ -13,12 +13,19 @@ const baseQuery = fetchBaseQuery({
 });
 
 const mutex = new Mutex();
+let lastRefreshFailTime = 0;
+const REFRESH_TIMEOUT = 10000; // 10 seconds
 
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
+    if (Date.now() - lastRefreshFailTime < REFRESH_TIMEOUT) {
+      api.dispatch(logout());
+      return result;
+    }
+
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
@@ -43,11 +50,13 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
             });
             result = await baseQuery(args, api, extraOptions);
           } else {
+            lastRefreshFailTime = Date.now();
             api.dispatch(logout());
             // Clear stale cache so the next user never sees another user's data
             api.dispatch(apiSlice.util.resetApiState());
           }
         } else {
+          lastRefreshFailTime = Date.now();
           api.dispatch(logout());
           // Clear stale cache on refresh failure too
           api.dispatch(apiSlice.util.resetApiState());
