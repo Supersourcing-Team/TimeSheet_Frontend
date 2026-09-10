@@ -13,9 +13,9 @@ RUN npm ci || npm install
 COPY . .
 
 # Build-time env for Vite (proxied via nginx at runtime)
-ARG BASE_URL=/api/v1
+ARG VITE_API_BASE_URL=/api/v1
 ARG VITE_GOOGLE_CLIENT_ID
-ENV BASE_URL=$BASE_URL \
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
   VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 RUN npm run build
