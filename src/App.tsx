@@ -868,7 +868,7 @@ export default function App() {
           onQuickAddTimesheet={handleQuickAddTimesheet}
         />
 
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full min-w-0">
           {portalMode === 'employee' && (
             <>
               {activeEmployeeTab === 'my_dashboard' && (

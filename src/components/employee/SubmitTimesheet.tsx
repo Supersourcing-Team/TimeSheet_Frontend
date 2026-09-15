@@ -305,16 +305,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-slate-900 font-sans">
-      {/* Left Column: Form & Work Breakdown */}
-      <div className="lg:col-span-8 space-y-6">
+      <div className="w-full space-y-6 text-slate-900 font-sans pb-12">
         {/* Header Bar */}
         <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <h2 className="text-2xl font-black tracking-tight">
               {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
             </h2>
-            <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
+            <p className="text-xs text-blue-100/90 max-w-3xl leading-relaxed">
               {editingEntry
                 ? 'Update your daily logged work hours and descriptions.'
                 : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
@@ -343,130 +341,183 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             }`}
           >
             <CalendarX className={`w-5 h-5 shrink-0 ${isOnFullDayLeave ? 'text-red-500' : 'text-amber-500'}`} />
-            <div className="flex-1">
-              <p className="text-xs font-extrabold">
-                {leaveStatus.blocked_message || 'On Leave'}
-                {leaveStatus.leave_type_name && (
-                  <span className="font-normal ml-1 text-slate-500">({leaveStatus.leave_type_name})</span>
-                )}
+            <div className="text-xs font-semibold">
+              <span className="font-extrabold">
+                {isOnFullDayLeave
+                  ? 'On Leave — Full Day'
+                  : `On Leave — ${leaveStatus.leave_duration_type === 'half_day' ? 'Half Day' : 'Partial Day'}`}
+              </span>
+              {((leaveStatus as any).reason || (leaveStatus as any).leave_type) && <span className="opacity-75"> ({((leaveStatus as any).reason || (leaveStatus as any).leave_type)})</span>}
+              <p className="text-[11px] font-normal opacity-90 mt-0.5">
+                {isOnFullDayLeave
+                  ? 'Timesheet submission is blocked for this date.'
+                  : `You may log up to ${leaveStatus.available_hours} hours for this date.`}
               </p>
-              {isOnFullDayLeave ? (
-                <p className="text-[10px] mt-0.5">
-                  Timesheet submission is blocked for this date.
-                </p>
-              ) : (
-                <p className="text-[10px] mt-0.5">
-                  You can log up to{' '}
-                  <strong>{leaveStatus.available_hours.toFixed(1)} hours</strong> of timesheet today.
-                </p>
+            </div>
+          </div>
+        )}
+
+        {/* Weekend / Holiday Warnings */}
+        {isWeekendSelected && (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <p className="font-extrabold text-amber-900">Weekend Date Selected</p>
+              <p className="text-amber-800">Direct timesheet submission is not permitted on weekends. Weekend work requires prior PM approval through a Weekend Work Request.</p>
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('weekend_work')}
+                  className="inline-flex items-center gap-1.5 font-black text-amber-800 hover:text-amber-950 underline mt-1 cursor-pointer"
+                >
+                  <span>Go to Weekend Work Requests</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
           </div>
         )}
 
-        {/* Target Progress & Summary Bar */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 font-semibold text-slate-600">
-              <span>Daily Target:</span>
-              <span className="font-black text-slate-900 font-mono">{targetDayHours.toFixed(1)} Hours</span>
-              <span className="text-slate-300 mx-2">•</span>
-              <span>Logged Today:</span>
-              <span
-                className={`font-black font-mono px-2 py-0.5 rounded ${grandTotal >= targetDayHours ? 'text-emerald-700 bg-emerald-50' : 'text-blue-700 bg-blue-50'
-                  }`}
-              >
-                {grandTotal.toFixed(1)} Hours
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs font-bold">
-              <span className="text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
-                Billable: <span className="font-mono font-black">{totalBillable.toFixed(1)}h</span>
-              </span>
-              <span className="text-slate-800 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
-                Non-Billable: <span className="font-mono font-black">{totalNonBillable.toFixed(1)}h</span>
-              </span>
+        {matchedHoliday && (
+          <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 flex items-start gap-3 shadow-xs">
+            <CalendarX className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <p className="font-extrabold text-orange-900">Company Holiday Selected ({matchedHoliday.name})</p>
+              <p className="text-orange-800">Timesheet submission is disabled on official company holidays.</p>
             </div>
           </div>
+        )}
 
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-            <div
-              className={`h-2.5 rounded-full transition-all duration-500 ${grandTotal >= targetDayHours ? 'bg-emerald-500' : 'bg-blue-600'
-                }`}
-              style={{ width: `${Math.min(100, (grandTotal / targetDayHours) * 100)}%` }}
-            />
-          </div>
-
-          {grandTotal < targetDayHours && (
-            <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-semibold flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+        {/* Dynamic Target Indicator Bar */}
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
               <span>
-                You are currently <strong className="font-mono">{(targetDayHours - grandTotal).toFixed(1)} hours</strong> short of the 8.0h daily target.
+                Daily Target:{' '}
+                <span className="text-slate-900 font-extrabold">{targetDayHours.toFixed(1)} Hours</span>
               </span>
-            </p>
-          )}
+              <span className="text-slate-300">•</span>
+              <span>
+                Logged Today:{' '}
+                <span
+                  className={`font-black px-2 py-0.5 rounded-md ${
+                    grandTotal >= targetDayHours && targetDayHours > 0
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {grandTotal.toFixed(1)} Hours
+                </span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                Billable: {totalBillable.toFixed(1)}h
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                Non-Billable: {totalNonBillable.toFixed(1)}h
+              </span>
+            </div>
+          </div>
+
+          {/* Dynamic Filling Progress Bar */}
+          <div className="space-y-1">
+            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex shadow-inner">
+              <div
+                style={{
+                  width: `${Math.min(
+                    100,
+                    ((totalBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
+                  )}%`,
+                }}
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 rounded-l-full"
+                title={`Billable: ${totalBillable.toFixed(1)}h`}
+              />
+              <div
+                style={{
+                  width: `${Math.min(
+                    Math.max(
+                      0,
+                      100 - ((totalBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
+                    ),
+                    ((totalNonBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
+                  )}%`,
+                }}
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
+                title={`Non-Billable: ${totalNonBillable.toFixed(1)}h`}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold px-0.5">
+              <span>0h</span>
+              <span>{((targetDayHours > 0 ? targetDayHours : 8) / 2).toFixed(1)}h (50%)</span>
+              <span>{(targetDayHours > 0 ? targetDayHours : 8).toFixed(1)}h Target (100%)</span>
+            </div>
+          </div>
         </div>
 
-        {/* Task Rows Form */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span>Tasks Breakdown ({rows.length} {rows.length === 1 ? 'row' : 'rows'})</span>
-            </h3>
-            <button
-              type="button"
-              onClick={handleAddRow}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Project Row</span>
-            </button>
+        {/* Main Work Entry Form Card */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <h3 className="font-black text-sm text-slate-900 tracking-wide uppercase">
+                Tasks Breakdown ({rows.length} {rows.length === 1 ? 'Row' : 'Rows'})
+              </h3>
+            </div>
+            {!editingEntry && (
+              <button
+                type="button"
+                onClick={handleAddRow}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs transition-colors cursor-pointer border border-blue-200"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Project Row</span>
+              </button>
+            )}
           </div>
 
-          <div className="space-y-6">
+          {/* Task Rows List */}
+          <div className="space-y-4">
             {rows.map((row, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-4 relative"
+                className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 transition-all hover:border-slate-300"
               >
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                  {/* Project Dropdown */}
+                {/* Project, Date, Hours Selection Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                  {/* Project Selection */}
                   <div className="md:col-span-4 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Project
                     </label>
                     <select
                       value={row.projectId}
                       onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
-                      className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:bg-slate-50"
-                      disabled={assignedProjects.length === 0}
+                      disabled={!!editingEntry}
+                      className="w-full bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
                     >
-                      {assignedProjects.length > 0 ? (
-                        assignedProjects.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.code || `PRJ-${p.id}`})
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">No project allocated</option>
-                      )}
+                      <option value="">Select a Project...</option>
+                      {assignedProjects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.code || `PRJ-${p.id}`})
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   {/* Date Input */}
                   <div className="md:col-span-3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Date
                     </label>
                     <input
                       type="date"
                       value={row.date}
+                      max={today}
                       onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
-                      
-                      className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      disabled={!!editingEntry}
+                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
                     />
                   </div>
 
@@ -492,7 +543,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   {/* Non-Billable Hours */}
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Non-Bill (h)
+                      Non-Billable (h)
                     </label>
                     <input
                       type="number"
@@ -513,7 +564,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemoveRow(idx)}
-                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200 cursor-pointer"
+                      disabled={rows.length === 1}
+                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                       title="Remove Task Row"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -522,38 +574,38 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 </div>
 
                 {/* SEPARATE DESCRIPTIONS FOR BILLABLE AND NON-BILLABLE HOURS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200/80">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200/80">
                   {/* Billable Work Description */}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center justify-between">
                       <span>Billable Work Description / Client Scope</span>
-                      <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                         Invoiced to Client
                       </span>
                     </label>
                     <textarea
-                      rows={10}
+                      rows={8}
                       value={row.billableDescription}
                       onChange={(e) => handleRowChange(idx, 'billableDescription', e.target.value)}
                       placeholder="E.g. Built API endpoint, fixed payment bug, wrote design specs..."
-                      className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y"
+                      className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y shadow-2xs leading-relaxed"
                     />
                   </div>
 
                   {/* Non-Billable Work Description */}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
                       <span>Non-Billable Description / Internal Notes</span>
-                      <span className="text-[9px] text-slate-500 font-semibold bg-slate-200 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] text-slate-500 font-semibold bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">
                         Internal Overhead
                       </span>
                     </label>
                     <textarea
-                      rows={10}
+                      rows={8}
                       value={row.nonBillableDescription}
                       onChange={(e) => handleRowChange(idx, 'nonBillableDescription', e.target.value)}
                       placeholder="E.g. Daily standup meeting, local docker debugging, JIRA updates..."
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y shadow-2xs leading-relaxed"
                     />
                   </div>
                 </div>
@@ -590,7 +642,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 type="button"
                 disabled={isSubmitting || isWeekendSelected || !!matchedHoliday}
                 onClick={() => handleSubmit()}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
+                className="flex items-center gap-2 px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 <span>{isSubmitting ? 'Saving...' : (editingEntry ? 'Update & Save' : 'Submit Timesheet')}</span>
@@ -600,136 +652,18 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         </div>
       </div>
 
-      {/* Right Column: My Projects & Tips Sidebar */}
-      <div className="lg:col-span-4 space-y-6">
-        {/* My Projects Card */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-sm text-slate-900">My Projects</h3>
-            {onNavigateTab && (
-              <button
-                type="button"
-                onClick={() => onNavigateTab('my_projects')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <span>View more</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {displaySidebarProjects.length > 0 ? (
-              displaySidebarProjects.map((p, idx) => {
-                const style = PROJECT_ICON_STYLES[idx % PROJECT_ICON_STYLES.length];
-                const IconComp = style.icon;
-                const userLoggedHours = timesheets
-                  .filter((t) => t.projectId === p.id && t.userId === currentUser.id)
-                  .reduce((sum, t) => sum + (t.billableHours || 0) + (t.nonBillableHours || 0), 0);
-
-                const formattedLogged = userLoggedHours > 0
-                  ? userLoggedHours.toFixed(1)
-                  : (p.loggedHours > 0 ? p.loggedHours.toFixed(1) : ((idx + 1) * 8).toFixed(1));
-
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      if (rows.length > 0) {
-                        handleRowChange(0, 'projectId', p.id);
-                        onShowToast('Project Selected', `Selected "${p.name}" for task entry`, 'info');
-                      }
-                    }}
-                    className="p-3.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:bg-slate-50/80 transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
-                    title="Click to select this project for timesheet entry"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} border ${style.border} shrink-0`}>
-                        <IconComp className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-xs text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                          {p.name}
-                        </h4>
-                        <span className="text-[11px] font-semibold text-slate-400">
-                          ({p.code || `PRJ-${p.id}`})
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-bold text-slate-600 font-mono">
-                        {formattedLogged}h logged
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-4 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50">
-                <p className="text-xs text-slate-500 font-medium">No projects allocated</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Tips for Accurate Timesheet Card */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-500 border border-amber-100">
-              <Lightbulb className="w-4 h-4" />
-            </div>
-            <h3 className="font-black text-sm text-slate-900">Tips for Accurate Timesheet</h3>
-          </div>
-
-          <ul className="space-y-3 text-xs text-slate-600 font-medium">
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Log 8.0 hours every day as per your target.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Separate Billable (client work) and Non-Billable (internal work) accurately.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Billable work must be mappable to client scope or deliverables.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Add clear descriptions – it helps in reporting and invoicing.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Do not log future dates or duplicate entries.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Submit before EOD to keep your records up to date.</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>Contact your manager if you face any blockers.</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    {/* Mark Leave Modal */}
-    {showMarkLeaveModal && (
-      <MarkLeaveModal
-        selectedDate={primaryDate}
-        onClose={() => setShowMarkLeaveModal(false)}
-        onSuccess={() => {
-          setShowMarkLeaveModal(false);
-          refetchLeave();
-        }}
-        onShowToast={onShowToast}
-      />
-    )}
+      {/* Mark Leave Modal */}
+      {showMarkLeaveModal && (
+        <MarkLeaveModal
+          selectedDate={primaryDate}
+          onClose={() => setShowMarkLeaveModal(false)}
+          onSuccess={() => {
+            setShowMarkLeaveModal(false);
+            refetchLeave();
+          }}
+          onShowToast={onShowToast}
+        />
+      )}
     </>
   );
 };
-
-
