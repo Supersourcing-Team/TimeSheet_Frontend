@@ -174,7 +174,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
     if (targetProject && targetMilestone && selectedMasterTool) {
       // Check if tool already allocated to this milestone
       const isAlreadyAllocated = (targetProject.tools || []).some(
-        (t) => String(t.id) === String(selectedMasterTool.id) && String(t.milestone_id || t.milestoneId) === String(targetMilestone.id) && t.status !== 'Inactive' && t.status !== 'deallocated'
+        (t) => String(t.id) === String(selectedMasterTool.id) && String(((t as any).milestone_id || t.milestoneId) || t.milestoneId) === String(targetMilestone.id) && t.status !== 'Inactive' && t.status !== 'deallocated'
       );
       if (isAlreadyAllocated) {
         onShowToast('Already Allocated', `${selectedMasterTool.name} is already allocated to ${targetMilestone.name}.`, 'error');

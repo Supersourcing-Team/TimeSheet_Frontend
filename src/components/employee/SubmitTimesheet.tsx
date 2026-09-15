@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
-import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery } from '../../store/api/dataApi';
+import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery, useGetHolidaysQuery } from '../../store/api/dataApi';
 import { MarkLeaveModal } from './MarkLeaveModal';
 import {
   Clock,
@@ -153,11 +153,31 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   // Fetch leave status for the primary date (first row) — used to derive minimum hours
   const primaryDate = rows[0]?.date || today;
   const { data: leaveStatus, refetch: refetchLeave } = useGetLeaveForDateQuery(primaryDate);
+  const { data: holidaysList = [] } = useGetHolidaysQuery();
+
+  const isWeekendSelected = rows.some((r) => {
+    if (!r.date) return false;
+    const d = new Date(r.date + 'T00:00:00');
+    return d.getDay() === 0 || d.getDay() === 6;
+  });
+
+  const matchedHoliday = rows.reduce<any>((found, r) => {
+    if (found) return found;
+    return (holidaysList || []).find((h) => h.date === r.date) || null;
+  }, null);
   const isOnFullDayLeave = leaveStatus?.has_leave && leaveStatus.leave_duration_type === 'full_day';
   const effectiveMinHours = leaveStatus?.has_leave ? leaveStatus.available_hours : 8.0;
   const targetDayHours = effectiveMinHours;
 
   const handleSubmit = async () => {
+    if (isWeekendSelected) {
+      onShowToast('Weekend Work Required', 'Timesheet submission is not allowed on weekends. Please submit a Weekend Work Request under the Weekend Work tab.', 'error');
+      return;
+    }
+    if (matchedHoliday) {
+      onShowToast('Company Holiday', `Timesheet submission is not allowed on company holiday (${matchedHoliday.name}).`, 'error');
+      return;
+    }
     if (isOnFullDayLeave) {
       onShowToast('Leave Day', 'You are on full-day leave. Timesheet submission is not allowed.', 'error');
       return;
@@ -569,7 +589,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isWeekendSelected || !!matchedHoliday}
                 onClick={() => handleSubmit()}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
               >

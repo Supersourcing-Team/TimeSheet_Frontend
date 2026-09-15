@@ -131,7 +131,7 @@ export const ToolUtilization: React.FC<ToolUtilizationProps> = ({
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase tracking-wider ${categoryClass}`}>
                     {t.category}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400">{t.projectName} - {t.milestoneName || t.milestone_name || 'Milestone'}</span>
+                  <span className="text-[11px] font-semibold text-slate-400">{t.projectName} - {t.milestoneName || ((t as any).milestone_name || t.milestoneName) || 'Milestone'}</span>
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">{t.name}</h3>

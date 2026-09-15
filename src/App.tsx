@@ -928,6 +928,7 @@ export default function App() {
                     setDefaultSubmitDate(date);
                     setActiveEmployeeTab('submit_timesheet');
                   }}
+                  onNavigateToWeekendWork={() => setActiveEmployeeTab('weekend_work')}
                   onShowToast={showToast}
                 />
               )}
@@ -1005,7 +1006,7 @@ export default function App() {
                   allUsers={users}
                   onAssignUserToProject={handleAssignUserToProject}
                   onRemoveUserFromProject={handleRemoveUserFromProject}
-                  onAddToolToProject={handleAddToolToMilestone}
+                  onAddToolToMilestone={handleAddToolToMilestone}
                   onUpdateToolInProject={handleUpdateToolInProject}
                   onRemoveToolFromProject={handleRemoveToolFromProject}
                   onShowToast={showToast}
@@ -1049,6 +1050,7 @@ export default function App() {
                     setDefaultSubmitDate(date);
                     setActivePmTab('pm_submit_timesheet');
                   }}
+                  onNavigateToWeekendWork={() => setActivePmTab('pm_weekend_work')}
                   onShowToast={showToast}
                 />
               )}

@@ -19,6 +19,8 @@ import {
   Filter,
   Info,
   CalendarX,
+  Zap,
+  ArrowRight,
 } from 'lucide-react';
 
 interface TimesheetsHistoryProps {
@@ -31,6 +33,7 @@ interface TimesheetsHistoryProps {
   onEditRequest?: (entry: TimesheetEntry) => void;
   onSubmitTimesheets?: (entries: Omit<TimesheetEntry, 'id'>[]) => void;
   onNavigateToSubmit?: (date: string) => void;
+  onNavigateToWeekendWork?: () => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -44,6 +47,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   onEditRequest,
   onSubmitTimesheets,
   onNavigateToSubmit,
+  onNavigateToWeekendWork,
   onShowToast,
 }) => {
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
@@ -355,12 +359,23 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   type="button"
                   key={dateStr}
                   onClick={() => {
-                    
-                    if (dayEntries.length === 0 && onNavigateToSubmit) {
-                      onNavigateToSubmit(dateStr);
-                    } else {
-                      setSelectedDateModal(dateStr);
+                    if (dayEntries.length === 0) {
+                      if (isWeekend) {
+                        onShowToast('Weekend Date', 'Weekend work requires prior PM approval. Please submit a request in the Weekend Work tab.', 'info');
+                        setSelectedDateModal(dateStr);
+                        return;
+                      }
+                      if (holidayForDay) {
+                        onShowToast('Company Holiday', `This date is a company holiday (${holidayForDay.name}). Timesheet logging is disabled.`, 'info');
+                        setSelectedDateModal(dateStr);
+                        return;
+                      }
+                      if (onNavigateToSubmit) {
+                        onNavigateToSubmit(dateStr);
+                        return;
+                      }
                     }
+                    setSelectedDateModal(dateStr);
                   }}
                   disabled={false}
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
@@ -611,29 +626,81 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {modalEntries.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 text-xs space-y-3">
-                  <p>No hours logged for this date.</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const dateToLog = selectedDateModal;
-                      setSelectedDateModal(null);
-                      if (dateToLog) {
-                        if (onNavigateToSubmit) {
-                          onNavigateToSubmit(dateToLog);
-                        } else {
-                          handleStartAddForDate(dateToLog);
+              {modalEntries.length === 0 ? (() => {
+                const dateObj = selectedDateModal ? new Date(selectedDateModal + 'T00:00:00') : null;
+                const isSelectedWeekend = dateObj ? (dateObj.getDay() === 0 || dateObj.getDay() === 6) : false;
+                const selectedHoliday = selectedDateModal ? getHolidayForDate(selectedDateModal) : null;
+
+                if (isSelectedWeekend) {
+                  return (
+                    <div className="text-center py-8 text-slate-500 text-xs space-y-4 bg-amber-50/60 rounded-2xl border border-amber-200 p-6 shadow-xs">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                        <CalendarX className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-extrabold text-sm text-amber-950">Weekend Date ({selectedDateModal})</p>
+                        <p className="text-amber-800 text-xs max-w-xs mx-auto leading-relaxed">
+                          Timesheets cannot be submitted directly for weekends. Weekend work requires prior PM approval through a Weekend Work Request.
+                        </p>
+                      </div>
+                      {onNavigateToWeekendWork && (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDateModal(null);
+                              onNavigateToWeekendWork();
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-600/20 transition-all hover:scale-[1.02] cursor-pointer"
+                          >
+                            <Zap className="w-4 h-4" />
+                            <span>Request Weekend Work</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (selectedHoliday) {
+                  return (
+                    <div className="text-center py-8 text-slate-500 text-xs space-y-3 bg-orange-50/50 rounded-xl border border-orange-200/60 p-4">
+                      <div className="w-10 h-10 mx-auto rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold">
+                        <CalendarX className="w-5 h-5" />
+                      </div>
+                      <p className="font-extrabold text-orange-900">Company Holiday ({selectedHoliday.name})</p>
+                      <p className="text-orange-800 text-[11px] max-w-xs mx-auto">
+                        Timesheet logging is disabled on official company holidays.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="text-center py-8 text-slate-500 text-xs space-y-3">
+                    <p>No hours logged for this date.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dateToLog = selectedDateModal;
+                        setSelectedDateModal(null);
+                        if (dateToLog) {
+                          if (onNavigateToSubmit) {
+                            onNavigateToSubmit(dateToLog);
+                          } else {
+                            handleStartAddForDate(dateToLog);
+                          }
                         }
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 shadow-xs cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Log Hours for {selectedDateModal}</span>
-                  </button>
-                </div>
-              ) : (
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 shadow-xs cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Log Hours for {selectedDateModal}</span>
+                    </button>
+                  </div>
+                );
+              })() : (
                 modalEntries.map((entry) => (
                   <div
                     key={entry.id}
