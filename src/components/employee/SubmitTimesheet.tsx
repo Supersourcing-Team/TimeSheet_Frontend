@@ -93,6 +93,13 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
   const displaySidebarProjects = assignedProjects;
 
+  // Sync initial empty projectId when projects load
+  useEffect(() => {
+    if (assignedProjects.length > 0 && rows.length > 0 && !rows[0].projectId) {
+      setRows(prev => prev.map((r, i) => i === 0 ? { ...r, projectId: assignedProjects[0].id } : r));
+    }
+  }, [assignedProjects]);
+
   const [rows, setRows] = useState<FormRow[]>(() => {
     if (editingEntry) {
       return [{
