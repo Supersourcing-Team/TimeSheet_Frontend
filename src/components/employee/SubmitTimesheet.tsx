@@ -91,7 +91,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
-  const displaySidebarProjects = assignedProjects.length > 0 ? assignedProjects : (projects || []).slice(0, 5);
+  const displaySidebarProjects = assignedProjects;
 
   const [rows, setRows] = useState<FormRow[]>(() => {
     if (editingEntry) {
@@ -105,7 +105,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }];
     }
     return [{
-      projectId: assignedProjects[0]?.id || projects[0]?.id || '',
+      projectId: assignedProjects[0]?.id || '',
       date: defaultDate || today,
       billableHours: 0,
       nonBillableHours: 0,
@@ -118,7 +118,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     setRows([
       ...rows,
       {
-        projectId: assignedProjects[0]?.id || projects[0]?.id || '',
+        projectId: assignedProjects[0]?.id || '',
         date: today,
         billableHours: 2.0,
         nonBillableHours: 0,
@@ -289,7 +289,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       // Reset form after successful submit
       setRows([
         {
-          projectId: projects[0]?.id || '',
+          projectId: assignedProjects[0]?.id || '',
           date: defaultDate || today,
           billableHours: 0,
           nonBillableHours: 0,
@@ -441,19 +441,18 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     <select
                       value={row.projectId}
                       onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
-                      className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:bg-slate-50"
+                      disabled={assignedProjects.length === 0}
                     >
-                      {assignedProjects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.code || `PRJ-${p.id}`})
-                        </option>
-                      ))}
-                      {assignedProjects.length === 0 &&
-                        projects.map((p) => (
+                      {assignedProjects.length > 0 ? (
+                        assignedProjects.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name} ({p.code || `PRJ-${p.id}`})
                           </option>
-                        ))}
+                        ))
+                      ) : (
+                        <option value="">No project allocated</option>
+                      )}
                     </select>
                   </div>
 
@@ -620,52 +619,58 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
           </div>
 
           <div className="space-y-3">
-            {displaySidebarProjects.map((p, idx) => {
-              const style = PROJECT_ICON_STYLES[idx % PROJECT_ICON_STYLES.length];
-              const IconComp = style.icon;
-              const userLoggedHours = timesheets
-                .filter((t) => t.projectId === p.id && t.userId === currentUser.id)
-                .reduce((sum, t) => sum + (t.billableHours || 0) + (t.nonBillableHours || 0), 0);
+            {displaySidebarProjects.length > 0 ? (
+              displaySidebarProjects.map((p, idx) => {
+                const style = PROJECT_ICON_STYLES[idx % PROJECT_ICON_STYLES.length];
+                const IconComp = style.icon;
+                const userLoggedHours = timesheets
+                  .filter((t) => t.projectId === p.id && t.userId === currentUser.id)
+                  .reduce((sum, t) => sum + (t.billableHours || 0) + (t.nonBillableHours || 0), 0);
 
-              const formattedLogged = userLoggedHours > 0
-                ? userLoggedHours.toFixed(1)
-                : (p.loggedHours > 0 ? p.loggedHours.toFixed(1) : ((idx + 1) * 8).toFixed(1));
+                const formattedLogged = userLoggedHours > 0
+                  ? userLoggedHours.toFixed(1)
+                  : (p.loggedHours > 0 ? p.loggedHours.toFixed(1) : ((idx + 1) * 8).toFixed(1));
 
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => {
-                    if (rows.length > 0) {
-                      handleRowChange(0, 'projectId', p.id);
-                      onShowToast('Project Selected', `Selected "${p.name}" for task entry`, 'info');
-                    }
-                  }}
-                  className="p-3.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:bg-slate-50/80 transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
-                  title="Click to select this project for timesheet entry"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} border ${style.border} shrink-0`}>
-                      <IconComp className="w-4 h-4" />
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      if (rows.length > 0) {
+                        handleRowChange(0, 'projectId', p.id);
+                        onShowToast('Project Selected', `Selected "${p.name}" for task entry`, 'info');
+                      }
+                    }}
+                    className="p-3.5 rounded-xl border border-slate-100 hover:border-slate-300 hover:bg-slate-50/80 transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
+                    title="Click to select this project for timesheet entry"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`p-2.5 rounded-xl ${style.bg} ${style.text} border ${style.border} shrink-0`}>
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-xs text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                          {p.name}
+                        </h4>
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          ({p.code || `PRJ-${p.id}`})
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-xs text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                        {p.name}
-                      </h4>
-                      <span className="text-[11px] font-semibold text-slate-400">
-                        ({p.code || `PRJ-${p.id}`})
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold text-slate-600 font-mono">
+                        {formattedLogged}h logged
                       </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-bold text-slate-600 font-mono">
-                      {formattedLogged}h logged
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="p-4 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                <p className="text-xs text-slate-500 font-medium">No projects allocated</p>
+              </div>
+            )}
           </div>
         </div>
 
