@@ -38,6 +38,36 @@ export interface TimesheetCreatePayload {
   non_billable_work_summary?: string;
 }
 
+export interface DailyEodEntry {
+  timesheet_id: number;
+  date: string;
+  employee_id: number;
+  employee_name: string;
+  employee_email: string;
+  department: string;
+  project_id: number | null;
+  project_name: string;
+  project_code: string;
+  billable_hours: number;
+  billable_work_summary: string;
+  non_billable_hours: number;
+  non_billable_work_summary: string;
+  total_hours: number;
+  status: string;
+  submitted_at: string;
+}
+
+export interface DailyEodPreviewData {
+  date: string;
+  total_submissions: number;
+  total_employees: number;
+  total_billable_hours: number;
+  total_non_billable_hours: number;
+  grand_total_hours: number;
+  entries: DailyEodEntry[];
+}
+
+
 // ---------------------------------------------------------------------------
 // Helper: map a single raw backend timesheet => frontend TimesheetEntry
 // ---------------------------------------------------------------------------
@@ -965,6 +995,33 @@ export const dataApi = apiSlice.injectEndpoints({
       query: () => ({ url: '/notifications/clear-all', method: 'DELETE' }),
       invalidatesTags: ['LeaveRequest', 'WeekendWork', 'Timesheet'],
     }),
+
+    // -----------------------------------------------------------------------
+    // Daily EOD Report Preview
+    // -----------------------------------------------------------------------
+        sendDailyEodToSlack: builder.mutation<{ ok: boolean; message: string }, { date?: string }>({
+      query: (params) => {
+        const d = params?.date;
+        return {
+          url: `/reports/daily-eod/slack-notify${d ? `?date=${d}` : ''}`,
+          method: 'POST',
+        };
+      },
+    }),
+    getDailyEodPreview: builder.query<DailyEodPreviewData, string | void>({
+      query: (date) => (date ? `/reports/daily-eod/preview?date=${date}` : '/reports/daily-eod/preview'),
+      transformResponse: (res: any) =>
+        res.data || {
+          date: '',
+          total_submissions: 0,
+          total_employees: 0,
+          total_billable_hours: 0,
+          total_non_billable_hours: 0,
+          grand_total_hours: 0,
+          entries: [],
+        },
+      providesTags: ['Timesheet'],
+    }),
   }),
 });
 
@@ -1056,6 +1113,8 @@ export const {
   useGetUtilizationDashboardQuery,
   useGetEmployeeUtilizationQuery,
   useGetMilestoneUtilizationQuery,
+  useGetDailyEodPreviewQuery,
+  useSendDailyEodToSlackMutation,
 } = dataApi;
 
 

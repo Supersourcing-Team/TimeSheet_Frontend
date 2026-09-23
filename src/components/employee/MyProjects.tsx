@@ -1,6 +1,6 @@
 import { Pagination } from '../common/Pagination';
 import React, { useState } from 'react';
-import { User, Project } from '../../types';
+import { User, Project, Milestone } from '../../types';
 import {
   FolderKanban,
   Users,
@@ -16,6 +16,10 @@ import {
   Paperclip,
   File,
   Download,
+  Flag,
+  Target,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 interface MyProjectsProps {
@@ -44,6 +48,42 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
+  const getMilestoneStatusBadge = (status?: string) => {
+    const s = (status || 'planned').toLowerCase().trim();
+    if (s === 'achieved' || s === 'completed') {
+      return {
+        label: 'Achieved',
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dot: 'bg-emerald-500',
+      };
+    }
+    if (s === 'in_progress') {
+      return {
+        label: 'In Progress',
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+        dot: 'bg-blue-500',
+      };
+    }
+    return {
+      label: 'Planned',
+      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      dot: 'bg-amber-500',
+    };
+  };
+
+  const getMilestoneProgress = (m: Milestone) => {
+    if (m.status === 'achieved' || (m as any).status === 'completed') {
+      return 100;
+    }
+    if (m.completion_percentage && m.completion_percentage > 0) {
+      return Math.round(m.completion_percentage);
+    }
+    if (m.status === 'in_progress') {
+      return 35; // Default 35% for In Progress milestones
+    }
+    return 0;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,7 +93,7 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
             <span>My Assigned Projects</span>
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            View project scopes, allocated sprint hours, software tools, and PM contacts.
+            View project scopes, milestones & deliverables, allocated tools, and PM contacts.
           </p>
         </div>
         <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-bold">
@@ -64,6 +104,22 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
       {/* Projects Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {paginatedProjects.map((project) => {
+          const milestones = project.milestones || [];
+          const achievedCount = milestones.filter(
+            (m) => m.status === 'achieved' || (m as any).status === 'completed'
+          ).length;
+
+          // Calculate average milestone progress taking in-progress as 35% default
+          const totalProgress = milestones.length > 0
+            ? Math.round(
+                milestones.reduce((acc, m) => acc + getMilestoneProgress(m), 0) / milestones.length
+              )
+            : 0;
+
+          const overallProgress = project.completion_percentage && project.completion_percentage > 0
+            ? Math.round(project.completion_percentage)
+            : totalProgress;
+
           return (
             <div
               key={project.id}
@@ -94,6 +150,27 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                 <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                   {project.description}
                 </p>
+
+                {/* Milestones Preview Bar */}
+                {milestones.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <Flag className="w-3 h-3 text-indigo-600" />
+                        <span>Milestones</span>
+                      </span>
+                      <span className="text-indigo-600 font-semibold text-[10px]">
+                        {achievedCount}/{milestones.length} Completed ({overallProgress}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(0, overallProgress))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Stats */}
@@ -121,10 +198,10 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
 
                 <button
                   onClick={() => setSelectedProjectModal(project)}
-                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-800 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Wrench className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>View Details, Tools & Docs</span>
+                  <Target className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>View Details, Milestones & Tools</span>
                 </button>
               </div>
             </div>
@@ -132,7 +209,23 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
         })}
       </div>
 
-      {/* PROJECT DETAILS, TOOLS & DOCUMENTS MODAL */}
+      {/* Pagination */}
+      {myProjects.length > itemsPerPage && (
+        <div className="mt-4 flex justify-end">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={myProjects.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(newVal) => {
+              setItemsPerPage(newVal);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      )}
+
+      {/* PROJECT DETAILS, MILESTONES, TOOLS & DOCUMENTS MODAL */}
       {selectedProjectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-5">
@@ -162,6 +255,87 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                 <p className="text-slate-600 leading-relaxed bg-slate-50/40 p-3 rounded-xl border border-slate-200">
                   {selectedProjectModal.description || 'No description provided.'}
                 </p>
+              </div>
+
+              {/* PROJECT MILESTONES & DELIVERABLES */}
+              <div>
+                <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Flag className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Project Milestones & Deliverables ({(selectedProjectModal.milestones || []).length})</span>
+                  </span>
+                  {(selectedProjectModal.milestones || []).length > 0 && (
+                    <span className="text-indigo-600 font-semibold lowercase tracking-normal">
+                      {(selectedProjectModal.milestones || []).filter((m) => m.status === 'achieved').length} achieved
+                    </span>
+                  )}
+                </h4>
+                {(selectedProjectModal.milestones || []).length > 0 ? (
+                  <div className="space-y-2.5">
+                    {(selectedProjectModal.milestones || []).map((m, idx) => {
+                      const badge = getMilestoneStatusBadge(m.status);
+                      const completion = getMilestoneProgress(m);
+
+                      return (
+                        <div
+                          key={m.id || idx}
+                          className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 transition-all space-y-2"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-0.5 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                                  {idx + 1}
+                                </span>
+                                <h5 className="font-bold text-slate-800 text-xs truncate">
+                                  {m.name}
+                                </h5>
+                              </div>
+                              {m.description && (
+                                <p className="text-[11px] text-slate-500 pl-7 leading-relaxed">
+                                  {m.description}
+                                </p>
+                              )}
+                            </div>
+
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${badge.className}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                              {badge.label}
+                            </span>
+                          </div>
+
+                          {/* Progress & Target Dates */}
+                          <div className="pl-7 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span>
+                                Target: <strong className="text-slate-700">{m.expected_completion_date || 'TBD'}</strong>
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-2">
+                              <span>Progress: <strong className="text-slate-700">{completion}%</strong></span>
+                              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    m.status === 'achieved' ? 'bg-emerald-500' : 'bg-indigo-600'
+                                  }`}
+                                  style={{ width: `${Math.min(100, Math.max(0, completion))}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-50/40 border border-slate-200 text-slate-400 text-xs italic">
+                    No milestones defined for this project yet.
+                  </div>
+                )}
               </div>
 
               {/* Supporting Documents */}
