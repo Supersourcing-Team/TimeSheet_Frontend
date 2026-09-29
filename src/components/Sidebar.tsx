@@ -59,7 +59,8 @@ export type AdminTab =
   | 'admin_leave_approvals'
   | 'admin_holidays'
   | 'admin_leave_types'
-  | 'admin_working_calendar';
+  | 'admin_working_calendar'
+  | 'keka_integration';
 
 interface SidebarProps {
   portalMode: ActivePortalMode;
@@ -265,6 +266,13 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         desc: 'Master Tool Catalog & Categories',
       },
       {
+        id: 'admin_leave_approvals',
+        label: 'Leave Approvals',
+        icon: Palmtree,
+        desc: 'Review & approve employee leaves',
+        badge: pendingLeavesCount,
+      },
+      {
         id: 'admin_holidays',
         label: 'Holidays',
         icon: CalendarCheck,
@@ -281,6 +289,12 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         label: 'Working Calendar',
         icon: CalendarDays,
         desc: 'Standard Working Hours & Days',
+      },
+      {
+        id: 'keka_integration',
+        label: 'Keka Integration',
+        icon: Building2,
+        desc: 'HRMS, Employee & Leave Sync',
       },
     ];
 

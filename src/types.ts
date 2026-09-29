@@ -64,6 +64,7 @@ export interface LeaveTypeConfig {
   description: string;
   requiresDocument?: boolean;
   allocatedHours?: number;
+  kekaLeaveTypeId?: string;
 }
 
 export interface WorkingCalendarConfig {
@@ -239,6 +240,55 @@ export interface LeaveRequest {
   halfDayPeriod?: 'first' | 'second';
   partialStartTime?: string; // HH:MM
   partialEndTime?: string;   // HH:MM
+  // Keka Sync metadata
+  syncedToKeka?: boolean;
+  kekaLeaveRequestId?: string;
+  lastSyncError?: string;
+  lastSyncedAt?: string;
+}
+
+export interface KekaStatus {
+  is_configured: boolean;
+  company_name: string | null;
+  environment: string;
+  token_endpoint: string;
+  has_client_id: boolean;
+  has_client_secret: boolean;
+  has_api_key: boolean;
+  is_token_cached: boolean;
+}
+
+export interface KekaEmployeeMappingCandidate {
+  keka_employee_id: string;
+  keka_employee_number?: string | null;
+  keka_name?: string | null;
+  keka_email?: string | null;
+  keka_department?: string | null;
+  keka_job_title?: string | null;
+  status: 'mapped' | 'local_match' | 'unmapped' | 'conflict';
+  matched_local_user_id?: number | null;
+  matched_local_user_email?: string | null;
+  matched_local_user_name?: string | null;
+  matched_by?: string | null;
+  reason: string;
+}
+
+export interface KekaMappingPreview {
+  total_keka_employees: number;
+  summary: {
+    mapped: number;
+    local_match: number;
+    unmapped: number;
+    conflict: number;
+  };
+  items: KekaEmployeeMappingCandidate[];
+}
+
+export interface KekaLeaveType {
+  id: string;
+  name: string;
+  code?: string | null;
+  description?: string | null;
 }
 
 /** Response from GET /leave-requests/check-date */

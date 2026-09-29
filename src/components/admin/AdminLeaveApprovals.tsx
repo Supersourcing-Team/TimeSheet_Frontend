@@ -611,7 +611,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
 
                       {/* Status */}
                       <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex flex-col items-center">
+                        <div className="inline-flex flex-col items-center gap-1">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
                               req.status === 'approved'
@@ -626,6 +626,26 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                             {req.status === 'rejected' && <XCircle className="w-3 h-3" />}
                             <span>{req.status}</span>
                           </span>
+
+                          {/* Keka Sync Pill */}
+                          {req.syncedToKeka ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                              title={`Synced to Keka: ${req.kekaLeaveRequestId || 'Yes'}`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                              Keka Synced
+                            </span>
+                          ) : req.lastSyncError ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                              title={req.lastSyncError}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Sync Failed
+                            </span>
+                          ) : null}
+
                           {req.reviewedBy && (
                             <span className="text-[9px] text-slate-400 mt-0.5 font-medium">
                               By {req.reviewedBy}

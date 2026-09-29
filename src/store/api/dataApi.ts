@@ -13,6 +13,9 @@ import {
   UtilizationDashboardData,
   EmployeeUtilizationData,
   MilestoneUtilizationData,
+  KekaStatus,
+  KekaMappingPreview,
+  KekaLeaveType,
 } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -145,6 +148,11 @@ function mapBackendLeaveToFrontend(r: any): LeaveRequest {
     halfDayPeriod: r.half_day_period ?? undefined,
     partialStartTime: r.partial_start_time ?? undefined,
     partialEndTime: r.partial_end_time ?? undefined,
+    // Keka sync fields
+    syncedToKeka: Boolean(r.synced_to_keka),
+    kekaLeaveRequestId: r.keka_leave_request_id ?? undefined,
+    lastSyncError: r.last_sync_error ?? undefined,
+    lastSyncedAt: r.last_synced_at ?? undefined,
   };
 }
 
@@ -795,6 +803,7 @@ export const dataApi = apiSlice.injectEndpoints({
           description: lt.description,
           requiresDocument: lt.requires_document,
           status: lt.is_active ? 'active' : 'inactive',
+          kekaLeaveTypeId: lt.keka_leave_type_id ?? undefined,
         }));
       },
       providesTags: ['LeaveType'],
@@ -811,6 +820,7 @@ export const dataApi = apiSlice.injectEndpoints({
           is_paid: body.isPaid,
           requires_document: body.requiresDocument,
           description: body.description,
+          keka_leave_type_id: body.kekaLeaveTypeId,
         }
       }),
       invalidatesTags: ['LeaveType'],
@@ -828,6 +838,7 @@ export const dataApi = apiSlice.injectEndpoints({
           requires_document: body.requiresDocument,
           description: body.description,
           is_active: body.status !== undefined ? body.status === 'active' : undefined,
+          keka_leave_type_id: body.kekaLeaveTypeId !== undefined ? body.kekaLeaveTypeId : undefined,
         }
       }),
       invalidatesTags: ['LeaveType'],
@@ -1022,6 +1033,67 @@ export const dataApi = apiSlice.injectEndpoints({
         },
       providesTags: ['Timesheet'],
     }),
+
+    // -----------------------------------------------------------------------
+    // Keka HRMS Integration
+    // -----------------------------------------------------------------------
+    getKekaStatus: builder.query<KekaStatus, void>({
+      query: () => '/keka/status',
+      transformResponse: (res: any) => res.data,
+      providesTags: ['Keka'],
+    }),
+    testKekaConnection: builder.mutation<any, void>({
+      query: () => ({ url: '/keka/test-connection', method: 'GET' }),
+      invalidatesTags: ['Keka'],
+    }),
+    clearKekaTokenCache: builder.mutation<{ cleared: boolean }, void>({
+      query: () => ({ url: '/keka/clear-token-cache', method: 'POST' }),
+      invalidatesTags: ['Keka'],
+    }),
+    getKekaMappingPreview: builder.query<KekaMappingPreview, void>({
+      query: () => '/keka/employees/mapping-preview',
+      transformResponse: (res: any) => res.data,
+      providesTags: ['Keka'],
+    }),
+    getKekaMappings: builder.query<{ total: number; items: any[] }, void>({
+      query: () => '/keka/mappings/employees',
+      transformResponse: (res: any) => res.data,
+      providesTags: ['Keka'],
+    }),
+    saveKekaMapping: builder.mutation<any, { keka_employee_id: string; local_user_id: number; keka_employee_number?: string }>({
+      query: (body) => ({
+        url: '/keka/mappings/employees',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Keka'],
+    }),
+    deleteKekaMapping: builder.mutation<any, string>({
+      query: (kekaEmployeeId) => ({
+        url: `/keka/mappings/employees/${kekaEmployeeId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Keka'],
+    }),
+    autoSyncKekaMappings: builder.mutation<{ mapped_count: number; skipped_count: number; total_evaluated: number; mapped_items: any[] }, void>({
+      query: () => ({
+        url: '/keka/mappings/auto-sync',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Keka'],
+    }),
+    getKekaLeaveTypes: builder.query<KekaLeaveType[], void>({
+      query: () => '/keka/leave-types',
+      transformResponse: (res: any) => res.data || [],
+      providesTags: ['Keka'],
+    }),
+    syncLeaveToKeka: builder.mutation<any, { local_leave_id: string | number; keka_leave_type_id?: string }>({
+      query: ({ local_leave_id, keka_leave_type_id }) => ({
+        url: `/keka/leave-requests/${local_leave_id}/sync${keka_leave_type_id ? `?keka_leave_type_id=${encodeURIComponent(keka_leave_type_id)}` : ''}`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['LeaveRequest'],
+    }),
   }),
 });
 
@@ -1115,6 +1187,17 @@ export const {
   useGetMilestoneUtilizationQuery,
   useGetDailyEodPreviewQuery,
   useSendDailyEodToSlackMutation,
+  // Keka Integration
+  useGetKekaStatusQuery,
+  useTestKekaConnectionMutation,
+  useClearKekaTokenCacheMutation,
+  useGetKekaMappingPreviewQuery,
+  useGetKekaMappingsQuery,
+  useSaveKekaMappingMutation,
+  useDeleteKekaMappingMutation,
+  useAutoSyncKekaMappingsMutation,
+  useGetKekaLeaveTypesQuery,
+  useSyncLeaveToKekaMutation,
 } = dataApi;
 
 

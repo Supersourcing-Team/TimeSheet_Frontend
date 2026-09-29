@@ -95,6 +95,7 @@ const AdminLeaveApprovals = React.lazy(() => import('./components/admin/AdminLea
 const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysManagement').then(m => ({ default: m.HolidaysManagement })));
 const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
 const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
+const KekaIntegrationManagement = React.lazy(() => import('./components/admin/KekaIntegrationManagement').then(m => ({ default: m.KekaIntegrationManagement })));
 
 // Initial mocks for things not yet in backend API endpoints
 import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
@@ -1163,6 +1164,12 @@ export default function App() {
                         showToast('Action Failed', getErrorMessage(e, 'Failed to update working calendar'), 'error');
                       }
                     }}
+                    onShowToast={showToast}
+                  />
+                )}
+
+                {activeAdminTab === 'keka_integration' && (
+                  <KekaIntegrationManagement
                     onShowToast={showToast}
                   />
                 )}
