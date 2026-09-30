@@ -50,6 +50,11 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const [reason, setReason] = useState('Marked from timesheet');
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Current calendar year bounds
+  const currentYear = new Date().getFullYear();
+  const minDate = `${currentYear}-01-01`;
+  const maxDate = `${currentYear}-12-31`;
+
   // Fetch Admin-configured Leave Types
   const { data: leaveTypes = [], isLoading: loadingTypes } = useGetLeaveTypesQuery();
   const activeLeaveTypes = leaveTypes.filter((lt) => lt.status === 'active');
@@ -149,6 +154,13 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         return null;
       }
 
+      const sYear = new Date(startDate).getFullYear();
+      const eYear = new Date(endDate).getFullYear();
+      if (sYear !== currentYear || eYear !== currentYear) {
+        setValidationError(`Leaves can only be marked for the current calendar year (${currentYear}). Requests for previous or future years are not allowed.`);
+        return null;
+      }
+
       const isMulti = startDate !== endDate;
       const payload: MarkLeavePayload = {
         leave_duration_type: isMulti ? 'multiple_days' : 'full_day',
@@ -181,6 +193,12 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         setValidationError(`Maximum partial leave duration is 2 hours. You selected ${dur.toFixed(1)}h.`);
         return null;
       }
+    }
+
+    const selYear = new Date(singleDate).getFullYear();
+    if (selYear !== currentYear) {
+      setValidationError(`Leaves can only be marked for the current calendar year (${currentYear}). Requests for previous or future years are not allowed.`);
+      return null;
     }
 
     const payload: MarkLeavePayload = {
@@ -318,6 +336,8 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                     <span className="text-[10px] font-bold text-slate-500 uppercase">Start Date</span>
                     <input
                       type="date"
+                      min={minDate}
+                      max={maxDate}
                       value={startDate}
                       onChange={(e) => {
                         setStartDate(e.target.value);
@@ -332,6 +352,7 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                       type="date"
                       value={endDate}
                       min={startDate}
+                      max={maxDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-rose-400 focus:outline-none"
                     />
@@ -451,6 +472,8 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                 </label>
                 <input
                   type="date"
+                  min={minDate}
+                  max={maxDate}
                   value={singleDate}
                   onChange={(e) => setSingleDate(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-rose-400 focus:outline-none"
