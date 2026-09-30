@@ -116,30 +116,30 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
   return (
     <div className="space-y-6 text-slate-800">
       {/* Top Banner / Hero Greeting */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl lg:text-3xl font-black tracking-tight">
-            Welcome back, {currentUser.name}
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Welcome back, {currentUser.name}</span>
           </h1>
-          <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
-            You have logged <span className="font-extrabold text-white">{totalLoggedHoursThisWeek} hours</span> out of your {targetWeeklyHours}h weekly goal. All timesheet entries are synchronized.
+          <p className="text-xs text-slate-500 max-w-xl">
+            You have logged <span className="font-bold text-slate-900">{totalLoggedHoursThisWeek} hours</span> out of your {targetWeeklyHours}h weekly goal. All timesheet entries are synchronized.
           </p>
         </div>
 
         {/* Quick Actions Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigateTab('submit_timesheet')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-extrabold text-xs shadow-md transition-all hover:scale-[1.02]"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-blue-600" />
+            <Plus className="w-4 h-4" />
             <span>Log Daily Hours</span>
           </button>
           <button
             onClick={() => onNavigateTab('weekend_work')}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <Moon className="w-4 h-4 text-amber-300" />
+            <Moon className="w-4 h-4 text-slate-600" />
             <span>Weekend Request</span>
           </button>
         </div>

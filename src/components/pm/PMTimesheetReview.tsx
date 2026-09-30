@@ -216,24 +216,25 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-            <CheckSquare className="w-6 h-6 text-blue-300" /> Team Timesheets & EOD Reports
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <CheckSquare className="w-6 h-6 text-sky-600" />
+            <span>Team Timesheets &amp; EOD Reports</span>
           </h1>
-          <p className="text-sm text-blue-100/90 max-w-2xl leading-relaxed">
+          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
             Review your team's submitted timesheets and generate consolidated daily EOD reports across all employees.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center bg-white/10 p-1.5 rounded-xl border border-white/20 shrink-0">
+        <div className="flex items-center bg-slate-100 p-1 border border-slate-200 shrink-0">
           <button
             onClick={() => setActiveTab('review')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'review'
-                ? 'bg-white text-blue-950 shadow-sm'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
+                ? 'bg-white text-sky-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -241,10 +242,10 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
           </button>
           <button
             onClick={() => setActiveTab('eod')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'eod'
-                ? 'bg-white text-blue-950 shadow-sm'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
+                ? 'bg-white text-sky-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />

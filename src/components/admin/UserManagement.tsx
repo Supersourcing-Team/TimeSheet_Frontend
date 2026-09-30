@@ -53,28 +53,22 @@ function roleLabel(roleName: string): string {
 
 function roleBadgeClass(roleName: string): string {
   const r = roleName.toLowerCase();
-  if (r.includes('admin')) return 'bg-rose-100 text-rose-800';
-  if (r.includes('project')) return 'bg-amber-100 text-amber-800';
-  if (r.includes('account')) return 'bg-purple-100 text-purple-800';
-  return 'bg-blue-100 text-blue-800';
+  if (r.includes('admin')) return 'bg-slate-900 text-white border border-slate-900';
+  if (r.includes('project')) return 'bg-sky-100 text-sky-900 border border-sky-300';
+  if (r.includes('account')) return 'bg-sky-50 text-sky-800 border border-sky-200';
+  return 'bg-slate-100 text-slate-800 border border-slate-200';
 }
 
 function statusBadgeClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === 'active') return 'bg-emerald-100 text-emerald-800';
-  if (s === 'inactive') return 'bg-rose-100 text-rose-800';
-  if (s === 'pending') return 'bg-amber-100 text-amber-800';
-  return 'bg-slate-200 text-slate-700';
+  if (s === 'active') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+  if (s === 'inactive') return 'bg-rose-50 text-rose-700 border border-rose-200';
+  if (s === 'pending') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  return 'bg-slate-100 text-slate-700 border border-slate-200';
 }
 
 function departmentBadgeClass(deptName: string): string {
-  const d = deptName.toLowerCase();
-  if (d.includes('design') || d.includes('ui') || d.includes('ux')) return 'bg-purple-100 text-purple-800 border-purple-200';
-  if (d.includes('dev') || d.includes('engineering') || d.includes('software')) return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-  if (d.includes('qa') || d.includes('test') || d.includes('quality')) return 'bg-amber-100 text-amber-800 border-amber-200';
-  if (d.includes('hr') || d.includes('people') || d.includes('human')) return 'bg-pink-100 text-pink-800 border-pink-200';
-  if (d.includes('sales') || d.includes('marketing')) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-  return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+  return 'bg-sky-50 text-sky-900 border border-sky-200';
 }
 
 // ---------------------------------------------------------------------------
@@ -406,48 +400,48 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   return (
     <div className="space-y-6">
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-              <UserCog className="w-6 h-6 text-blue-600" />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+              <UserCog className="w-6 h-6 text-sky-600" />
               <span>User &amp; Department Management</span>
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+            <span className="px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
               {total} Total Users
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
               {departments.length} Departments
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
+          <p className="text-xs text-slate-500 mt-1">
             Manage system access, assign employees to configured departments, manage roles, and review account statuses.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowManageDeptModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <Building2 className="w-4 h-4 text-indigo-600" />
+            <Building2 className="w-4 h-4 text-slate-600" />
             <span>Manage Departments</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowRoleMatrixModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <ShieldCheck className="w-4 h-4 text-sky-600" />
             <span>Role Matrix</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Employee</span>
@@ -565,7 +559,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Employee */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shrink-0 ring-2 ring-blue-500/20 shadow-sm">
+                        <div className="w-9 h-9 bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-900 font-bold text-sm shrink-0">
                           {user.first_name?.[0]?.toUpperCase() ?? '?'}
                           {user.last_name?.[0]?.toUpperCase() ?? ''}
                         </div>
@@ -589,7 +583,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Role */}
                     <td className="py-3.5 px-3">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${roleBadgeClass(
+                        className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${roleBadgeClass(
                           user.role?.name ?? ''
                         )}`}
                       >
@@ -601,7 +595,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     <td className="py-3.5 px-3">
                       {user.department?.name ? (
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${departmentBadgeClass(
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold border ${departmentBadgeClass(
                             user.department.name
                           )}`}
                         >
@@ -627,7 +621,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Status */}
                     <td className="py-3.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${statusBadgeClass(
+                        className={`inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(
                           user.status
                         )}`}
                       >
@@ -644,19 +638,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                             type="button"
                             onClick={() => handleToggleStatus(user)}
                             disabled={togglingIds.has(user.id)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              user.status === 'Active'
-                                ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                                : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                            }`}
+                            className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
                             title={user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
                           >
                             {togglingIds.has(user.id) ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
                             ) : user.status === 'Active' ? (
-                              <UserX className="w-3.5 h-3.5" />
+                              <UserX className="w-3.5 h-3.5 text-rose-600" />
                             ) : (
-                              <UserCheck className="w-3.5 h-3.5" />
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                             )}
                           </button>
                         )}
@@ -665,7 +655,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(user)}
-                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50"
+                          className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-600 transition-all cursor-pointer"
                           title="Edit User"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -1056,84 +1046,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         </div>
       )}
 
-      {/* ── QUICK ADD DEPARTMENT MODAL ──────────────────────────────────── */}
-      {showAddDeptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <form
-            onSubmit={handleCreateDepartmentSubmit}
-            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-base font-black text-slate-900">Add New Department</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddDeptModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className={labelCls}>Department Name *</label>
-                <input
-                  type="text"
-                  value={newDeptForm.name}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, name: e.target.value })}
-                  placeholder="e.g. Design, Development, QA, HR"
-                  className={inputCls}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className={labelCls}>Department Code (Optional)</label>
-                <input
-                  type="text"
-                  value={newDeptForm.code}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, code: e.target.value })}
-                  placeholder="e.g. DES, DEV, QA, HR"
-                  className={inputCls}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className={labelCls}>Description (Optional)</label>
-                <textarea
-                  value={newDeptForm.description}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, description: e.target.value })}
-                  placeholder="Brief summary of department responsibilities..."
-                  className={`${inputCls} h-20 resize-none`}
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAddDeptModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={newDeptLoading}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 disabled:opacity-70"
-              >
-                {newDeptLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Create Department
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       {/* ── MANAGE DEPARTMENTS MODAL ────────────────────────────────────── */}
       {showManageDeptModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -1222,6 +1134,84 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── QUICK ADD DEPARTMENT MODAL (NESTED ON TOP) ────────────────── */}
+      {showAddDeptModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <form
+            onSubmit={handleCreateDepartmentSubmit}
+            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-black text-slate-900">Add New Department</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddDeptModal(false)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className={labelCls}>Department Name *</label>
+                <input
+                  type="text"
+                  value={newDeptForm.name}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, name: e.target.value })}
+                  placeholder="e.g. Design, Development, QA, HR"
+                  className={inputCls}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className={labelCls}>Department Code (Optional)</label>
+                <input
+                  type="text"
+                  value={newDeptForm.code}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, code: e.target.value })}
+                  placeholder="e.g. DES, DEV, QA, HR"
+                  className={inputCls}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className={labelCls}>Description (Optional)</label>
+                <textarea
+                  value={newDeptForm.description}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, description: e.target.value })}
+                  placeholder="Brief summary of department responsibilities..."
+                  className={`${inputCls} h-20 resize-none`}
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddDeptModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={newDeptLoading}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 disabled:opacity-70"
+              >
+                {newDeptLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Create Department
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

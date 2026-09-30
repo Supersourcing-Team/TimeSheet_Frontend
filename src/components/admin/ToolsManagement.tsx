@@ -165,19 +165,19 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-indigo-400" />
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Wrench className="w-6 h-6 text-sky-600" />
             <span>Master Tool Catalog</span>
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Configure software licenses, cloud tools, and services available for project managers to allocate.
           </p>
         </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer shrink-0"
+          className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Tool</span>

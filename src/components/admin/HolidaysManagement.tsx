@@ -134,24 +134,24 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <CalendarCheck className="w-5 h-5 text-blue-600" />
-            <span>Holiday Management & Working Calendar Exclusions</span>
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <CalendarCheck className="w-6 h-6 text-sky-600" />
+            <span>Holiday Management &amp; Working Calendar Exclusions</span>
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Configure organization-wide public, national, and regional holidays. Timesheet entries cannot be submitted on mandatory holidays without weekend/holiday overtime approval.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="p-1 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="p-1 bg-slate-100 border border-slate-200 flex items-center gap-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white text-blue-600 shadow-2xs'
+                  ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -160,9 +160,9 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-blue-600 shadow-2xs'
+                  ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -173,7 +173,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02]"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Holiday</span>

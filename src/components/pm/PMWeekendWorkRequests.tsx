@@ -68,20 +68,20 @@ export const PMWeekendWorkRequests: React.FC<PMWeekendWorkRequestsProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <CalendarX className="w-6 h-6 text-amber-400" />
-            <span>Weekend Work & Overtime Approvals</span>
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <CalendarX className="w-6 h-6 text-sky-600" />
+            <span>Weekend Work &amp; Overtime Approvals</span>
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Review and approve weekend work requests. Approving a request automatically generates and logs the employee's timesheet.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-bold flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-600" />
             <span>{weekendRequests.filter((r) => r.status === 'pending').length} Pending Review</span>
           </span>
         </div>

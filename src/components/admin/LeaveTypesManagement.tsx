@@ -102,20 +102,20 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <CalendarX className="w-5 h-5 text-blue-600" />
-            <span>Leave Type Management & Entitlement Rules</span>
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <CalendarX className="w-6 h-6 text-sky-600" />
+            <span>Leave Type Management &amp; Entitlement Rules</span>
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Configure leave categories. In accordance with policy, leave types can be activated or deactivated, but not deleted.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] shrink-0"
+          className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create Leave Type</span>

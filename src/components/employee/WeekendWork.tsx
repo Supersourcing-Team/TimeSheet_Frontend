@@ -104,27 +104,27 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md space-y-3">
+      <div className="p-5 bg-white border border-slate-200 space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
-              <Moon className="w-6 h-6 text-indigo-300" />
-              <span>Weekend Work & Overtime Timesheet</span>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+              <Moon className="w-6 h-6 text-sky-600" />
+              <span>Weekend Work &amp; Overtime Timesheet</span>
             </h2>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-slate-500">
               Submit your weekend work with task summaries. When your Project Manager approves, it automatically logs your timesheet!
             </p>
           </div>
 
-          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-500/30 text-xs font-bold w-max flex items-center gap-1.5 backdrop-blur-xs">
-            <Zap className="w-3.5 h-3.5 text-indigo-300" />
+          <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold w-max flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-sky-600" />
             <span>Auto-Timesheet on PM Approval</span>
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white/10 border border-white/15 flex items-start gap-3 text-xs text-slate-200 backdrop-blur-xs">
+        <div className="p-3 bg-slate-50 border border-slate-200 flex items-start gap-3 text-xs text-slate-700">
           <p className="leading-relaxed">
-            <strong className="text-blue-200 font-extrabold">Streamlined Flow:</strong> Fill in your weekend hours and task breakdown below. Once approved by your PM, you will <strong className="underline decoration-blue-300/50 text-white">not need to submit a separate timesheet</strong>—it will automatically populate in your timesheet history and logs.
+            <strong className="text-slate-900 font-bold">Streamlined Flow:</strong> Fill in your weekend hours and task breakdown below. Once approved by your PM, you will <strong className="font-bold text-slate-900">not need to submit a separate timesheet</strong>—it will automatically populate in your timesheet history and logs.
           </p>
         </div>
       </div>

@@ -220,14 +220,17 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header Section */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 font-medium text-xs border border-blue-400/30">
-            <Palmtree className="w-3.5 h-3.5 text-blue-300" />
-            <span>Employee Time Off & Leave Governance</span>
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 mb-1">
+            <Palmtree className="w-3.5 h-3.5 text-sky-600" />
+            <span>Employee Time Off &amp; Leave Governance</span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Employee Leave Approvals</h1>
-          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Palmtree className="w-6 h-6 text-sky-600" />
+            <span>Employee Leave Approvals</span>
+          </h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
             Review, approve, or reject employee leave applications and monitor coverage and leave allocations across all departments.
           </p>
         </div>
@@ -236,9 +239,9 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer"
           >
-            <Download className="w-4 h-4 text-blue-300" />
+            <Download className="w-4 h-4 text-slate-600" />
             <span>Export CSV Report</span>
           </button>
         </div>

@@ -21,6 +21,7 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     X,
+    LayoutDashboard,
 } from 'lucide-react';
 import { AdminTab } from '../Sidebar';
 import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
@@ -89,10 +90,13 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     return (
         <div className="space-y-6 text-slate-900 font-sans">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard Overview</h1>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <LayoutDashboard className="w-6 h-6 text-sky-600" />
+                        <span>Dashboard Overview</span>
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1">
                         Welcome back, here's what's happening today across SuperTime Enterprise.
                     </p>
                 </div>
@@ -100,16 +104,16 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => onNavigateTab('user_management')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5 hover:scale-[1.02]"
+                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>New Entry</span>
                     </button>
                     <button
                         onClick={() => onShowToast('Export Started', 'Exporting SuperTime dashboard summary report (CSV)...', 'info')}
-                        className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                        className="px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                        <Download className="w-4 h-4 text-slate-500" />
+                        <Download className="w-4 h-4 text-slate-600" />
                         <span>Export</span>
                     </button>
                 </div>

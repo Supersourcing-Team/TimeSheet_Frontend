@@ -125,132 +125,131 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-8">
       {/* Header Banner */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
-        <div className="space-y-2 relative z-10">
-          
-          <h1 className="text-2xl font-black tracking-tight">Project Manager Portal</h1>
-          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
-            Welcome back, <span className="font-bold text-white">{currentUser.name}</span>. Track active sprint delivery, review employee timesheet logs, manage team allocations, and approve weekend overtime requests.
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Briefcase className="w-6 h-6 text-sky-600" />
+            <span>Project Manager Portal</span>
+          </h1>
+          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+            Welcome back, <span className="font-bold text-slate-800">{currentUser.name}</span>. Track active sprint delivery, review employee timesheet logs, manage team allocations, and approve weekend overtime requests.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigateTab('pm_resource_allocation')}
-            className="px-5 py-2.5 rounded-2xl bg-white/90 backdrop-blur-md text-blue-900 hover:bg-white font-bold text-xs shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <Users className="w-4 h-4 text-blue-700" />
+            <Users className="w-4 h-4 text-slate-600" />
             <span>Resource Allocation</span>
           </button>
           <button
             onClick={() => onNavigateTab('pm_timesheet_review')}
-            className="px-5 py-2.5 rounded-2xl bg-blue-600/80 backdrop-blur-md hover:bg-blue-600 text-white font-bold text-xs border border-blue-400/30 hover:border-blue-400/50 shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
-            <CheckSquare className="w-4 h-4 text-blue-200" />
+            <CheckSquare className="w-4 h-4" />
             <span>Review Timesheets</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Active Projects */}
         <div
           onClick={() => onNavigateTab('pm_my_projects')}
-          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Active Projects
             </span>
-            <Briefcase className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+            <Briefcase className="w-4 h-4 text-sky-600 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{pmProjects.length}</div>
-          <p className="text-[11px] text-slate-500 font-medium truncate">Managed projects</p>
+          <div className="text-2xl font-bold text-slate-900">{pmProjects.length}</div>
+          <p className="text-[11px] text-slate-500 truncate">Managed projects</p>
         </div>
 
         {/* Total Team Members */}
         <div
           onClick={() => onNavigateTab('pm_resource_allocation')}
-          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-indigo-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Team Members
             </span>
-            <Users className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+            <Users className="w-4 h-4 text-sky-600 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-black text-indigo-900">{totalTeamMembersCount}</div>
-          <p className="text-[11px] text-slate-500 font-medium truncate">Assigned resources</p>
+          <div className="text-2xl font-bold text-slate-900">{totalTeamMembersCount}</div>
+          <p className="text-[11px] text-slate-500 truncate">Assigned resources</p>
         </div>
 
         {/* Pending Weekend Requests */}
         <div
           onClick={() => onNavigateTab('pm_weekend_work')}
-          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-amber-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-amber-400 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
               Weekend Overtime
             </span>
             <Moon className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-black text-amber-600">{pendingWeekendRequests.length}</div>
+          <div className="text-2xl font-bold text-amber-600">{pendingWeekendRequests.length}</div>
           <p className="text-[11px] text-amber-700 font-semibold truncate">Pending approvals</p>
         </div>
 
         {/* This Week's Billable Hours */}
         <div
           onClick={() => onNavigateTab('pm_timesheet_review')}
-          className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-emerald-300/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-emerald-400 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
               Week Billable
             </span>
             <Clock className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-2xl font-black text-emerald-900">{thisWeekBillableHours}h</div>
-          <p className="text-[11px] text-emerald-700 font-medium truncate">Billable logged</p>
+          <div className="text-2xl font-bold text-emerald-900">{thisWeekBillableHours}h</div>
+          <p className="text-[11px] text-emerald-700 truncate">Billable logged</p>
         </div>
 
-          {/* Team Leaves */}
-          <div
-            onClick={() => setShowLeavesModal(true)}
-            className="p-5 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] space-y-2 hover:border-blue-300/50 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center justify-between text-slate-500">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                Team Leaves
-              </span>
-              <Calendar className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-2xl font-black text-slate-900">{upcomingLeaves?.length || 0}</div>
-            <p className="text-[11px] text-slate-500 font-medium truncate">Upcoming or ongoing leaves</p>
+        {/* Team Leaves */}
+        <div
+          onClick={() => setShowLeavesModal(true)}
+          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all group cursor-pointer"
+        >
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Team Leaves
+            </span>
+            <Calendar className="w-4 h-4 text-sky-600 group-hover:scale-110 transition-transform" />
           </div>
+          <div className="text-2xl font-bold text-slate-900">{upcomingLeaves?.length || 0}</div>
+          <p className="text-[11px] text-slate-500 truncate">Upcoming or ongoing leaves</p>
+        </div>
       </div>
 
       {/* Main Grid: Projects Overview & Recent Timesheet Submissions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols): Project Progress Overview */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-7 rounded-3xl bg-white/60 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-5 text-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+          <div className="p-6 bg-white border border-slate-200 space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-600" />
-                  <span>Managed Projects & Resource Status</span>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-sky-600" />
+                  <span>Managed Projects &amp; Resource Status</span>
                 </h2>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Track sprint progress, allocated tools, and billable hour utilization per project.
                 </p>
               </div>
 
               <button
                 onClick={() => onNavigateTab('pm_my_projects')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
               >
                 <span>View All Projects</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -324,23 +323,23 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
 
         {/* Right Column (1 col): Recent Timesheet Submissions (Review-Only) */}
         <div className="space-y-6">
-          <div className="p-7 rounded-3xl bg-white/60 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-5 text-xs">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+          <div className="p-6 bg-white border border-slate-200 space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-sky-600" />
                   <span>Recent Submitted Timesheets</span>
                 </h2>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Review-only access. Timesheets are tracked for billable & non-billable auditing.
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Review-only access. Timesheets are tracked for billable &amp; non-billable auditing.
                 </p>
               </div>
 
               <button
                 onClick={() => onNavigateTab('pm_timesheet_review')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 shrink-0"
+                className="text-xs font-bold text-sky-600 hover:text-sky-700 shrink-0 cursor-pointer"
               >
-                View Log
+                <span>View Log</span>
               </button>
             </div>
 
@@ -351,7 +350,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
                 {recentTimesheets.map((ts) => (
                   <div
                     key={ts.id}
-                    className="p-4 rounded-2xl bg-white/80 border border-slate-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] space-y-2 hover:shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-all duration-300"
+                    className="p-4 bg-slate-50/50 border border-slate-200 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

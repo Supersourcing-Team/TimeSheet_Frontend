@@ -5,24 +5,16 @@ import {
   Clock,
   Calendar,
   FolderKanban,
-  Palmtree,
   Moon,
-  BarChart3,
+  TrendingUp,
   DollarSign,
   Users,
   CheckSquare,
-  UserCog,
   Briefcase,
-  Building2,
-  ShieldCheck,
-  TrendingUp,
   CalendarCheck,
   CalendarX,
   CalendarDays,
-  Settings,
   Wrench,
-  Plus,
-  HelpCircle,
   FileText,
   Layers,
 } from 'lucide-react';
@@ -90,7 +82,6 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   pendingTimesheetsCount,
   pendingLeavesCount,
   pendingWeekendCount,
-  onQuickAddTimesheet,
 }) => {
   const employeeNavItems: Array<{
     id: EmployeeTab;
@@ -123,15 +114,6 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         icon: FolderKanban,
         desc: 'Sprint Projects & Tools',
       },
-      /* 
-      {
-        id: 'leave_management',
-        label: 'Leave Management',
-        icon: Palmtree,
-        desc: 'Balances & Leave Request Form',
-        badge: pendingLeavesCount > 0 ? pendingLeavesCount : undefined,
-      },
-      */
       {
         id: 'weekend_work',
         label: 'Weekend Work Requests',
@@ -285,35 +267,26 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)] shadow-xs">
+    <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
       {/* Mode Indicator Banner */}
-      <div className="p-3 border-b border-slate-200 bg-slate-50/60">
-        <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
+      <div className="p-3 border-b border-slate-200 bg-white">
+        <div className="p-2.5 bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className={`p-2 rounded-lg text-white font-bold shrink-0 ${portalMode === 'employee'
-                  ? 'bg-blue-600 shadow-xs shadow-blue-600/30'
-                  : portalMode === 'pm'
-                    ? 'bg-purple-600 shadow-xs shadow-purple-600/30'
-                    : portalMode === 'ac_manager'
-                      ? 'bg-emerald-600 shadow-xs shadow-emerald-600/30'
-                      : 'bg-slate-800 shadow-xs shadow-slate-800/30'
-                }`}
-            >
+            <div className="p-2 bg-sky-600 text-white font-bold shrink-0">
               <Layers className="w-4 h-4" />
             </div>
             <div className="min-w-0 truncate">
-              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
                 Active Workspace
               </div>
-              <div className="text-xs font-black text-slate-800 capitalize leading-tight truncate">
+              <div className="text-xs font-bold text-slate-800 capitalize leading-tight truncate">
                 {portalMode === 'ac_manager' ? 'Account Manager' : portalMode === 'pm' ? 'Project Manager' : portalMode}
               </div>
             </div>
           </div>
 
           <span
-            className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shrink-0 ml-2"
+            className="w-2 h-2 bg-emerald-500 shrink-0 ml-2"
             title="Active Workspace"
           />
         </div>
@@ -323,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div className="p-3 space-y-1 flex-1 overflow-y-auto">
         {portalMode === 'employee' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
+            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Employee Navigation
             </div>
             {employeeNavItems.map((item) => {
@@ -333,18 +306,21 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <button
                   key={item.id}
                   type="button"
+                  data-active={isActive ? 'true' : 'false'}
                   onClick={() => onSelectEmployeeTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
+                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
+                    isActive
+                      ? 'active-nav-item font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                        }`}
+                      className={`p-1.5 transition-colors ${
+                        isActive
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
+                      }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -353,15 +329,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                          }`}
+                        className={`text-[10px] truncate mt-0.5 ${
+                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
+                        }`}
                       >
                         {item.desc}
                       </div>
                     </div>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-slate-900 shrink-0">
+                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
                       {item.badge}
                     </span>
                   )}
@@ -371,7 +348,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           </div>
         ) : portalMode === 'pm' ? (
           <div>
-
+            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Project Manager
+            </div>
             {pmNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activePmTab === item.id;
@@ -379,18 +358,21 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <button
                   key={item.id}
                   type="button"
+                  data-active={isActive ? 'true' : 'false'}
                   onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
+                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
+                    isActive
+                      ? 'active-nav-item font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                        }`}
+                      className={`p-1.5 transition-colors ${
+                        isActive
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
+                      }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -399,15 +381,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                          }`}
+                        className={`text-[10px] truncate mt-0.5 ${
+                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
+                        }`}
                       >
                         {item.desc}
                       </div>
                     </div>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-slate-900 shrink-0">
+                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
                       {item.badge}
                     </span>
                   )}
@@ -417,8 +400,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           </div>
         ) : portalMode === 'ac_manager' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
-              ProjectOS • Enterprise Tier
+            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Account Manager
             </div>
             {acNavItems.map((item) => {
               const Icon = item.icon;
@@ -427,18 +410,21 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <button
                   key={item.id}
                   type="button"
+                  data-active={isActive ? 'true' : 'false'}
                   onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group mb-0.5 ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
+                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group mb-0.5 cursor-pointer ${
+                    isActive
+                      ? 'active-nav-item font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                        }`}
+                      className={`p-1.5 transition-colors ${
+                        isActive
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
+                      }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -447,15 +433,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                          }`}
+                        className={`text-[10px] truncate mt-0.5 ${
+                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
+                        }`}
                       >
                         {item.desc}
                       </div>
                     </div>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500 text-white shrink-0">
+                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-sky-500 text-white shrink-0">
                       {item.badge}
                     </span>
                   )}
@@ -465,8 +452,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           </div>
         ) : (
           <div>
-            <div className="px-3 py-2 text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
-              Management & Admin Portal
+            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Management &amp; Admin
             </div>
             {adminNavItems.map((item) => {
               const Icon = item.icon;
@@ -475,18 +462,21 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 <button
                   key={item.id}
                   type="button"
+                  data-active={isActive ? 'true' : 'false'}
                   onClick={() => onSelectAdminTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group ${isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-bold'
+                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
+                    isActive
+                      ? 'active-nav-item font-bold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`p-1.5 rounded-lg transition-colors ${isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-50'
-                        }`}
+                      className={`p-1.5 transition-colors ${
+                        isActive
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
+                      }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                     </div>
@@ -495,15 +485,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                         {item.label}
                       </div>
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100 font-medium' : 'text-slate-400 font-normal'
-                          }`}
+                        className={`text-[10px] truncate mt-0.5 ${
+                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
+                        }`}
                       >
                         {item.desc}
                       </div>
                     </div>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white shrink-0">
+                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white shrink-0">
                       {item.badge}
                     </span>
                   )}
@@ -514,13 +505,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         )}
       </div>
 
-      {/* Sidebar Quick Action & Footer Links */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
-
-
-      </div>
+      {/* Sidebar Footer */}
+      <div className="p-3 border-t border-slate-200 bg-white space-y-2"></div>
     </aside>
   );
 });
 Sidebar.displayName = 'Sidebar';
-

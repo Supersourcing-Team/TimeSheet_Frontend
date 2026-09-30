@@ -234,24 +234,25 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header & View Mode Switcher */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-2xl font-black tracking-tight">Timesheet History</h2>
-          <p className="text-xs text-blue-100/90 max-w-2xl leading-relaxed">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Timesheet History</h2>
+          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
             Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Calendar vs List Toggle */}
-          <div className="bg-white/10 p-1 rounded-xl border border-white/20 flex items-center gap-1">
+          <div className="bg-slate-100 p-1 border border-slate-200 flex items-center gap-1">
             <button
               type="button"
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'calendar'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-blue-200 hover:text-white'
-                }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-white text-sky-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
               <span>Calendar View</span>
@@ -259,10 +260,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'list'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-blue-200 hover:text-white'
-                }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-sky-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               <ListFilter className="w-3.5 h-3.5" />
               <span>List View</span>
@@ -272,9 +274,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-blue-300" />
+            <Download className="w-3.5 h-3.5 text-slate-600" />
             <span>Export CSV</span>
           </button>
         </div>
