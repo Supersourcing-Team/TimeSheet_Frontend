@@ -95,9 +95,10 @@ const AdminLeaveApprovals = React.lazy(() => import('./components/admin/AdminLea
 const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysManagement').then(m => ({ default: m.HolidaysManagement })));
 const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
 const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
+const KekaManagement = React.lazy(() => import('./components/admin/KekaManagement').then(m => ({ default: m.KekaManagement })));
 
-// Initial mocks for things not yet in backend API endpoints
-import { INITIAL_LEAVE_BALANCE, INITIAL_ACTIVITIES, INITIAL_LEAVE_TYPES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
+// Initial fallbacks for things not yet in backend API endpoints
+import { INITIAL_ACTIVITIES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
@@ -1165,6 +1166,10 @@ export default function App() {
                     }}
                     onShowToast={showToast}
                   />
+                )}
+
+                {activeAdminTab === 'admin_keka' && (
+                  <KekaManagement onShowToast={showToast} />
                 )}
               </React.Suspense>
             </ErrorBoundary>

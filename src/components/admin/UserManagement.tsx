@@ -5,6 +5,7 @@ import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import {
   fetchUsersApi,
   createUserApi,
+  createKekaEmployeeApi,
   updateUserApi,
   toggleUserStatusApi,
   fetchRolesApi,
@@ -35,6 +36,9 @@ import {
   Building2,
   Trash2,
   Settings,
+  Sparkles,
+  Globe,
+  Briefcase,
 } from 'lucide-react';
 
 interface UserManagementProps {
@@ -53,28 +57,22 @@ function roleLabel(roleName: string): string {
 
 function roleBadgeClass(roleName: string): string {
   const r = roleName.toLowerCase();
-  if (r.includes('admin')) return 'bg-rose-100 text-rose-800';
-  if (r.includes('project')) return 'bg-amber-100 text-amber-800';
-  if (r.includes('account')) return 'bg-purple-100 text-purple-800';
-  return 'bg-blue-100 text-blue-800';
+  if (r.includes('admin')) return 'bg-slate-900 text-white border border-slate-900';
+  if (r.includes('project')) return 'bg-sky-100 text-sky-900 border border-sky-300';
+  if (r.includes('account')) return 'bg-sky-50 text-sky-800 border border-sky-200';
+  return 'bg-slate-100 text-slate-800 border border-slate-200';
 }
 
 function statusBadgeClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === 'active') return 'bg-emerald-100 text-emerald-800';
-  if (s === 'inactive') return 'bg-rose-100 text-rose-800';
-  if (s === 'pending') return 'bg-amber-100 text-amber-800';
-  return 'bg-slate-200 text-slate-700';
+  if (s === 'active') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+  if (s === 'inactive') return 'bg-rose-50 text-rose-700 border border-rose-200';
+  if (s === 'pending') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  return 'bg-slate-100 text-slate-700 border border-slate-200';
 }
 
 function departmentBadgeClass(deptName: string): string {
-  const d = deptName.toLowerCase();
-  if (d.includes('design') || d.includes('ui') || d.includes('ux')) return 'bg-purple-100 text-purple-800 border-purple-200';
-  if (d.includes('dev') || d.includes('engineering') || d.includes('software')) return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-  if (d.includes('qa') || d.includes('test') || d.includes('quality')) return 'bg-amber-100 text-amber-800 border-amber-200';
-  if (d.includes('hr') || d.includes('people') || d.includes('human')) return 'bg-pink-100 text-pink-800 border-pink-200';
-  if (d.includes('sales') || d.includes('marketing')) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-  return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+  return 'bg-sky-50 text-sky-900 border border-sky-200';
 }
 
 // ---------------------------------------------------------------------------
@@ -82,13 +80,27 @@ function departmentBadgeClass(deptName: string): string {
 // ---------------------------------------------------------------------------
 const defaultCreate = {
   first_name: '',
+  middle_name: '',
   last_name: '',
+  display_name: '',
   email: '',
+  employee_id: '',
   role_id: 0,
   department_id: '' as number | '',
   joining_date: '',
-  status: 'Pending',
+  status: 'Active',
   ctc: undefined as number | undefined,
+  // Keka Official Fields
+  mobile_number: '',
+  gender: 0, // 0: Unspecified, 1: Male, 2: Female, 3: Other
+  date_of_birth: '',
+  business_unit: '',
+  job_title: '',
+  secondary_job_title: '',
+  location: '',
+  legal_entity: '',
+  nationality: 'Indian',
+  sync_to_keka: true,
 };
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
@@ -262,23 +274,58 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
     }
     setCreateLoading(true);
     try {
-      await createUserApi({
-        email: createForm.email,
-        first_name: createForm.first_name,
-        last_name: createForm.last_name,
-        role_id: createForm.role_id,
-        department_id: createForm.department_id ? Number(createForm.department_id) : null,
-        joining_date: createForm.joining_date || null,
-        status: createForm.status,
-        ctc: createForm.ctc,
-      });
-      onShowToast('Employee Created', `Account for ${createForm.first_name} ${createForm.last_name} created.`, 'success');
+      if (createForm.sync_to_keka) {
+        const selectedDept = departments.find((d) => d.id === Number(createForm.department_id));
+        const kekaPayload: any = {
+          employeeNumber: createForm.employee_id.trim() || `EMP-${Date.now().toString().slice(-4)}`,
+          firstName: createForm.first_name.trim(),
+          lastName: createForm.last_name.trim(),
+          email: createForm.email.trim(),
+          dateJoined: createForm.joining_date || new Date().toISOString().split('T')[0],
+        };
+        if (createForm.middle_name.trim()) kekaPayload.middleName = createForm.middle_name.trim();
+        if (createForm.display_name.trim()) {
+          kekaPayload.displayName = createForm.display_name.trim();
+        } else {
+          kekaPayload.displayName = `${createForm.first_name.trim()} ${createForm.last_name.trim()}`;
+        }
+        if (createForm.mobile_number.trim()) kekaPayload.mobileNumber = createForm.mobile_number.trim();
+        if (createForm.gender !== undefined && createForm.gender !== null) kekaPayload.gender = Number(createForm.gender);
+        if (createForm.date_of_birth) kekaPayload.dateOfBirth = createForm.date_of_birth;
+        if (selectedDept?.name) kekaPayload.department = selectedDept.name;
+        if (createForm.business_unit.trim()) kekaPayload.businessUnit = createForm.business_unit.trim();
+        if (createForm.job_title.trim()) kekaPayload.jobTitle = createForm.job_title.trim();
+        if (createForm.secondary_job_title.trim()) kekaPayload.secondaryJobTitle = createForm.secondary_job_title.trim();
+        if (createForm.location.trim()) kekaPayload.location = createForm.location.trim();
+        if (createForm.legal_entity.trim()) kekaPayload.legalEntity = createForm.legal_entity.trim();
+        if (createForm.nationality.trim()) kekaPayload.nationality = createForm.nationality.trim();
+
+        const res = await createKekaEmployeeApi(kekaPayload);
+        onShowToast(
+          'Employee Created in Keka',
+          res?.message || `Account for ${createForm.first_name} ${createForm.last_name} created in Keka and synchronized locally.`,
+          'success'
+        );
+      } else {
+        await createUserApi({
+          email: createForm.email,
+          first_name: createForm.first_name,
+          last_name: createForm.last_name,
+          employee_id: createForm.employee_id.trim() || undefined,
+          role_id: createForm.role_id,
+          department_id: createForm.department_id ? Number(createForm.department_id) : null,
+          joining_date: createForm.joining_date || null,
+          status: createForm.status,
+          ctc: createForm.ctc,
+        });
+        onShowToast('Employee Created', `Account for ${createForm.first_name} ${createForm.last_name} created locally.`, 'success');
+      }
       setShowAddModal(false);
       setCreateForm({ ...defaultCreate });
       loadUsers();
       loadDepartments();
     } catch (e: any) {
-      onShowToast('Create Failed', getErrorMessage(e, 'Failed to create user.'), 'error');
+      onShowToast('Create Failed', getErrorMessage(e, 'Failed to create employee.'), 'error');
     } finally {
       setCreateLoading(false);
     }
@@ -406,48 +453,48 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   return (
     <div className="space-y-6">
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-              <UserCog className="w-6 h-6 text-blue-600" />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+              <UserCog className="w-6 h-6 text-sky-600" />
               <span>User &amp; Department Management</span>
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+            <span className="px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
               {total} Total Users
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
               {departments.length} Departments
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
+          <p className="text-xs text-slate-500 mt-1">
             Manage system access, assign employees to configured departments, manage roles, and review account statuses.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowManageDeptModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <Building2 className="w-4 h-4 text-indigo-600" />
+            <Building2 className="w-4 h-4 text-slate-600" />
             <span>Manage Departments</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowRoleMatrixModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <ShieldCheck className="w-4 h-4 text-sky-600" />
             <span>Role Matrix</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Employee</span>
@@ -565,7 +612,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Employee */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shrink-0 ring-2 ring-blue-500/20 shadow-sm">
+                        <div className="w-9 h-9 bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-900 font-bold text-sm shrink-0">
                           {user.first_name?.[0]?.toUpperCase() ?? '?'}
                           {user.last_name?.[0]?.toUpperCase() ?? ''}
                         </div>
@@ -589,7 +636,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Role */}
                     <td className="py-3.5 px-3">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${roleBadgeClass(
+                        className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${roleBadgeClass(
                           user.role?.name ?? ''
                         )}`}
                       >
@@ -601,7 +648,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     <td className="py-3.5 px-3">
                       {user.department?.name ? (
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${departmentBadgeClass(
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold border ${departmentBadgeClass(
                             user.department.name
                           )}`}
                         >
@@ -627,7 +674,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     {/* Status */}
                     <td className="py-3.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${statusBadgeClass(
+                        className={`inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(
                           user.status
                         )}`}
                       >
@@ -644,19 +691,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                             type="button"
                             onClick={() => handleToggleStatus(user)}
                             disabled={togglingIds.has(user.id)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              user.status === 'Active'
-                                ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                                : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                            }`}
+                            className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
                             title={user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
                           >
                             {togglingIds.has(user.id) ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
                             ) : user.status === 'Active' ? (
-                              <UserX className="w-3.5 h-3.5" />
+                              <UserX className="w-3.5 h-3.5 text-rose-600" />
                             ) : (
-                              <UserCheck className="w-3.5 h-3.5" />
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                             )}
                           </button>
                         )}
@@ -665,7 +708,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(user)}
-                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50"
+                          className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-600 transition-all cursor-pointer"
                           title="Edit User"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -873,262 +916,376 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         </div>
       )}
 
-      {/* ── ADD USER MODAL ──────────────────────────────────────────────── */}
+      {/* ── ADD USER MODAL WITH COMPLETE KEKA HRMS FIELD SUPPORT ───────── */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <form
             onSubmit={handleCreateSubmit}
-            className="w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
+            className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-xs"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Plus className="w-4 h-4 text-blue-600" />
-                <h3 className="text-base font-black text-slate-900">Add New Employee</h3>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/75 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-600">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Add New Employee</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Create employee record with direct Keka HRMS provisioning</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
+                className="p-1.5 rounded-lg bg-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className={labelCls}>First Name *</label>
-                  <input
-                    type="text"
-                    value={createForm.first_name}
-                    onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })}
-                    placeholder="e.g. Vikram"
-                    className={inputCls}
-                    required
-                  />
+            {/* Modal Scrollable Body */}
+            <div className="p-6 overflow-y-auto space-y-5">
+              {/* Keka Sync Integration Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-200/80 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-600/30 shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-slate-900 text-xs">Provision directly in Keka HRMS</span>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Executes official <code className="font-mono text-blue-700 bg-blue-100/60 px-1 py-0.5 rounded text-[10px]">POST /hris/employees</code> API and maps local account
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className={labelCls}>Last Name *</label>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
                   <input
-                    type="text"
-                    value={createForm.last_name}
-                    onChange={(e) => setCreateForm({ ...createForm, last_name: e.target.value })}
-                    placeholder="e.g. Sharma"
-                    className={inputCls}
-                    required
+                    type="checkbox"
+                    checked={createForm.sync_to_keka}
+                    onChange={(e) => setCreateForm({ ...createForm, sync_to_keka: e.target.checked })}
+                    className="sr-only peer"
                   />
+                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* 1. Core Identity & Contact Details */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider pb-1 border-b border-slate-100">
+                  <UserCog className="w-3.5 h-3.5 text-blue-600" />
+                  <span>1. Core Profile & Contact Details</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>First Name *</label>
+                    <input
+                      type="text"
+                      value={createForm.first_name}
+                      onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })}
+                      placeholder="e.g. Vikram"
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Middle Name</label>
+                    <input
+                      type="text"
+                      value={createForm.middle_name}
+                      onChange={(e) => setCreateForm({ ...createForm, middle_name: e.target.value })}
+                      placeholder="e.g. Kumar"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Last Name *</label>
+                    <input
+                      type="text"
+                      value={createForm.last_name}
+                      onChange={(e) => setCreateForm({ ...createForm, last_name: e.target.value })}
+                      placeholder="e.g. Sharma"
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>Display Name</label>
+                    <input
+                      type="text"
+                      value={createForm.display_name}
+                      onChange={(e) => setCreateForm({ ...createForm, display_name: e.target.value })}
+                      placeholder="Leave blank to auto-derive"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Work Email Address *</label>
+                    <input
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                      placeholder="e.g. vikram@company.com"
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Mobile Number</label>
+                    <input
+                      type="tel"
+                      value={createForm.mobile_number}
+                      onChange={(e) => setCreateForm({ ...createForm, mobile_number: e.target.value })}
+                      placeholder="+91 9876543210"
+                      className={inputCls}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className={labelCls}>Email Address *</label>
-                  <input
-                    type="email"
-                    value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    placeholder="e.g. vikram@supersourcing.com"
-                    className={inputCls}
-                    required
-                  />
+              {/* 2. Employment & Organization */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider pb-1 border-b border-slate-100">
+                  <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                  <span>2. Job Details & Organization</span>
                 </div>
-                {/* Department Selection with Inline Add */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className={labelCls}>Department</label>
-                    <button
-                      type="button"
-                      onClick={() => { setDeptActionTarget('create'); setShowAddDeptModal(true); }}
-                      className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5"
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>Employee ID / Number</label>
+                    <input
+                      type="text"
+                      value={createForm.employee_id}
+                      onChange={(e) => setCreateForm({ ...createForm, employee_id: e.target.value })}
+                      placeholder="e.g. EMP-101 (or auto)"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Joining Date *</label>
+                    <input
+                      type="date"
+                      value={createForm.joining_date}
+                      onChange={(e) => setCreateForm({ ...createForm, joining_date: e.target.value })}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  {/* Department */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className={labelCls}>Department</label>
+                      <button
+                        type="button"
+                        onClick={() => { setDeptActionTarget('create'); setShowAddDeptModal(true); }}
+                        className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5"
+                      >
+                        <Plus className="w-3 h-3" /> Add Dept
+                      </button>
+                    </div>
+                    <select
+                      value={createForm.department_id || ''}
+                      onChange={(e) => setCreateForm({ ...createForm, department_id: e.target.value === '' ? '' : Number(e.target.value) })}
+                      className={inputCls}
                     >
-                      <Plus className="w-3 h-3" /> Add Dept
-                    </button>
-                  </div>
-                  <select
-                    value={createForm.department_id || ''}
-                    onChange={(e) => setCreateForm({ ...createForm, department_id: e.target.value === '' ? '' : Number(e.target.value) })}
-                    className={inputCls}
-                  >
-                    <option value="">-- Select Department --</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} {d.code ? `(${d.code})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className={labelCls}>CTC (Annual in ₹)</label>
-                  <input
-                    type="number"
-                    value={createForm.ctc !== undefined ? createForm.ctc : ''}
-                    onChange={(e) => setCreateForm({ ...createForm, ctc: e.target.value ? Number(e.target.value) : undefined })}
-                    className={inputCls}
-                    placeholder="E.g., 500000"
-                  />
-                </div>
-                <div className="space-y-1 flex flex-col justify-end">
-                  <div className="text-[10px] text-slate-500 pb-2">
-                    Employee ID is auto-generated (e.g. EMP-1)
+                      <option value="">-- Select Department --</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} {d.code ? `(${d.code})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className={labelCls}>System Role *</label>
-                  {rolesLoading ? (
-                    <div className={`${inputCls} flex items-center gap-2 text-slate-400`}>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Loading roles…</span>
-                    </div>
-                  ) : rolesError ? (
-                    <div className={`${inputCls} flex items-center gap-2 text-rose-600`}>
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span className="flex-1 truncate">{rolesError}</span>
-                      <button type="button" onClick={loadRoles} className="underline font-bold shrink-0">Retry</button>
-                    </div>
-                  ) : (
-                  <select
-                    value={createForm.role_id}
-                    onChange={(e) => setCreateForm({ ...createForm, role_id: Number(e.target.value) })}
-                    className={inputCls}
-                    required
-                  >
-                    <option value={0} disabled>
-                      Select Role
-                    </option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {roleLabel(r.name)}
-                      </option>
-                    ))}
-                  </select>
-                  )}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>Job Title (Primary)</label>
+                    <input
+                      type="text"
+                      value={createForm.job_title}
+                      onChange={(e) => setCreateForm({ ...createForm, job_title: e.target.value })}
+                      placeholder="e.g. Senior Software Engineer"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Secondary Job Title</label>
+                    <input
+                      type="text"
+                      value={createForm.secondary_job_title}
+                      onChange={(e) => setCreateForm({ ...createForm, secondary_job_title: e.target.value })}
+                      placeholder="e.g. Tech Lead"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Business Unit</label>
+                    <input
+                      type="text"
+                      value={createForm.business_unit}
+                      onChange={(e) => setCreateForm({ ...createForm, business_unit: e.target.value })}
+                      placeholder="e.g. Digital Solutions"
+                      className={inputCls}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className={labelCls}>Status</label>
-                  <select
-                    value={createForm.status}
-                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
-                    className={inputCls}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>System Role *</label>
+                    {rolesLoading ? (
+                      <div className={`${inputCls} flex items-center gap-2 text-slate-400`}>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Loading roles…</span>
+                      </div>
+                    ) : rolesError ? (
+                      <div className={`${inputCls} flex items-center gap-2 text-rose-600`}>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span className="flex-1 truncate">{rolesError}</span>
+                        <button type="button" onClick={loadRoles} className="underline font-bold shrink-0">Retry</button>
+                      </div>
+                    ) : (
+                      <select
+                        value={createForm.role_id}
+                        onChange={(e) => setCreateForm({ ...createForm, role_id: Number(e.target.value) })}
+                        className={inputCls}
+                        required
+                      >
+                        <option value={0} disabled>
+                          Select Role
+                        </option>
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {roleLabel(r.name)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Account Status</label>
+                    <select
+                      value={createForm.status}
+                      onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
+                      className={inputCls}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>CTC (Annual in ₹)</label>
+                    <input
+                      type="number"
+                      value={createForm.ctc !== undefined ? createForm.ctc : ''}
+                      onChange={(e) => setCreateForm({ ...createForm, ctc: e.target.value ? Number(e.target.value) : undefined })}
+                      className={inputCls}
+                      placeholder="e.g. 750000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Additional Demographics & Compliance */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider pb-1 border-b border-slate-100">
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>3. Personal & Location (Keka Fields)</span>
                 </div>
 
-                <div className="space-y-1">
-                  <label className={labelCls}>Joining Date</label>
-                  <input
-                    type="date"
-                    value={createForm.joining_date}
-                    onChange={(e) => setCreateForm({ ...createForm, joining_date: e.target.value })}
-                    className={inputCls}
-                  />
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>Gender</label>
+                    <select
+                      value={createForm.gender}
+                      onChange={(e) => setCreateForm({ ...createForm, gender: Number(e.target.value) })}
+                      className={inputCls}
+                    >
+                      <option value={0}>Unspecified</option>
+                      <option value={1}>Male</option>
+                      <option value={2}>Female</option>
+                      <option value={3}>Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Date of Birth</label>
+                    <input
+                      type="date"
+                      value={createForm.date_of_birth}
+                      onChange={(e) => setCreateForm({ ...createForm, date_of_birth: e.target.value })}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Nationality</label>
+                    <input
+                      type="text"
+                      value={createForm.nationality}
+                      onChange={(e) => setCreateForm({ ...createForm, nationality: e.target.value })}
+                      placeholder="e.g. Indian"
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className={labelCls}>Location / Office</label>
+                    <input
+                      type="text"
+                      value={createForm.location}
+                      onChange={(e) => setCreateForm({ ...createForm, location: e.target.value })}
+                      placeholder="e.g. Bangalore, India"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelCls}>Legal Entity</label>
+                    <input
+                      type="text"
+                      value={createForm.legal_entity}
+                      onChange={(e) => setCreateForm({ ...createForm, legal_entity: e.target.value })}
+                      placeholder="e.g. Supersourcing India Pvt Ltd"
+                      className={inputCls}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={createLoading}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 flex items-center gap-2 disabled:opacity-70"
-              >
-                {createLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Create Account
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ── QUICK ADD DEPARTMENT MODAL ──────────────────────────────────── */}
-      {showAddDeptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <form
-            onSubmit={handleCreateDepartmentSubmit}
-            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-base font-black text-slate-900">Add New Department</h3>
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/75 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-slate-500">
+                {createForm.sync_to_keka ? (
+                  <span className="text-blue-700 font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" /> Will create in Keka and sync locally
+                  </span>
+                ) : (
+                  <span>Saving to local database only</span>
+                )}
+              </span>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-200/70 hover:bg-slate-200 text-slate-700 font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 flex items-center gap-2 disabled:opacity-70 transition-colors"
+                >
+                  {createLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {createForm.sync_to_keka ? 'Create & Provision in Keka' : 'Create Account'}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddDeptModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className={labelCls}>Department Name *</label>
-                <input
-                  type="text"
-                  value={newDeptForm.name}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, name: e.target.value })}
-                  placeholder="e.g. Design, Development, QA, HR"
-                  className={inputCls}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className={labelCls}>Department Code (Optional)</label>
-                <input
-                  type="text"
-                  value={newDeptForm.code}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, code: e.target.value })}
-                  placeholder="e.g. DES, DEV, QA, HR"
-                  className={inputCls}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className={labelCls}>Description (Optional)</label>
-                <textarea
-                  value={newDeptForm.description}
-                  onChange={(e) => setNewDeptForm({ ...newDeptForm, description: e.target.value })}
-                  placeholder="Brief summary of department responsibilities..."
-                  className={`${inputCls} h-20 resize-none`}
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAddDeptModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={newDeptLoading}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 disabled:opacity-70"
-              >
-                {newDeptLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Create Department
-              </button>
             </div>
           </form>
         </div>
@@ -1222,6 +1379,84 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── QUICK ADD DEPARTMENT MODAL (NESTED ON TOP) ────────────────── */}
+      {showAddDeptModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <form
+            onSubmit={handleCreateDepartmentSubmit}
+            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-xs"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-black text-slate-900">Add New Department</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddDeptModal(false)}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className={labelCls}>Department Name *</label>
+                <input
+                  type="text"
+                  value={newDeptForm.name}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, name: e.target.value })}
+                  placeholder="e.g. Design, Development, QA, HR"
+                  className={inputCls}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className={labelCls}>Department Code (Optional)</label>
+                <input
+                  type="text"
+                  value={newDeptForm.code}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, code: e.target.value })}
+                  placeholder="e.g. DES, DEV, QA, HR"
+                  className={inputCls}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className={labelCls}>Description (Optional)</label>
+                <textarea
+                  value={newDeptForm.description}
+                  onChange={(e) => setNewDeptForm({ ...newDeptForm, description: e.target.value })}
+                  placeholder="Brief summary of department responsibilities..."
+                  className={`${inputCls} h-20 resize-none`}
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddDeptModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={newDeptLoading}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 disabled:opacity-70"
+              >
+                {newDeptLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Create Department
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

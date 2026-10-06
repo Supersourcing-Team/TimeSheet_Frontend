@@ -329,28 +329,28 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950 via-indigo-900 to-slate-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-400" />
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Users className="w-6 h-6 text-sky-600" />
             <span>Project Resource Allocation</span>
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
-            Assign team engineers & allocate software tools configured in the master catalog.
+          <p className="text-xs text-slate-500 mt-1">
+            Assign team engineers &amp; allocate software tools configured in the master catalog.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowAssignModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-4 h-4 text-sky-600" />
             <span>Assign Employee</span>
           </button>
           <button
             onClick={() => setShowToolModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Wrench className="w-4 h-4" />
             <span>Allocate Tool</span>

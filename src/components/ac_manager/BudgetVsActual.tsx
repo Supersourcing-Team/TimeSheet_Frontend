@@ -73,18 +73,18 @@ export const BudgetVsActual: React.FC<BudgetVsActualProps> = ({ projects }) => {
   return (
     <div className="space-y-6 text-slate-800">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2.5">
-            <TrendingUp className="w-6 h-6 text-indigo-300" />
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <TrendingUp className="w-6 h-6 text-sky-600" />
             <span>Budget vs Actual Cost Analysis</span>
           </h1>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-slate-500">
             Real-time tracking of contract allocations against actual labor and software overhead expenses.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-500/30 text-xs font-bold backdrop-blur-xs">
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold">
             {safeProjects.length} Active Portfolios
           </span>
         </div>

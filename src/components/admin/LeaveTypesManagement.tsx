@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LeaveTypeConfig } from '../../types';
+import { useGetKekaLeaveTypesQuery } from '../../store/api/dataApi';
 import {
   CalendarX,
   Plus,
@@ -9,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Layers,
 } from 'lucide-react';
 
 interface LeaveTypesManagementProps {
@@ -26,6 +28,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   onToggleLeaveTypeStatus,
   onShowToast,
 }) => {
+  const { data: kekaLeaveTypes = [] } = useGetKekaLeaveTypesQuery();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingType, setEditingType] = useState<LeaveTypeConfig | null>(null);
@@ -35,12 +38,14 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   const [code, setCode] = useState('');
   const [allocatedHours, setAllocatedHours] = useState<number | undefined>(undefined);
   const [description, setDescription] = useState('');
+  const [kekaLeaveTypeId, setKekaLeaveTypeId] = useState('');
 
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
   const [editAllocatedHours, setEditAllocatedHours] = useState<number | undefined>(undefined);
   const [editDescription, setEditDescription] = useState('');
+  const [editKekaLeaveTypeId, setEditKekaLeaveTypeId] = useState('');
 
   const filteredTypes = (leaveTypes || []).filter(
     (lt) =>
@@ -65,6 +70,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       status: 'active',
       description,
       requiresDocument: false,
+      keka_leave_type_id: kekaLeaveTypeId || undefined,
     });
 
     onShowToast('Leave Type Created', `Added "${name} (${code.toUpperCase()})" to policies`, 'success');
@@ -73,6 +79,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     setCode('');
     setDescription('');
     setAllocatedHours(undefined);
+    setKekaLeaveTypeId('');
   };
 
   const handleOpenEdit = (lt: LeaveTypeConfig) => {
@@ -81,6 +88,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     setEditCode(lt.code);
     setEditAllocatedHours(lt.allocatedHours);
     setEditDescription(lt.description);
+    setEditKekaLeaveTypeId(lt.keka_leave_type_id || '');
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -93,6 +101,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       code: editCode.toUpperCase(),
       allocatedHours: editAllocatedHours,
       description: editDescription,
+      keka_leave_type_id: editKekaLeaveTypeId || undefined,
     });
 
     onShowToast('Leave Type Updated', `Updated policy details for ${editName}`, 'success');
@@ -102,20 +111,20 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans">
       {/* Header */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-            <CalendarX className="w-5 h-5 text-blue-600" />
-            <span>Leave Type Management & Entitlement Rules</span>
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <CalendarX className="w-6 h-6 text-sky-600" />
+            <span>Leave Type Management &amp; Entitlement Rules</span>
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Configure leave categories. In accordance with policy, leave types can be activated or deactivated, but not deleted.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] shrink-0"
+          className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create Leave Type</span>
@@ -200,6 +209,13 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                         {lt.allocatedHours} hrs
                       </span>
                     ) : null}
+
+                    {lt.keka_leave_type_id && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                        <Layers className="w-3 h-3" />
+                        Keka Mapped
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -316,6 +332,28 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                   required
                 />
               </div>
+
+              <div className="space-y-1">
+                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                  <span>Keka Leave Type Mapping (Optional)</span>
+                  <span className="text-blue-600 font-bold lowercase">auto-sync</span>
+                </label>
+                <select
+                  value={kekaLeaveTypeId}
+                  onChange={(e) => setKekaLeaveTypeId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">-- No Keka Mapping --</option>
+                  {kekaLeaveTypes.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name} ({k.code || k.id.substring(0, 8)})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400">
+                  When linked, approved leaves under this policy will be synchronized to Keka HR.
+                </p>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
@@ -408,6 +446,28 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                  <span>Keka Leave Type Mapping (Optional)</span>
+                  <span className="text-blue-600 font-bold lowercase">auto-sync</span>
+                </label>
+                <select
+                  value={editKekaLeaveTypeId}
+                  onChange={(e) => setEditKekaLeaveTypeId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">-- No Keka Mapping --</option>
+                  {kekaLeaveTypes.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name} ({k.code || k.id.substring(0, 8)})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400">
+                  Select which Keka Leave Type corresponds to this policy.
+                </p>
               </div>
             </div>
 

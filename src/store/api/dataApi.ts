@@ -13,6 +13,21 @@ import {
   UtilizationDashboardData,
   EmployeeUtilizationData,
   MilestoneUtilizationData,
+  KekaStatusData,
+  KekaTestConnectionResult,
+  KekaMappingPreviewData,
+  KekaMappingPreviewItem,
+  KekaEmployeeMappingItem,
+  KekaLeaveTypeItem,
+  KekaAttendanceRecord,
+  KekaAttendanceExceptionsData,
+  KekaEmployeeCreatePayload,
+  KekaJobDetailsUpdatePayload,
+  KekaEmployeeExitPayload,
+  KekaTimeEntryPayload,
+  KekaWFHCreatePayload,
+  KekaODCreatePayload,
+  KekaSyncSummary,
 } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -795,6 +810,7 @@ export const dataApi = apiSlice.injectEndpoints({
           description: lt.description,
           requiresDocument: lt.requires_document,
           status: lt.is_active ? 'active' : 'inactive',
+          keka_leave_type_id: lt.keka_leave_type_id || undefined,
         }));
       },
       providesTags: ['LeaveType'],
@@ -811,6 +827,7 @@ export const dataApi = apiSlice.injectEndpoints({
           is_paid: body.isPaid,
           requires_document: body.requiresDocument,
           description: body.description,
+          keka_leave_type_id: (body as any).keka_leave_type_id || null,
         }
       }),
       invalidatesTags: ['LeaveType'],
@@ -828,6 +845,7 @@ export const dataApi = apiSlice.injectEndpoints({
           requires_document: body.requiresDocument,
           description: body.description,
           is_active: body.status !== undefined ? body.status === 'active' : undefined,
+          keka_leave_type_id: body.keka_leave_type_id !== undefined ? body.keka_leave_type_id : undefined,
         }
       }),
       invalidatesTags: ['LeaveType'],
@@ -1022,6 +1040,221 @@ export const dataApi = apiSlice.injectEndpoints({
         },
       providesTags: ['Timesheet'],
     }),
+
+    // -----------------------------------------------------------------------
+    // Keka Integration Endpoints
+    // -----------------------------------------------------------------------
+    getKekaStatus: builder.query<KekaStatusData, void>({
+      query: () => '/keka/status',
+      transformResponse: (res: any) => res.data || res,
+      providesTags: ['Keka'],
+    }),
+
+    testKekaConnection: builder.mutation<KekaTestConnectionResult, void>({
+      query: () => ({ url: '/keka/test-connection', method: 'GET' }),
+      transformResponse: (res: any) => res.data || res,
+    }),
+
+    clearKekaTokenCache: builder.mutation<{ cleared: boolean }, void>({
+      query: () => ({ url: '/keka/clear-token-cache', method: 'POST' }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka'],
+    }),
+
+    getKekaMappingPreview: builder.query<KekaMappingPreviewData, void>({
+      query: () => '/keka/employees/mapping-preview',
+      transformResponse: (res: any) =>
+        res.data || {
+          total_keka_employees: 0,
+          summary: { mapped: 0, local_match: 0, unmapped: 0, conflict: 0 },
+          items: [],
+        },
+      providesTags: ['Keka'],
+    }),
+
+    getKekaMappings: builder.query<{ total: number; items: KekaEmployeeMappingItem[] }, { skip?: number; limit?: number } | void>({
+      query: (params) => {
+        const p = params || {};
+        const skip = p.skip ?? 0;
+        const limit = p.limit ?? 200;
+        return `/keka/mappings/employees?skip=${skip}&limit=${limit}`;
+      },
+      transformResponse: (res: any) => res.data || { total: 0, items: [] },
+      providesTags: ['Keka'],
+    }),
+
+    saveKekaMapping: builder.mutation<KekaEmployeeMappingItem, { keka_employee_id: string; local_user_id: number; keka_employee_number?: string | null }>({
+      query: (body) => ({
+        url: '/keka/mappings/employees',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    deleteKekaMapping: builder.mutation<{ keka_employee_id: string; deleted: boolean }, string>({
+      query: (keka_employee_id) => ({
+        url: `/keka/mappings/employees/${keka_employee_id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    autoSyncKekaMappings: builder.mutation<{ mapped_count: number; skipped_count: number; total_evaluated: number; mapped_items: any[] }, void>({
+      query: () => ({
+        url: '/keka/mappings/auto-sync',
+        method: 'POST',
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    getKekaLeaveTypes: builder.query<KekaLeaveTypeItem[], void>({
+      query: () => '/keka/leave-types',
+      transformResponse: (res: any) => res.data || [],
+      providesTags: ['Keka'],
+    }),
+
+    getKekaLeaveSyncStatus: builder.query<{ local_leave_id: number; synced_to_keka: boolean; keka_leave_request_id?: string; last_synced_at?: string; last_sync_error?: string }, number>({
+      query: (id) => `/keka/leave-requests/${id}/sync-status`,
+      transformResponse: (res: any) => res.data || res,
+      providesTags: ['LeaveRequest'],
+    }),
+
+    syncLeaveToKeka: builder.mutation<{ success: boolean; synced: boolean; message: string; keka_leave_request_id?: string }, { local_leave_id: number | string; keka_leave_type_id?: string } | number | string>({
+      query: (arg) => {
+        const local_leave_id = typeof arg === 'object' && arg !== null ? (arg as any).local_leave_id : arg;
+        const keka_leave_type_id = typeof arg === 'object' && arg !== null ? (arg as any).keka_leave_type_id : undefined;
+        return {
+          url: `/keka/leave-requests/${local_leave_id}/sync${keka_leave_type_id ? `?keka_leave_type_id=${keka_leave_type_id}` : ''}`,
+          method: 'POST',
+        };
+      },
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['LeaveRequest'],
+    }),
+
+    getKekaAttendance: builder.query<KekaAttendanceRecord[], { from: string; to: string; employee_id?: string }>({
+      query: ({ from, to, employee_id }) =>
+        `/keka/attendance?from=${from}&to=${to}${employee_id ? `&employee_id=${employee_id}` : ''}`,
+      transformResponse: (res: any) => res.data || [],
+      providesTags: ['Keka'],
+    }),
+
+    getKekaAttendanceExceptions: builder.query<KekaAttendanceExceptionsData, string | void>({
+      query: (date) => (date ? `/keka/attendance/exceptions?date=${date}` : '/keka/attendance/exceptions'),
+      transformResponse: (res: any) =>
+        res.data || {
+          date: '',
+          total_evaluated: 0,
+          exceptions_count: 0,
+          missing_punch_count: 0,
+          absent_without_leave_count: 0,
+          items: [],
+        },
+      providesTags: ['Keka'],
+    }),
+
+    createKekaEmployee: builder.mutation<any, KekaEmployeeCreatePayload>({
+      query: (body) => ({
+        url: '/keka/employees',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    updateKekaJobDetails: builder.mutation<any, KekaJobDetailsUpdatePayload>({
+      query: (body) => ({
+        url: '/keka/employees/jobdetails',
+        method: 'PUT',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    createKekaExitRequest: builder.mutation<any, { employee_id: string; body: KekaEmployeeExitPayload }>({
+      query: ({ employee_id, body }) => ({
+        url: `/keka/employees/${employee_id}/exit`,
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    pushKekaTimeEntry: builder.mutation<any, KekaTimeEntryPayload>({
+      query: (body) => ({
+        url: '/keka/attendance/timeentry',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka'],
+    }),
+
+    createKekaWFH: builder.mutation<any, KekaWFHCreatePayload>({
+      query: (body) => ({
+        url: '/keka/wfh',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka'],
+    }),
+
+    createKekaOD: builder.mutation<any, KekaODCreatePayload>({
+      query: (body) => ({
+        url: '/keka/od',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka'],
+    }),
+
+    syncKekaEmployees: builder.mutation<KekaSyncSummary, { update_existing?: boolean; create_missing?: boolean } | void>({
+      query: (params) => {
+        const p = params || {};
+        return {
+          url: `/keka/sync/employees?update_existing=${p.update_existing ?? true}&create_missing=${p.create_missing ?? true}`,
+          method: 'POST',
+        };
+      },
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'User'],
+    }),
+
+    syncKekaDepartments: builder.mutation<KekaSyncSummary, void>({
+      query: () => ({
+        url: '/keka/sync/departments',
+        method: 'POST',
+      }),
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'Department'],
+    }),
+
+    syncKekaHolidays: builder.mutation<KekaSyncSummary, { calendar_id?: string } | void>({
+      query: (params) => {
+        const p = params || {};
+        return {
+          url: `/keka/sync/holidays${p.calendar_id ? `?calendar_id=${p.calendar_id}` : ''}`,
+          method: 'POST',
+        };
+      },
+      transformResponse: (res: any) => res.data || res,
+      invalidatesTags: ['Keka', 'Holiday'],
+    }),
+
+    getKekaUpdateFields: builder.query<any, void>({
+      query: () => '/keka/employees/updatefields',
+      transformResponse: (res: any) => res.data || res,
+      providesTags: ['Keka'],
+    }),
   }),
 });
 
@@ -1115,6 +1348,30 @@ export const {
   useGetMilestoneUtilizationQuery,
   useGetDailyEodPreviewQuery,
   useSendDailyEodToSlackMutation,
+  // Keka Integration
+  useGetKekaStatusQuery,
+  useTestKekaConnectionMutation,
+  useClearKekaTokenCacheMutation,
+  useGetKekaMappingPreviewQuery,
+  useGetKekaMappingsQuery,
+  useSaveKekaMappingMutation,
+  useDeleteKekaMappingMutation,
+  useAutoSyncKekaMappingsMutation,
+  useGetKekaLeaveTypesQuery,
+  useGetKekaLeaveSyncStatusQuery,
+  useSyncLeaveToKekaMutation,
+  useGetKekaAttendanceQuery,
+  useGetKekaAttendanceExceptionsQuery,
+  useCreateKekaEmployeeMutation,
+  useUpdateKekaJobDetailsMutation,
+  useCreateKekaExitRequestMutation,
+  usePushKekaTimeEntryMutation,
+  useCreateKekaWFHMutation,
+  useCreateKekaODMutation,
+  useSyncKekaEmployeesMutation,
+  useSyncKekaDepartmentsMutation,
+  useSyncKekaHolidaysMutation,
+  useGetKekaUpdateFieldsQuery,
 } = dataApi;
 
 

@@ -314,12 +314,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     <>
       <div className="w-full space-y-6 text-slate-900 font-sans pb-12">
         {/* Header Bar */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <h2 className="text-2xl font-black tracking-tight">
+        <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
               {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
             </h2>
-            <p className="text-xs text-blue-100/90 max-w-3xl leading-relaxed">
+            <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
               {editingEntry
                 ? 'Update your daily logged work hours and descriptions.'
                 : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
@@ -330,10 +330,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <button
               type="button"
               onClick={() => setShowMarkLeaveModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-extrabold shadow-md shadow-rose-900/30 transition-all hover:scale-[1.02] active:scale-95 shrink-0 cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all shrink-0 cursor-pointer"
             >
               <CalendarX className="w-4 h-4" />
-              Mark Leave
+              <span>Mark Leave</span>
             </button>
           )}
         </div>
@@ -438,7 +438,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     ((totalBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
                   )}%`,
                 }}
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 rounded-l-full"
+                className="h-full bg-emerald-500 transition-all duration-300"
                 title={`Billable: ${totalBillable.toFixed(1)}h`}
               />
               <div
@@ -451,7 +451,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     ((totalNonBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
                   )}%`,
                 }}
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
+                className="h-full bg-sky-600 transition-all duration-300"
                 title={`Non-Billable: ${totalNonBillable.toFixed(1)}h`}
               />
             </div>

@@ -87,16 +87,17 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md flex items-center justify-between">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <FolderKanban className="w-6 h-6 text-sky-600" />
             <span>My Assigned Projects</span>
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
-            View project scopes, milestones & deliverables, allocated tools, and PM contacts.
+          <p className="text-xs text-slate-500 mt-1">
+            View project scopes, milestones &amp; deliverables, allocated tools, and PM contacts.
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-bold">
+        <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold">
           {myProjects.length} Active Assignments
         </span>
       </div>
@@ -163,9 +164,9 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                         {achievedCount}/{milestones.length} Completed ({overallProgress}%)
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-slate-200 overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+                        className="h-full bg-sky-600 transition-all duration-500"
                         style={{ width: `${Math.min(100, Math.max(0, overallProgress))}%` }}
                       />
                     </div>

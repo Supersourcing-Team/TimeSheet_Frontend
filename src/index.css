@@ -1,6 +1,228 @@
 @import "tailwindcss";
 
-/* Remove browser default up/down counter spinners on number inputs */
+@theme {
+  --color-background: oklch(0.975 0.008 233);
+  --color-foreground: oklch(0.22 0.038 246);
+  --color-card: oklch(1 0 0);
+  --color-primary: oklch(0.59 0.18 238);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary: oklch(0.94 0.028 230);
+  --color-secondary-foreground: oklch(0.31 0.1 236);
+  --color-muted: oklch(0.955 0.008 232);
+  --color-muted-foreground: oklch(0.52 0.027 241);
+  --color-accent: oklch(0.94 0.028 230);
+  --color-border: oklch(0.9 0.015 234);
+  --color-ring: oklch(0.59 0.18 238);
+  --color-surface: oklch(0.985 0.005 230);
+  --sky-soft: oklch(0.94 0.035 233);
+  --sky-deep: oklch(0.37 0.11 245);
+  --color-success: oklch(0.5 0.12 163);
+  --color-warning: oklch(0.57 0.13 73);
+  --color-destructive: oklch(0.57 0.19 25);
+
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Global Color Re-mapping for Sky Blue & White Palette */
+  --color-blue-50: oklch(0.97 0.02 233);
+  --color-blue-100: oklch(0.94 0.035 233);
+  --color-blue-200: oklch(0.9 0.05 235);
+  --color-blue-300: oklch(0.8 0.1 236);
+  --color-blue-400: oklch(0.7 0.15 237);
+  --color-blue-500: oklch(0.63 0.17 238);
+  --color-blue-600: oklch(0.59 0.18 238);
+  --color-blue-700: oklch(0.48 0.15 240);
+  --color-blue-800: oklch(0.37 0.11 245);
+  --color-blue-900: oklch(0.26 0.06 246);
+  --color-blue-950: oklch(0.22 0.038 246);
+
+  --color-sky-50: oklch(0.97 0.02 233);
+  --color-sky-100: oklch(0.94 0.035 233);
+  --color-sky-200: oklch(0.9 0.05 235);
+  --color-sky-300: oklch(0.8 0.1 236);
+  --color-sky-400: oklch(0.7 0.15 237);
+  --color-sky-500: oklch(0.63 0.17 238);
+  --color-sky-600: oklch(0.59 0.18 238);
+  --color-sky-700: oklch(0.48 0.15 240);
+  --color-sky-800: oklch(0.37 0.11 245);
+  --color-sky-900: oklch(0.26 0.06 246);
+  --color-sky-950: oklch(0.22 0.038 246);
+
+  --color-indigo-50: oklch(0.97 0.02 233);
+  --color-indigo-100: oklch(0.94 0.035 233);
+  --color-indigo-200: oklch(0.9 0.05 235);
+  --color-indigo-400: oklch(0.7 0.15 237);
+  --color-indigo-500: oklch(0.63 0.17 238);
+  --color-indigo-600: oklch(0.59 0.18 238);
+  --color-indigo-700: oklch(0.48 0.15 240);
+  --color-indigo-800: oklch(0.37 0.11 245);
+  --color-indigo-900: oklch(0.26 0.06 246);
+  --color-indigo-950: oklch(0.22 0.038 246);
+
+  --color-purple-50: oklch(0.97 0.02 233);
+  --color-purple-100: oklch(0.94 0.035 233);
+  --color-purple-600: oklch(0.59 0.18 238);
+  --color-purple-700: oklch(0.37 0.11 245);
+
+  --color-slate-50: oklch(0.985 0.005 230);
+  --color-slate-100: oklch(0.955 0.008 232);
+  --color-slate-200: oklch(0.9 0.015 234);
+  --color-slate-300: oklch(0.85 0.02 235);
+  --color-slate-400: oklch(0.65 0.025 240);
+  --color-slate-500: oklch(0.52 0.027 241);
+  --color-slate-600: oklch(0.42 0.03 243);
+  --color-slate-700: oklch(0.32 0.035 245);
+  --color-slate-800: oklch(0.26 0.038 246);
+  --color-slate-900: oklch(0.22 0.038 246);
+  --color-slate-950: oklch(0.18 0.038 246);
+}
+
+:root {
+  --background: oklch(0.975 0.008 233);        /* near-white with cool tint */
+  --foreground: oklch(0.22 0.038 246);         /* dark navy text */
+  --card: oklch(1 0 0);                        /* pure white cards */
+  --primary: oklch(0.59 0.18 238);             /* sky blue — buttons, links, active states */
+  --primary-foreground: oklch(1 0 0);          /* white text on sky blue */
+  --secondary: oklch(0.94 0.028 230);          /* soft sky-blue tint for secondary buttons */
+  --secondary-foreground: oklch(0.31 0.1 236);
+  --muted: oklch(0.955 0.008 232);
+  --muted-foreground: oklch(0.52 0.027 241);   /* secondary text */
+  --accent: oklch(0.94 0.028 230);
+  --border: oklch(0.9 0.015 234);
+  --ring: oklch(0.59 0.18 238);
+  --surface: oklch(0.985 0.005 230);
+  --sky-soft: oklch(0.94 0.035 233);           /* light sky-blue fills, selected rows */
+  --sky-deep: oklch(0.37 0.11 245);            /* dark sky-blue for emphasis text */
+  --success: oklch(0.5 0.12 163);
+  --warning: oklch(0.57 0.13 73);
+  --destructive: oklch(0.57 0.19 25);
+  --radius: 0px !important;
+}
+
+/* ── 1. RECTANGULAR EVERYWHERE: Remove ALL rounded corners ── */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* ── 2. GLOBAL TYPOGRAPHY ── */
+html,
+body,
+#root {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings (h1–h6, nav brand, stat numbers, buttons): Space Grotesk (400-700) */
+h1, h2, h3, h4, h5, h6,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+[role="button"],
+.nav-brand,
+.font-heading,
+.stat-number,
+nav a,
+nav button {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+/* Body text, labels, inputs, tables in DM Sans */
+p,
+span,
+label,
+input,
+textarea,
+select,
+table,
+th,
+td,
+li,
+a,
+div {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Re-assert Space Grotesk on nested heading and button spans */
+h1 span, h2 span, h3 span, h4 span, h5 span, h6 span,
+button span,
+[role="button"] span {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* ── 3. FLAT FILLS (NO GRADIENTS) ── */
+[class*="bg-gradient-"],
+[class*="from-"],
+[class*="via-"],
+[class*="to-"] {
+  background-image: none !important;
+}
+
+/* ── 4. FOCUS STATES ── */
+*:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
+
+/* ── 5. CARDS & SURFACES ── */
+.bg-white {
+  background-color: var(--card) !important;
+}
+
+[class*="shadow-"],
+[class*="rounded-"] {
+  box-shadow: none !important;
+}
+
+/* Modals & Popovers rectangular with 1px border */
+[role="dialog"],
+.modal-container {
+  border-radius: 0 !important;
+  border: 1px solid var(--border) !important;
+  background-color: var(--card) !important;
+}
+
+/* ── 6. SIDEBAR CLEAN WHITE STYLING ── */
+aside {
+  background-color: #ffffff !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+aside button {
+  background-color: transparent !important;
+  color: var(--foreground) !important;
+  border: none !important;
+}
+
+aside button:hover {
+  background-color: var(--muted) !important;
+}
+
+aside button.active-nav-item,
+aside button[data-active="true"] {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+aside button.active-nav-item span,
+aside button[data-active="true"] span,
+aside button.active-nav-item div,
+aside button[data-active="true"] div {
+  color: #ffffff !important;
+}
+
+/* ── 7. NUMBER INPUTS ── */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -10,4 +232,20 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* ── 8. SCROLLBARS ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 0 !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }

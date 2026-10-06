@@ -393,7 +393,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Capacity & Utilization */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-sky-600" />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -412,7 +412,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                  className="h-full rounded-full bg-sky-600 transition-all duration-500"
                   style={{ width: `${Math.min(100, Math.max(0, capacity.employee_utilization_pct))}%` }}
                 />
               </div>
@@ -534,8 +534,8 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
           <div
             className={`absolute top-0 left-0 right-0 h-1 ${
               forecast.projected_overrun > 0
-                ? 'bg-gradient-to-r from-rose-500 to-red-500'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                ? 'bg-rose-500'
+                : 'bg-emerald-500'
             }`}
           />
           <div className="space-y-2">

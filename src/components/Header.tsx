@@ -225,7 +225,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-blue-600 text-white text-[9px] font-bold leading-none">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold leading-none z-10">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}

@@ -695,22 +695,20 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       {!selectedProject && (
         <>
           {/* Top Header & Search Bar */}
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="relative z-10">
-              <h1 className="text-2xl font-black text-white-900 flex items-center gap-3">
-
+          <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <Briefcase className="w-6 h-6 text-sky-600" />
                 <span>My Projects Management</span>
               </h1>
-              <p className="text-xs text-white-500 mt-2 font-medium max-w-xl leading-relaxed">
-                Manage active projects, assign team members, allocate project tools & services, and review project timesheets.
+              <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                Manage active projects, assign team members, allocate project tools &amp; services, and review project timesheets.
               </p>
             </div>
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 relative z-10 self-start md:self-auto"
+              className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer self-start md:self-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Create New Project</span>

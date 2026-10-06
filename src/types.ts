@@ -64,6 +64,7 @@ export interface LeaveTypeConfig {
   description: string;
   requiresDocument?: boolean;
   allocatedHours?: number;
+  keka_leave_type_id?: string;
 }
 
 export interface WorkingCalendarConfig {
@@ -409,5 +410,191 @@ export interface MilestoneUtilizationRow {
 export interface MilestoneUtilizationData {
   milestones: MilestoneUtilizationRow[];
   total_count: number;
+}
+
+// ---------------------------------------------------------------------------
+// Keka Integration Types
+// ---------------------------------------------------------------------------
+
+export interface KekaStatusData {
+  is_configured: boolean;
+  company_name: string | null;
+  environment: 'production' | 'sandbox' | string;
+  token_endpoint: string;
+  has_client_id: boolean;
+  has_client_secret: boolean;
+  has_api_key: boolean;
+  is_token_cached: boolean;
+}
+
+export interface KekaTestConnectionResult {
+  status: 'connected' | 'unconfigured' | 'error' | string;
+  message: string;
+  company?: string;
+  environment?: string;
+  token_endpoint?: string;
+  api_base_url?: string;
+  total_records_in_keka?: number;
+  sample_count?: number;
+  sample_employees?: Array<{
+    id: string;
+    employeeNumber?: string;
+    displayName?: string;
+    email?: string;
+    department?: string;
+  }>;
+}
+
+export interface KekaMappingPreviewItem {
+  keka_employee_id: string;
+  keka_employee_number: string | null;
+  keka_name: string | null;
+  keka_email: string | null;
+  keka_department: string | null;
+  keka_job_title: string | null;
+  status: 'mapped' | 'local_match' | 'unmapped' | 'conflict';
+  matched_local_user_id: number | null;
+  matched_local_user_email: string | null;
+  matched_local_user_name: string | null;
+  matched_by: 'existing_mapping' | 'email' | 'employee_number' | string | null;
+  reason: string;
+}
+
+export interface KekaMappingPreviewData {
+  total_keka_employees: number;
+  summary: {
+    mapped: number;
+    local_match: number;
+    unmapped: number;
+    conflict: number;
+  };
+  items: KekaMappingPreviewItem[];
+}
+
+export interface KekaEmployeeMappingItem {
+  id: number;
+  keka_employee_id: string;
+  local_user_id: number;
+  keka_employee_number: string | null;
+  last_synced_at: string | null;
+  sync_status: string;
+  created_at: string;
+  updated_at: string;
+  local_user_email: string | null;
+  local_user_name: string | null;
+}
+
+export interface KekaLeaveTypeItem {
+  id: string;
+  name: string;
+  code: string | null;
+  description: string | null;
+}
+
+export interface KekaAttendanceRecord {
+  keka_employee_id: string;
+  keka_employee_number: string | null;
+  keka_employee_name: string;
+  date: string;
+  status: string;
+  first_in: string | null;
+  last_out: string | null;
+  effective_hours: number;
+  gross_hours: number;
+  is_mapped: boolean;
+  local_user_id: number | null;
+  local_user_name: string | null;
+  local_user_email: string | null;
+  is_missing_punch: boolean;
+  is_absent_without_leave: boolean;
+  exception_type?: 'missing_punch' | 'absent_without_leave' | string;
+  exception_note?: string;
+}
+
+export interface KekaAttendanceExceptionsData {
+  date: string;
+  total_evaluated: number;
+  exceptions_count: number;
+  missing_punch_count: number;
+  absent_without_leave_count: number;
+  items: KekaAttendanceRecord[];
+}
+
+export interface KekaEmployeeCreatePayload {
+  employeeNumber: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  displayName?: string;
+  email: string;
+  mobileNumber?: string;
+  gender?: number; // 0: Unspecified, 1: Male, 2: Female, 3: Other
+  dateOfBirth?: string;
+  dateJoined: string;
+  department?: string;
+  businessUnit?: string;
+  jobTitle?: string;
+  secondaryJobTitle?: string;
+  location?: string;
+  legalEntity?: string;
+  nationality?: string;
+}
+
+export interface KekaJobDetailsUpdatePayload {
+  user_id?: number;
+  employeeId?: string;
+  jobTitle?: string;
+  secondaryJobTitle?: string;
+  department?: string;
+  businessUnit?: string;
+  location?: string;
+  reportsToEmail?: string;
+}
+
+export interface KekaEmployeeExitPayload {
+  exitType: number; // 0: Voluntary, 1: Involuntary, 2: Retirement, 3: Death
+  exitReason?: string;
+  resignationDate?: string;
+  lastWorkingDate: string;
+  isOkToRehire?: boolean;
+  comments?: string;
+}
+
+export interface KekaTimeEntryPayload {
+  user_id?: number;
+  timestamp: string;
+  punchStatus?: number; // 0: In, 1: Out, 2: BreakIn, 3: BreakOut, 99: Other
+  employeeIdentifier?: string;
+}
+
+export interface KekaWFHCreatePayload {
+  user_id?: number;
+  employeeId?: string;
+  fromDate: string;
+  toDate: string;
+  fromSession?: number;
+  toSession?: number;
+  note?: string;
+}
+
+export interface KekaODCreatePayload {
+  user_id?: number;
+  employeeId?: string;
+  fromDate: string;
+  toDate: string;
+  fromSession?: number;
+  toSession?: number;
+  note?: string;
+}
+
+export interface KekaSyncSummary {
+  status: string;
+  message: string;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  synced?: number;
+  total?: number;
+  synced_at?: string;
 }
 

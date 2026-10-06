@@ -56,87 +56,6 @@ export function mapBackendUserToFrontendUser(backendUser: any): User {
   };
 }
 
-export interface AuthSuccessData {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  user: User;
-}
-
-export async function loginWithGoogleApi(credential: string): Promise<AuthSuccessData> {
-  const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ credential }),
-  });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.success) {
-    const errorMsg = json.message || (json.errors && json.errors[0]?.msg) || 'Google SSO Login failed';
-    throw new Error(errorMsg);
-  }
-
-  const data = json.data;
-  const frontendUser = mapBackendUserToFrontendUser(data.user);
-
-  return {
-    user: frontendUser,
-  } as AuthSuccessData;
-}
-
-export async function fetchCurrentUserApi(): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.success) {
-    throw new Error(json.message || 'Session expired');
-  }
-
-  return mapBackendUserToFrontendUser(json.data);
-}
-
-export async function refreshAccessTokenApi(): Promise<AuthSuccessData> {
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const json = await response.json();
-
-  if (!response.ok || !json.success) {
-    throw new Error(json.message || 'Token refresh failed');
-  }
-
-  const data = json.data;
-  const frontendUser = mapBackendUserToFrontendUser(data.user);
-
-  return {
-    user: frontendUser,
-  } as AuthSuccessData;
-}
-
-export async function logoutApi(): Promise<void> {
-  try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-  } catch {
-    // Stateless logout ignore network errors
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Users API
 // ---------------------------------------------------------------------------
@@ -227,11 +146,6 @@ export async function fetchUsersApi(
   return handleResponse<PaginatedUsersResponse>(res);
 }
 
-export async function fetchUserByIdApi(userId: number): Promise<BackendUser> {
-  const res = await fetch(`${API_BASE_URL}/users/${userId}`, { credentials: 'include', headers: authHeader() });
-  return handleResponse<BackendUser>(res);
-}
-
 export async function createUserApi(payload: UserCreatePayload): Promise<BackendUser> {
   const res = await fetch(`${API_BASE_URL}/users`, {
     method: 'POST',
@@ -240,6 +154,16 @@ export async function createUserApi(payload: UserCreatePayload): Promise<Backend
     body: JSON.stringify(payload),
   });
   return handleResponse<BackendUser>(res);
+}
+
+export async function createKekaEmployeeApi(payload: any): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/keka/employees`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: authHeader(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<any>(res);
 }
 
 export async function updateUserApi(userId: number, payload: UserUpdatePayload): Promise<BackendUser> {
@@ -288,13 +212,6 @@ export interface DepartmentCreatePayload {
   description?: string;
 }
 
-export interface DepartmentUpdatePayload {
-  name?: string;
-  code?: string;
-  description?: string;
-  is_active?: boolean;
-}
-
 export async function fetchDepartmentsApi(activeOnly: boolean = true): Promise<BackendDepartment[]> {
   const res = await fetch(`${API_BASE_URL}/departments?active_only=${activeOnly}`, { credentials: 'include', headers: authHeader() });
   return handleResponse<BackendDepartment[]>(res);
@@ -303,16 +220,6 @@ export async function fetchDepartmentsApi(activeOnly: boolean = true): Promise<B
 export async function createDepartmentApi(payload: DepartmentCreatePayload): Promise<BackendDepartment> {
   const res = await fetch(`${API_BASE_URL}/departments`, {
     method: 'POST',
-    credentials: 'include',
-    headers: authHeader(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<BackendDepartment>(res);
-}
-
-export async function updateDepartmentApi(deptId: number, payload: DepartmentUpdatePayload): Promise<BackendDepartment> {
-  const res = await fetch(`${API_BASE_URL}/departments/${deptId}`, {
-    method: 'PUT',
     credentials: 'include',
     headers: authHeader(),
     body: JSON.stringify(payload),
