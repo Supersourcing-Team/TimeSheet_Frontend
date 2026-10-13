@@ -8,6 +8,22 @@ if (!API_BASE_URL) {
   );
 }
 
+export function getAttachmentUrl(filePath?: string): string {
+  if (!filePath) return '#';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  // If API_BASE_URL is relative (e.g., '/api/v1'), get origin, or relative path directly
+  if (API_BASE_URL.startsWith('http')) {
+    try {
+      const parsed = new URL(API_BASE_URL);
+      return `${parsed.origin}${cleanPath}`;
+    } catch {
+      return cleanPath;
+    }
+  }
+  return cleanPath;
+}
+
 export function mapBackendRoleToFrontendRole(backendRole: string): UserRole {
   const roleStr = (backendRole || '').toLowerCase();
   if (roleStr.includes('admin')) return 'admin';
@@ -86,6 +102,8 @@ export interface BackendUser {
   created_at: string;
   updated_at: string;
   role: { id: number; name: string; description: string | null; created_at: string };
+  is_keka_synced?: boolean;
+  keka_employee_id?: string | null;
 }
 
 export interface PaginatedUsersResponse {

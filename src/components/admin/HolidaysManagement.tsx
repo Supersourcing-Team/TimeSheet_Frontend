@@ -12,13 +12,15 @@ import {
   Search,
   Sparkles,
   Info,
+  AlertCircle,
 } from 'lucide-react';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface HolidaysManagementProps {
   holidays: HolidayItem[];
-  onAddHoliday: (holiday: Omit<HolidayItem, 'id'>) => void;
-  onUpdateHoliday: (updated: HolidayItem) => void;
-  onDeleteHoliday: (holidayId: string) => void;
+  onAddHoliday: (holiday: Omit<HolidayItem, 'id'>) => Promise<void | any> | void;
+  onUpdateHoliday: (updated: HolidayItem) => Promise<void | any> | void;
+  onDeleteHoliday: (holidayId: string) => Promise<void | any> | void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -53,6 +55,14 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
   const [editis_mandatory, setEditis_mandatory] = useState(true);
   const [editDescription, setEditDescription] = useState('');
 
+  // Async submission and error states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteHolidayConfirm, setDeleteHolidayConfirm] = useState<HolidayItem | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType]);
 
@@ -70,9 +80,10 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
 
   const paginatedHolidays = filteredHolidays.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !date) {
+      setAddError('Please enter holiday name and date.');
       onShowToast('Validation Error', 'Please enter holiday name and date.', 'error');
       return;
     }
@@ -81,21 +92,31 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    onAddHoliday({
-      name,
-      date,
-      month: months[dateObj.getMonth()],
-      day: String(dateObj.getDate()).padStart(2, '0'),
-      dayOfWeek: days[dateObj.getDay()],
-      type,
-      description,
-      is_mandatory,
-    });
+    setIsSubmitting(true);
+    setAddError(null);
 
-    onShowToast('Holiday Added', `Added "${name}" to organization holiday calendar`, 'success');
-    setShowAddModal(false);
-    setName('');
-    setDescription('');
+    try {
+      await onAddHoliday({
+        name,
+        date,
+        month: months[dateObj.getMonth()],
+        day: String(dateObj.getDate()).padStart(2, '0'),
+        dayOfWeek: days[dateObj.getDay()],
+        type,
+        description,
+        is_mandatory,
+      });
+
+      setShowAddModal(false);
+      setName('');
+      setDescription('');
+      setAddError(null);
+    } catch (err: any) {
+      const msg = err?.data?.detail || err?.message || 'Failed to add holiday';
+      setAddError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOpenEdit = (h: HolidayItem) => {
@@ -105,9 +126,10 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
     setEditType(h.type);
     setEditDescription(h.description || '');
     setEditis_mandatory(h.is_mandatory);
+    setEditError(null);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingHoliday) return;
 
@@ -115,20 +137,49 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    onUpdateHoliday({
-      ...editingHoliday,
-      name: editName,
-      date: editDate,
-      month: months[dateObj.getMonth()],
-      day: String(dateObj.getDate()).padStart(2, '0'),
-      dayOfWeek: days[dateObj.getDay()],
-      type: editType,
-      description: editDescription,
-      is_mandatory: editis_mandatory,
-    });
+    setIsEditing(true);
+    setEditError(null);
 
-    onShowToast('Holiday Updated', `Updated details for ${editName}`, 'success');
-    setEditingHoliday(null);
+    try {
+      await onUpdateHoliday({
+        ...editingHoliday,
+        name: editName,
+        date: editDate,
+        month: months[dateObj.getMonth()],
+        day: String(dateObj.getDate()).padStart(2, '0'),
+        dayOfWeek: days[dateObj.getDay()],
+        type: editType,
+        description: editDescription,
+        is_mandatory: editis_mandatory,
+      });
+
+      setEditingHoliday(null);
+      setEditError(null);
+    } catch (err: any) {
+      const msg = err?.data?.detail || err?.message || 'Failed to update holiday';
+      setEditError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = (holiday: HolidayItem) => {
+    if (deletingId) return;
+    setDeleteHolidayConfirm(holiday);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteHolidayConfirm || deletingId) return;
+    const holiday = deleteHolidayConfirm;
+    try {
+      setDeletingId(holiday.id);
+      await onDeleteHoliday(holiday.id);
+      setDeleteHolidayConfirm(null);
+    } catch {
+      // App.tsx shows error toast
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -172,7 +223,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
           </div>
 
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => { setShowAddModal(true); setAddError(null); }}
             className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -298,13 +349,13 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
                           <Edit2 className="w-3.5 h-3.5 text-blue-600" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(`Delete holiday "${holiday.name}"?`)) {
-                              onDeleteHoliday(holiday.id);
-                              onShowToast('Deleted', `Removed ${holiday.name}`, 'info');
-                            }
-                          }}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200"
+                          onClick={() => handleDelete(holiday)}
+                          disabled={deletingId === holiday.id}
+                          className={`p-1.5 rounded-lg border border-rose-200 transition-colors ${
+                            deletingId === holiday.id
+                              ? 'bg-rose-100 text-rose-400 cursor-not-allowed'
+                              : 'bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer'
+                          }`}
                           title="Delete Holiday"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -404,12 +455,20 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               <h3 className="text-base font-black text-slate-900">Add Holiday Entry</h3>
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
+                onClick={() => { setShowAddModal(false); setAddError(null); }}
+                disabled={isSubmitting}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {addError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{addError}</span>
+              </div>
+            )}
 
             <div className="space-y-3">
               <div className="space-y-1">
@@ -488,16 +547,22 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                onClick={() => { setShowAddModal(false); setAddError(null); }}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20"
+                disabled={isSubmitting}
+                className={`px-5 py-2 rounded-xl text-white font-bold shadow-md shadow-blue-600/20 transition-all ${
+                  isSubmitting
+                    ? 'bg-blue-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                }`}
               >
-                Add Holiday
+                {isSubmitting ? 'Adding...' : 'Add Holiday'}
               </button>
             </div>
           </form>
@@ -515,12 +580,20 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               <h3 className="text-base font-black text-slate-900">Edit Holiday Entry</h3>
               <button
                 type="button"
-                onClick={() => setEditingHoliday(null)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800"
+                onClick={() => { setEditingHoliday(null); setEditError(null); }}
+                disabled={isEditing}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {editError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{editError}</span>
+              </div>
+            )}
 
             <div className="space-y-3">
               <div className="space-y-1">
@@ -597,21 +670,39 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setEditingHoliday(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                onClick={() => { setEditingHoliday(null); setEditError(null); }}
+                disabled={isEditing}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20"
+                disabled={isEditing}
+                className={`px-5 py-2 rounded-xl text-white font-bold shadow-md shadow-blue-600/20 transition-all ${
+                  isEditing
+                    ? 'bg-blue-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                }`}
               >
-                Save Changes
+                {isEditing ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
         </div>
       )}
+
+      {/* Delete Holiday Confirmation Dialog */}
+      <ConfirmModal
+        isOpen={deleteHolidayConfirm !== null}
+        title="Delete Holiday"
+        message={`Are you sure you want to delete the holiday "${deleteHolidayConfirm?.name}" on ${deleteHolidayConfirm?.date}?`}
+        confirmText="Delete Holiday"
+        variant="danger"
+        isLoading={deletingId !== null}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteHolidayConfirm(null)}
+      />
     </div>
   );
 };

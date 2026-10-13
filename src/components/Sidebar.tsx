@@ -18,6 +18,7 @@ import {
   FileText,
   Layers,
   Network,
+  Settings,
 } from 'lucide-react';
 
 export type EmployeeTab =
@@ -53,7 +54,8 @@ export type AdminTab =
   | 'admin_holidays'
   | 'admin_leave_types'
   | 'admin_working_calendar'
-  | 'admin_keka';
+  | 'admin_keka'
+  | 'admin_settings';
 
 interface SidebarProps {
   portalMode: ActivePortalMode;
@@ -69,6 +71,8 @@ interface SidebarProps {
   pendingLeavesCount: number;
   pendingWeekendCount: number;
   onQuickAddTimesheet?: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = React.memo(({
@@ -84,6 +88,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   pendingTimesheetsCount,
   pendingLeavesCount,
   pendingWeekendCount,
+  mobileOpen = false,
+  onCloseMobile,
 }) => {
   const employeeNavItems: Array<{
     id: EmployeeTab;
@@ -272,11 +278,31 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         icon: Network,
         desc: 'HR API, Sync & Attendance',
       },
+      {
+        id: 'admin_settings',
+        label: 'System Settings',
+        icon: Settings,
+        desc: 'Organization & Notifications',
+      },
     ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
-      {/* Mode Indicator Banner */}
+    <>
+      {/* Mobile Drawer Backdrop */}
+      {mobileOpen && (
+        <div
+          role="presentation"
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden transition-opacity"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)] transition-transform duration-300 ease-in-out ${
+          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Mode Indicator Banner */}
       <div className="p-3 border-b border-slate-200 bg-white">
         <div className="p-2.5 bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -516,6 +542,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       {/* Sidebar Footer */}
       <div className="p-3 border-t border-slate-200 bg-white space-y-2"></div>
     </aside>
+  </>
   );
 });
 Sidebar.displayName = 'Sidebar';

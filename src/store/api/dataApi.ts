@@ -29,6 +29,7 @@ import {
   KekaODCreatePayload,
   KekaSyncSummary,
 } from '../../types';
+import { BackendUser } from '../../utils/api';
 
 // ---------------------------------------------------------------------------
 // Type representing a backend project-assignment (minimal shape)
@@ -124,7 +125,6 @@ const LEAVE_TYPE_MAP: Record<number, LeaveRequest['type']> = {
 };
 
 function mapBackendLeaveToFrontend(r: any): LeaveRequest {
-  // Resolve type from leave_type_id OR from nested leave_type.name
   const typeName = r.leave_type?.name ?? '';
   let type: LeaveRequest['type'] = 'Annual Leave';
   if (/sick/i.test(typeName)) type = 'Sick Leave';
@@ -134,7 +134,7 @@ function mapBackendLeaveToFrontend(r: any): LeaveRequest {
 
   const start = new Date(r.start_date);
   const end = new Date(r.end_date);
-  const daysCount = Math.max(
+  const daysCount = r.leave_duration_type === 'half_day' ? 0.5 : Math.max(
     1,
     Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
   );
@@ -155,11 +155,15 @@ function mapBackendLeaveToFrontend(r: any): LeaveRequest {
     appliedOn: r.created_at ? r.created_at.split('T')[0] : '',
     reviewedBy: r.manager ? `${r.manager.first_name} ${r.manager.last_name}` : undefined,
     reviewComment: r.rejection_reason ?? undefined,
-    // Inline leave fields
     leaveDurationType: r.leave_duration_type ?? undefined,
     halfDayPeriod: r.half_day_period ?? undefined,
     partialStartTime: r.partial_start_time ?? undefined,
     partialEndTime: r.partial_end_time ?? undefined,
+    kekaLeaveRequestId: r.keka_leave_request_id ?? undefined,
+    syncedToKeka: Boolean(r.synced_to_keka),
+    lastSyncError: r.last_sync_error ?? undefined,
+    lastSyncedAt: r.last_synced_at ?? undefined,
+    leaveTypeName: typeName || undefined,
   };
 }
 
@@ -417,17 +421,11 @@ export const dataApi = apiSlice.injectEndpoints({
     }),
 
     createTimesheets: builder.mutation<void, TimesheetCreatePayload[]>({
-      queryFn: async (entries, _api, _extraOptions, baseQuery) => {
-        for (const entry of entries) {
-          const result = await baseQuery({
-            url: '/timesheets',
-            method: 'POST',
-            body: entry,
-          });
-          if (result.error) return { error: result.error };
-        }
-        return { data: undefined };
-      },
+      query: (entries) => ({
+        url: '/timesheets/batch',
+        method: 'POST',
+        body: entries,
+      }),
       invalidatesTags: ['Timesheet'],
     }),
 
@@ -455,6 +453,24 @@ export const dataApi = apiSlice.injectEndpoints({
         url: `/timesheets/${id}`,
         method: 'DELETE',
       }),
+      invalidatesTags: ['Timesheet'],
+    }),
+
+    approveTimesheet: builder.mutation<TimesheetEntry, string>({
+      query: (id) => ({
+        url: `/timesheets/${id}/approve`,
+        method: 'PUT',
+      }),
+      transformResponse: (res: any) => mapBackendTimesheetToFrontend(res.data),
+      invalidatesTags: ['Timesheet'],
+    }),
+
+    rejectTimesheet: builder.mutation<TimesheetEntry, string>({
+      query: (id) => ({
+        url: `/timesheets/${id}/reject`,
+        method: 'PUT',
+      }),
+      transformResponse: (res: any) => mapBackendTimesheetToFrontend(res.data),
       invalidatesTags: ['Timesheet'],
     }),
 
@@ -553,30 +569,64 @@ export const dataApi = apiSlice.injectEndpoints({
       query: () => '/leave-balances/me',
       transformResponse: (res: any) => {
         const items: any[] = res.data || [];
+
         // Helper to find value by leave type name (case-insensitive)
-        const findDays = (namePattern: RegExp, field: 'allocated_days' | 'used_days') => {
+        const findDays = (namePattern: RegExp, field: 'allocated_days' | 'used_days' | 'annual_quota' | 'available_balance') => {
           const match = items.find((b) =>
-            namePattern.test(b.leave_type?.name ?? '')
+            namePattern.test(b.leave_type_name ?? b.leave_type?.name ?? '')
           );
-          return match ? (match[field] ?? 0) : 0;
+          if (!match) return 0;
+          if (field === 'allocated_days') {
+            return match.annual_quota ?? match.allocated_days ?? 0;
+          }
+          if (field === 'used_days') {
+            return match.used_days ?? 0;
+          }
+          return match[field] ?? 0;
         };
+
         // Fall back to leave_type_id when no name is available
         const findById = (id: number, field: 'allocated_days' | 'used_days') => {
           const match = items.find((b) => b.leave_type_id === id);
-          return match ? (match[field] ?? 0) : 0;
+          if (!match) return 0;
+          return field === 'allocated_days' ? (match.annual_quota ?? match.allocated_days ?? 0) : (match.used_days ?? 0);
         };
 
-        const hasNames = items.some((b) => b.leave_type?.name);
+        const hasNames = items.some((b) => Boolean(b.leave_type_name || b.leave_type?.name));
+        const firstItem = items[0];
+        const hasSyncError = items.find((b) => Boolean(b.sync_error));
+
+        const rawItems = items.map((b) => ({
+          id: Number(b.id),
+          userId: Number(b.user_id),
+          leaveTypeId: Number(b.leave_type_id),
+          leaveTypeName: b.leave_type_name ?? b.leave_type?.name,
+          kekaLeaveTypeId: b.keka_leave_type_id ?? undefined,
+          year: Number(b.year),
+          allocatedDays: Number(b.allocated_days ?? 0),
+          usedDays: Number(b.used_days ?? 0),
+          remainingDays: Number(b.remaining_days ?? 0),
+          availableBalance: b.available_balance !== undefined && b.available_balance !== null ? Number(b.available_balance) : undefined,
+          annualQuota: b.annual_quota !== undefined && b.annual_quota !== null ? Number(b.annual_quota) : undefined,
+          accruedDays: b.accrued_days !== undefined && b.accrued_days !== null ? Number(b.accrued_days) : undefined,
+          source: (b.source || 'local') as 'keka' | 'local',
+          isLive: Boolean(b.is_live),
+          syncError: b.sync_error || undefined,
+        }));
 
         return {
-          annualLeaveTotal: hasNames ? findDays(/annual|earned|privilege|el/i, 'allocated_days') : findById(3, 'allocated_days'),
-          annualLeaveUsed: hasNames ? findDays(/annual|earned|privilege|el/i, 'used_days') : findById(3, 'used_days'),
+          annualLeaveTotal: hasNames ? findDays(/annual|earned|privilege|el|casual/i, 'allocated_days') : findById(3, 'allocated_days'),
+          annualLeaveUsed: hasNames ? findDays(/annual|earned|privilege|el|casual/i, 'used_days') : findById(3, 'used_days'),
           sickLeaveTotal: hasNames ? findDays(/sick/i, 'allocated_days') : findById(2, 'allocated_days'),
           sickLeaveUsed: hasNames ? findDays(/sick/i, 'used_days') : findById(2, 'used_days'),
           parentalLeaveTotal: hasNames ? findDays(/parental|maternity|paternity/i, 'allocated_days') : findById(4, 'allocated_days'),
           parentalLeaveUsed: hasNames ? findDays(/parental|maternity|paternity/i, 'used_days') : findById(4, 'used_days'),
           compOffTotal: hasNames ? findDays(/comp|compensat/i, 'allocated_days') : findById(5, 'allocated_days'),
           compOffUsed: hasNames ? findDays(/comp|compensat/i, 'used_days') : findById(5, 'used_days'),
+          rawItems,
+          source: firstItem?.source || 'local',
+          isLive: Boolean(firstItem?.is_live),
+          syncError: hasSyncError?.sync_error || undefined,
         };
       },
       providesTags: ['LeaveBalance'],
@@ -1063,12 +1113,17 @@ export const dataApi = apiSlice.injectEndpoints({
 
     getKekaMappingPreview: builder.query<KekaMappingPreviewData, void>({
       query: () => '/keka/employees/mapping-preview',
-      transformResponse: (res: any) =>
-        res.data || {
+      transformResponse: (res: any) => {
+        const payload = res?.data ?? res;
+        if (payload?.items && Array.isArray(payload.items)) {
+          return payload;
+        }
+        return {
           total_keka_employees: 0,
           summary: { mapped: 0, local_match: 0, unmapped: 0, conflict: 0 },
           items: [],
-        },
+        };
+      },
       providesTags: ['Keka'],
     }),
 
@@ -1217,16 +1272,20 @@ export const dataApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Keka'],
     }),
 
-    syncKekaEmployees: builder.mutation<KekaSyncSummary, { update_existing?: boolean; create_missing?: boolean } | void>({
+    syncKekaEmployees: builder.mutation<KekaSyncSummary, { update_existing?: boolean; create_missing?: boolean; keka_employee_id?: string } | void>({
       query: (params) => {
         const p = params || {};
+        let url = `/keka/sync/employees?update_existing=${p.update_existing ?? true}&create_missing=${p.create_missing ?? true}`;
+        if (p.keka_employee_id) {
+          url += `&keka_employee_id=${encodeURIComponent(p.keka_employee_id)}`;
+        }
         return {
-          url: `/keka/sync/employees?update_existing=${p.update_existing ?? true}&create_missing=${p.create_missing ?? true}`,
+          url,
           method: 'POST',
         };
       },
       transformResponse: (res: any) => res.data || res,
-      invalidatesTags: ['Keka', 'User'],
+      invalidatesTags: ['Keka', 'User', 'Department'],
     }),
 
     syncKekaDepartments: builder.mutation<KekaSyncSummary, void>({
@@ -1254,6 +1313,18 @@ export const dataApi = apiSlice.injectEndpoints({
       query: () => '/keka/employees/updatefields',
       transformResponse: (res: any) => res.data || res,
       providesTags: ['Keka'],
+    }),
+
+    getKekaEmployeeDetails: builder.query<any, string>({
+      query: (employeeId) => `/keka/employees/${employeeId}`,
+      transformResponse: (res: any) => res?.data?.data || res?.data || res,
+      providesTags: ['Keka'],
+    }),
+
+    getUserById: builder.query<BackendUser, number | string>({
+      query: (userId) => `/users/${userId}`,
+      transformResponse: (res: any) => res?.data || res,
+      providesTags: ['User'],
     }),
   }),
 });
@@ -1297,6 +1368,8 @@ export const {
   useCreateTimesheetsMutation,
   useUpdateTimesheetMutation,
   useDeleteTimesheetMutation,
+  useApproveTimesheetMutation,
+  useRejectTimesheetMutation,
   // Leave
   useGetLeaveRequestsQuery,
   useGetUpcomingLeavesQuery,
@@ -1372,6 +1445,10 @@ export const {
   useSyncKekaDepartmentsMutation,
   useSyncKekaHolidaysMutation,
   useGetKekaUpdateFieldsQuery,
+  useGetKekaEmployeeDetailsQuery,
+  useLazyGetKekaEmployeeDetailsQuery,
+  useGetUserByIdQuery,
+  useLazyGetUserByIdQuery,
 } = dataApi;
 
 

@@ -12,6 +12,7 @@ import {
 import {
   useMarkLeaveFromTimesheetMutation,
   useGetLeaveTypesQuery,
+  useGetMyLeaveBalancesQuery,
   MarkLeavePayload,
 } from '../../store/api/dataApi';
 
@@ -50,34 +51,108 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const [reason, setReason] = useState('Marked from timesheet');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Fetch Admin-configured Leave Types
+  // Fetch Admin-configured Leave Types and user's Leave Balances
   const { data: leaveTypes = [], isLoading: loadingTypes } = useGetLeaveTypesQuery();
+  const { data: leaveBalances } = useGetMyLeaveBalancesQuery();
   const activeLeaveTypes = leaveTypes.filter((lt) => lt.status === 'active');
 
   // Helper to distinguish custom (half/partial) leaves from full day leaves
-  const isCustomLeave = (lt: { name?: string; code?: string }) => {
-    const name = (lt.name || '').toLowerCase();
-    const code = (lt.code || '').toLowerCase();
+  // Checks explicit allocatedHours or structured code/name flags
+  const isCustomLeave = (lt: { name?: string; code?: string; allocatedHours?: number }) => {
+    if (lt.allocatedHours !== undefined && lt.allocatedHours !== null) {
+      return lt.allocatedHours < 8;
+    }
+    const name = (lt.name || '').toLowerCase().trim();
+    const code = (lt.code || '').toLowerCase().trim();
     return (
-      name.includes('partial') ||
-      name.includes('half') ||
-      code.includes('partial') ||
-      code.includes('half') ||
-      code === 'pd' ||
-      code === 'hd'
+      name.startsWith('half') ||
+      name.includes('half day') ||
+      name.startsWith('partial') ||
+      name.includes('partial day') ||
+      code === 'half_day' ||
+      code === 'partial_day' ||
+      code === 'hd' ||
+      code === 'pd'
     );
   };
 
-  const isHalfDayLeave = (lt: { name?: string; code?: string }) => {
-    const name = (lt.name || '').toLowerCase();
-    const code = (lt.code || '').toLowerCase();
-    return name.includes('half') || code.includes('half') || code === 'hd';
+  const isHalfDayLeave = (lt: { name?: string; code?: string; allocatedHours?: number }) => {
+    if (lt.allocatedHours === 4) return true;
+    const name = (lt.name || '').toLowerCase().trim();
+    const code = (lt.code || '').toLowerCase().trim();
+    return code === 'half_day' || code === 'hd' || name.startsWith('half') || name.includes('half day');
   };
 
-  const isPartialDayLeave = (lt: { name?: string; code?: string }) => {
-    const name = (lt.name || '').toLowerCase();
-    const code = (lt.code || '').toLowerCase();
-    return name.includes('partial') || code.includes('partial') || code === 'pd';
+  const isPartialDayLeave = (lt: { name?: string; code?: string; allocatedHours?: number }) => {
+    if (lt.allocatedHours !== undefined && lt.allocatedHours !== null && lt.allocatedHours > 0 && lt.allocatedHours <= 2) return true;
+    const name = (lt.name || '').toLowerCase().trim();
+    const code = (lt.code || '').toLowerCase().trim();
+    return code === 'partial_day' || code === 'pd' || name.startsWith('partial') || name.includes('partial day');
+  };
+
+  // Helper to safely get remaining balance for a given leave type without NaN or division by zero
+  const getLeaveTypeBalance = (lt: { id?: string | number; name?: string; daysPerYear?: number; keka_leave_type_id?: string }) => {
+    const name = (lt.name || '').toLowerCase().trim();
+    let total = lt.daysPerYear || 0;
+    let used = 0;
+    let rawItemMatch = undefined;
+
+    // 1. Dynamic lookup against authoritative raw items from Keka
+    if (leaveBalances?.rawItems && leaveBalances.rawItems.length > 0) {
+      rawItemMatch = leaveBalances.rawItems.find((item) => {
+        if (lt.keka_leave_type_id && item.kekaLeaveTypeId && item.kekaLeaveTypeId === lt.keka_leave_type_id) {
+          return true;
+        }
+        if (lt.id && item.leaveTypeId === Number(lt.id)) {
+          return true;
+        }
+        if (item.leaveTypeName && item.leaveTypeName.toLowerCase().trim() === name) {
+          return true;
+        }
+        return false;
+      });
+
+      if (rawItemMatch) {
+        total = rawItemMatch.annualQuota ?? rawItemMatch.allocatedDays ?? total;
+        used = rawItemMatch.usedDays ?? 0;
+        const available = rawItemMatch.availableBalance ?? rawItemMatch.remainingDays ?? Math.max(0, total - used);
+        return {
+          total: isNaN(total) ? 0 : total,
+          used: isNaN(used) ? 0 : used,
+          available: isNaN(available) ? 0 : available,
+          source: rawItemMatch.source || leaveBalances.source || 'local',
+          isLive: Boolean(rawItemMatch.isLive ?? leaveBalances.isLive),
+          syncError: rawItemMatch.syncError || leaveBalances.syncError,
+        };
+      }
+    }
+
+    // 2. Fallback to standard category buckets
+    if (leaveBalances) {
+      if (/annual|earned|privilege|el|casual/i.test(name)) {
+        total = leaveBalances.annualLeaveTotal ?? total;
+        used = leaveBalances.annualLeaveUsed ?? 0;
+      } else if (/sick/i.test(name)) {
+        total = leaveBalances.sickLeaveTotal ?? total;
+        used = leaveBalances.sickLeaveUsed ?? 0;
+      } else if (/parental|maternity|paternity/i.test(name)) {
+        total = leaveBalances.parentalLeaveTotal ?? total;
+        used = leaveBalances.parentalLeaveUsed ?? 0;
+      } else if (/comp/i.test(name)) {
+        total = leaveBalances.compOffTotal ?? total;
+        used = leaveBalances.compOffUsed ?? 0;
+      }
+    }
+
+    const available = Math.max(0, total - used);
+    return {
+      total: isNaN(total) ? 0 : total,
+      used: isNaN(used) ? 0 : used,
+      available: isNaN(available) ? 0 : available,
+      source: leaveBalances?.source || 'local',
+      isLive: Boolean(leaveBalances?.isLive),
+      syncError: leaveBalances?.syncError,
+    };
   };
 
   // Full Day Leave Types: only non-custom leave types
@@ -353,7 +428,17 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Full Day Leave Type
                   </label>
-                  <span className="text-[10px] text-slate-400 font-medium">Configured by Admin</span>
+                  {leaveBalances?.isLive ? (
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200">
+                      Live from Keka
+                    </span>
+                  ) : leaveBalances?.syncError ? (
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold border border-amber-200" title={leaveBalances.syncError}>
+                      Local Balances (Keka Sync Error)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-medium">Configured by Admin</span>
+                  )}
                 </div>
                 {loadingTypes ? (
                   <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
@@ -378,9 +463,14 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                       >
                         <div className="text-xs flex items-center justify-between">
                           <span className="truncate">{lt.name}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${lt.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
-                            {lt.isPaid ? 'Paid' : 'Unpaid'}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-rose-50 text-rose-700 border border-rose-100">
+                              {getLeaveTypeBalance(lt).available} left
+                            </span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${lt.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                              {lt.isPaid ? 'Paid' : 'Unpaid'}
+                            </span>
+                          </div>
                         </div>
                         {lt.description && (
                           <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5 font-normal">
@@ -532,6 +622,12 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
                       </div>
                     ) : null;
                   })()}
+                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 flex items-start gap-2 text-[11px] text-amber-800">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      Notice: Partial-day (hourly) leaves are tracked locally as internal timesheet accommodations and cannot be synchronized to Keka HR.
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

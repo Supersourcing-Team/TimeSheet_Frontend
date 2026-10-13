@@ -208,6 +208,24 @@ export interface TimesheetEntry {
   rejectionReason?: string;
 }
 
+export interface LeaveBalanceItem {
+  id: number;
+  userId: number;
+  leaveTypeId: number;
+  leaveTypeName?: string;
+  kekaLeaveTypeId?: string;
+  year: number;
+  allocatedDays: number;
+  usedDays: number;
+  remainingDays: number;
+  availableBalance?: number;
+  annualQuota?: number;
+  accruedDays?: number;
+  source: 'keka' | 'local';
+  isLive: boolean;
+  syncError?: string;
+}
+
 export interface LeaveBalance {
   annualLeaveTotal: number;
   annualLeaveUsed: number;
@@ -217,6 +235,10 @@ export interface LeaveBalance {
   parentalLeaveUsed: number;
   compOffTotal: number;
   compOffUsed: number;
+  rawItems?: LeaveBalanceItem[];
+  source?: 'keka' | 'local';
+  isLive?: boolean;
+  syncError?: string;
 }
 
 export interface LeaveRequest {
@@ -235,11 +257,15 @@ export interface LeaveRequest {
   appliedOn: string;
   reviewedBy?: string;
   reviewComment?: string;
-  // Inline mark-leave fields
   leaveDurationType?: 'full_day' | 'half_day' | 'partial_day' | 'multiple_days';
   halfDayPeriod?: 'first' | 'second';
-  partialStartTime?: string; // HH:MM
-  partialEndTime?: string;   // HH:MM
+  partialStartTime?: string;
+  partialEndTime?: string;
+  kekaLeaveRequestId?: string;
+  syncedToKeka?: boolean;
+  lastSyncError?: string;
+  lastSyncedAt?: string;
+  leaveTypeName?: string;
 }
 
 /** Response from GET /leave-requests/check-date */
@@ -452,6 +478,8 @@ export interface KekaMappingPreviewItem {
   keka_email: string | null;
   keka_department: string | null;
   keka_job_title: string | null;
+  date_of_joining?: string | null;
+  employment_status?: string | null;
   status: 'mapped' | 'local_match' | 'unmapped' | 'conflict';
   matched_local_user_id: number | null;
   matched_local_user_email: string | null;
@@ -591,10 +619,12 @@ export interface KekaSyncSummary {
   status: string;
   message: string;
   created?: number;
+  created_count?: number;
   updated?: number;
   skipped?: number;
   synced?: number;
   total?: number;
+  total_keka_employees?: number;
   synced_at?: string;
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
-import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery, useGetHolidaysQuery } from '../../store/api/dataApi';
+import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery, useGetHolidaysQuery, useGetWeekendRequestsQuery, useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
 import { MarkLeaveModal } from './MarkLeaveModal';
 import {
   Clock,
@@ -161,12 +161,26 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const primaryDate = rows[0]?.date || today;
   const { data: leaveStatus, refetch: refetchLeave } = useGetLeaveForDateQuery(primaryDate);
   const { data: holidaysList = [] } = useGetHolidaysQuery();
+  const { data: myWeekendRequests = [] } = useGetWeekendRequestsQuery();
 
-  const isWeekendSelected = rows.some((r) => {
+  const isWeekendRow = (r: FormRow) => {
     if (!r.date) return false;
     const d = new Date(r.date + 'T00:00:00');
     return d.getDay() === 0 || d.getDay() === 6;
-  });
+  };
+
+  const isWeekendSelected = rows.some(isWeekendRow);
+
+  const hasApprovedWeekendRequest = (r: FormRow) => {
+    return myWeekendRequests.some(
+      (w) =>
+        w.workDate === r.date &&
+        String(w.projectId) === String(r.projectId) &&
+        w.status?.toLowerCase() === 'approved'
+    );
+  };
+
+  const hasUnauthorizedWeekend = rows.some((r) => isWeekendRow(r) && !hasApprovedWeekendRequest(r));
 
   const matchedHoliday = rows.reduce<any>((found, r) => {
     if (found) return found;
@@ -177,37 +191,92 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const targetDayHours = effectiveMinHours;
 
   const handleSubmit = async () => {
-    if (isWeekendSelected) {
-      onShowToast('Weekend Work Required', 'Timesheet submission is not allowed on weekends. Please submit a Weekend Work Request under the Weekend Work tab.', 'error');
+    // Check for negative or invalid hours across all rows
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const bHours = Number(r.billableHours);
+      const nbHours = Number(r.nonBillableHours);
+      if (isNaN(bHours) || bHours < 0 || isNaN(nbHours) || nbHours < 0) {
+        onShowToast('Validation Error', `Row ${i + 1}: Hours cannot be negative or invalid.`, 'error');
+        return;
+      }
+      if (r.date > today) {
+        onShowToast('Future Date Blocked', `Row ${i + 1}: Cannot log timesheets for future date (${r.date}).`, 'error');
+        return;
+      }
+    }
+
+    // Check for duplicate (project + date) combinations within submitted rows
+    const seenCombos = new Set<string>();
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const totalH = Number(r.billableHours || 0) + Number(r.nonBillableHours || 0);
+      if (totalH > 0 && r.projectId && r.date) {
+        const key = `${r.projectId}_${r.date}`;
+        if (seenCombos.has(key)) {
+          const projName = projects.find(p => p.id === r.projectId)?.name || 'Project';
+          onShowToast(
+            'Duplicate Entry Detected',
+            `Multiple rows found for project "${projName}" on date ${r.date}. Combine your hours into a single row.`,
+            'error'
+          );
+          return;
+        }
+        seenCombos.add(key);
+      }
+    }
+
+    // Validate holidays across every row's specific date
+    for (const r of rows) {
+      const hol = (holidaysList || []).find((h) => h.date === r.date);
+      if (hol) {
+        onShowToast('Company Holiday', `Timesheet submission is not allowed on company holiday (${hol.name} on ${r.date}).`, 'error');
+        return;
+      }
+    }
+
+    if (hasUnauthorizedWeekend) {
+      onShowToast(
+        'Weekend Work Required',
+        'Timesheet submission is not allowed on weekends without an approved Weekend Work Request.',
+        'error'
+      );
       return;
     }
-    if (matchedHoliday) {
-      onShowToast('Company Holiday', `Timesheet submission is not allowed on company holiday (${matchedHoliday.name}).`, 'error');
-      return;
-    }
+
     if (isOnFullDayLeave) {
       onShowToast('Leave Day', 'You are on full-day leave. Timesheet submission is not allowed.', 'error');
       return;
     }
+
+    // Daily hours limit (max 24h/day per date group)
+    const hoursByDate: { [dateStr: string]: number } = {};
+    for (const r of rows) {
+      const h = (Number(r.billableHours) || 0) + (Number(r.nonBillableHours) || 0);
+      hoursByDate[r.date] = (hoursByDate[r.date] || 0) + h;
+    }
+    for (const [dateStr, totalH] of Object.entries(hoursByDate)) {
+      if (totalH > 24) {
+        onShowToast('Validation Error', `Total hours logged for ${dateStr} (${totalH}h) exceeds the 24-hour daily limit.`, 'error');
+        return;
+      }
+    }
+
     if (grandTotal < effectiveMinHours) {
       onShowToast('Validation Error', `You must log a minimum of ${effectiveMinHours.toFixed(1)} hours for this day.`, 'error');
-      return;
-    }
-    if (grandTotal > 24) {
-      onShowToast('Validation Error', 'You cannot log more than 24 hours in a single day.', 'error');
       return;
     }
 
     if (editingEntry && onUpdateTimesheet) {
       const row = rows[0];
 
-      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
-        onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
+      if (Number(row.billableHours) > 0 && row.billableDescription.trim().length < 3) {
+        onShowToast('Validation Error', 'Billable work description must be at least 3 characters long.', 'error');
         return;
       }
 
-      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
-        onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
+      if (Number(row.nonBillableHours) > 0 && row.nonBillableDescription.trim().length < 3) {
+        onShowToast('Validation Error', 'Non-billable work description must be at least 3 characters long.', 'error');
         return;
       }
 
@@ -254,13 +323,13 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         return;
       }
 
-      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
-        onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
+      if (Number(row.billableHours) > 0 && row.billableDescription.trim().length < 3) {
+        onShowToast('Validation Error', 'Billable work description must be at least 3 characters long.', 'error');
         return;
       }
 
-      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
-        onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
+      if (Number(row.nonBillableHours) > 0 && row.nonBillableDescription.trim().length < 3) {
+        onShowToast('Validation Error', 'Non-billable work description must be at least 3 characters long.', 'error');
         return;
       }
 
@@ -365,12 +434,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         )}
 
         {/* Weekend / Holiday Warnings */}
-        {isWeekendSelected && (
+        {hasUnauthorizedWeekend && (
           <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
               <p className="font-extrabold text-amber-900">Weekend Date Selected</p>
-              <p className="text-amber-800">Direct timesheet submission is not permitted on weekends. Weekend work requires prior PM approval through a Weekend Work Request.</p>
+              <p className="text-amber-800">Direct timesheet submission is not permitted on weekends without an approved Weekend Work Request.</p>
               {onNavigateTab && (
                 <button
                   type="button"
@@ -381,6 +450,16 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {isWeekendSelected && !hasUnauthorizedWeekend && (
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3 shadow-xs">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <p className="font-extrabold text-emerald-900">Approved Weekend Work</p>
+              <p className="text-emerald-800">You have an approved Weekend Work Request for the selected weekend date and project.</p>
             </div>
           </div>
         )}
@@ -647,7 +726,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                disabled={isSubmitting || isWeekendSelected || !!matchedHoliday}
+                disabled={isSubmitting || hasUnauthorizedWeekend || !!matchedHoliday}
                 onClick={() => handleSubmit()}
                 className="flex items-center gap-2 px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
               >

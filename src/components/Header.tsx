@@ -6,6 +6,7 @@ import {
   ChevronDown,
   LogOut,
   CheckCheck,
+  Check,
   Clock,
   CalendarCheck,
   CalendarX,
@@ -13,6 +14,10 @@ import {
   Briefcase,
   AlertCircle,
   RefreshCw,
+  Layers,
+  Shield,
+  User as UserIcon,
+  Menu,
 } from 'lucide-react';
 import { formatINR } from '../utils/formatters';
 import { useGetNotificationsQuery, useClearNotificationsMutation } from '../store/api/dataApi';
@@ -25,6 +30,61 @@ interface HeaderProps {
   onTogglePortalMode: (mode: ActivePortalMode) => void;
   pendingApprovalsCount: number;
   onLogout: () => void;
+  onToggleMobileMenu?: () => void;
+}
+
+export const PORTAL_CONFIG: Record<
+  ActivePortalMode,
+  {
+    label: string;
+    shortLabel: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badgeClass: string;
+  }
+> = {
+  admin: {
+    label: 'Admin Portal',
+    shortLabel: 'Admin',
+    description: 'System administration & configuration',
+    icon: Shield,
+    badgeClass: 'bg-purple-100 text-purple-700 border-purple-200',
+  },
+  pm: {
+    label: 'Project Manager Portal',
+    shortLabel: 'PM',
+    description: 'Projects, resources & approvals',
+    icon: Briefcase,
+    badgeClass: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  },
+  ac_manager: {
+    label: 'Account Manager Portal',
+    shortLabel: 'Account Mgr',
+    description: 'Financials, accounts & margins',
+    icon: Layers,
+    badgeClass: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  employee: {
+    label: 'Employee Portal',
+    shortLabel: 'Employee',
+    description: 'Timesheets, leaves & assignments',
+    icon: UserIcon,
+    badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  },
+};
+
+export function getAllowedPortals(role: string | undefined): ActivePortalMode[] {
+  const r = String(role || '').toLowerCase();
+  if (r.includes('admin')) {
+    return ['admin', 'pm', 'ac_manager', 'employee'];
+  }
+  if (r.includes('project') || r === 'pm') {
+    return ['pm', 'employee'];
+  }
+  if (r.includes('account') || r === 'ac_manager') {
+    return ['ac_manager', 'employee'];
+  }
+  return ['employee'];
 }
 
 // ---------------------------------------------------------------------------
@@ -98,17 +158,29 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   onTogglePortalMode,
   pendingApprovalsCount,
   onLogout,
+  onToggleMobileMenu,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showPortalMenu, setShowPortalMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // Local read-state overlay — IDs that the user has "seen" this session
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!useSelector((state: RootState) => state.auth.user);
+
+  // Compute allowed portals based strictly on current user's authenticated role
+  const allowedPortals = React.useMemo(() => {
+    return getAllowedPortals(currentUser?.role);
+  }, [currentUser?.role]);
+
+  // Fallback to active portal config or employee
+  const currentPortalInfo = PORTAL_CONFIG[portalMode] || PORTAL_CONFIG.employee;
+  const CurrentPortalIcon = currentPortalInfo.icon;
 
   const {
     data: notifData,
@@ -130,7 +202,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   }));
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  // Close dropdowns on outside click
+  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -139,9 +211,23 @@ export const Header: React.FC<HeaderProps> = React.memo(({
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setShowProfileMenu(false);
       }
+      if (portalRef.current && !portalRef.current.contains(e.target as Node)) {
+        setShowPortalMenu(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowNotifications(false);
+        setShowProfileMenu(false);
+        setShowPortalMenu(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Mark all as read when panel opens
@@ -149,6 +235,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
     const next = !showNotifications;
     setShowNotifications(next);
     setShowProfileMenu(false);
+    setShowPortalMenu(false);
     if (next) {
       // Mark all currently visible unread items as locally read
       setReadIds((prev) => {
@@ -159,6 +246,13 @@ export const Header: React.FC<HeaderProps> = React.memo(({
         return updated;
       });
     }
+  };
+
+  const handleSelectPortal = (targetMode: ActivePortalMode) => {
+    if (allowedPortals.includes(targetMode)) {
+      onTogglePortalMode(targetMode);
+    }
+    setShowPortalMenu(false);
   };
 
   const handleMarkAllRead = () => {
@@ -180,12 +274,22 @@ export const Header: React.FC<HeaderProps> = React.memo(({
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-slate-200 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-xs">
-      {/* Left Branding */}
-      <div className="flex items-center gap-3 ">
-        <div className="flex items-center justify-center  w-10 h-10 rounded-2xl  bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
-        <span className=" text-2xl tracking-tight text-white-900 mb-1">
-              𝖊𝖇
-            </span>
+      {/* Left Branding & Mobile Menu Toggle */}
+      <div className="flex items-center gap-3">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
+          <span className="text-2xl tracking-tight text-white-900 mb-1">
+            𝖊𝖇
+          </span>
         </div>
         <div>
           <div className="flex items-center gap-2">
@@ -213,7 +317,105 @@ export const Header: React.FC<HeaderProps> = React.memo(({
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+
+        {/* Portal Switcher Dropdown */}
+        {allowedPortals.length > 1 ? (
+          <div className="relative" ref={portalRef}>
+            <button
+              type="button"
+              aria-label="Switch portal"
+              aria-expanded={showPortalMenu}
+              aria-haspopup="menu"
+              onClick={() => {
+                setShowPortalMenu(!showPortalMenu);
+                setShowNotifications(false);
+                setShowProfileMenu(false);
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer text-xs font-bold"
+              title="Switch Portal"
+            >
+              <div className="p-1 rounded-lg bg-blue-50 text-blue-600">
+                <CurrentPortalIcon className="w-3.5 h-3.5" />
+              </div>
+              <span className="hidden sm:inline font-bold">
+                {currentPortalInfo.shortLabel}
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                  showPortalMenu ? 'rotate-180 text-blue-600' : ''
+                }`}
+              />
+            </button>
+
+            {showPortalMenu && (
+              <div
+                role="menu"
+                aria-label="Available Portals"
+                className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 text-slate-800 animate-in fade-in zoom-in-95 duration-100"
+              >
+                <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                    Switch Portal
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Switch your active workspace view
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  {allowedPortals.map((mode) => {
+                    const info = PORTAL_CONFIG[mode];
+                    if (!info) return null;
+                    const Icon = info.icon;
+                    const isSelected = portalMode === mode;
+
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => handleSelectPortal(mode)}
+                        className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer text-xs ${
+                          isSelected
+                            ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-100'
+                            : 'hover:bg-slate-50 text-slate-700 font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`p-1.5 rounded-lg border shrink-0 ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-slate-50 text-slate-500 border-slate-200'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate leading-tight">{info.label}</p>
+                            <p className="text-[10px] text-slate-400 truncate leading-snug">
+                              {info.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-blue-600 shrink-0 ml-1" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold">
+            <CurrentPortalIcon className="w-3.5 h-3.5 text-slate-500" />
+            <span>{currentPortalInfo.shortLabel}</span>
+          </div>
+        )}
 
         {/* Notifications Dropdown */}
         <div className="relative" ref={notifRef}>
