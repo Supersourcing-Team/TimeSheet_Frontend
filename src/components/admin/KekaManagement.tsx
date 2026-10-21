@@ -476,33 +476,26 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
       {/* Top Banner & Header */}
       <div className="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-600">
-              <Zap className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black text-slate-900 tracking-tight">Keka HR Integration Hub</h1>
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                    isConfigured
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                    }`}
-                  />
-                  {isConfigured ? 'Configured & Active' : 'Credentials Missing'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Synchronize employee records, approved leaves, and attendance between SuperTime and Keka HR.
-              </p>
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Keka HR Integration Hub</h1>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                isConfigured
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
+              {isConfigured ? 'Configured & Active' : 'Credentials Missing'}
+            </span>
           </div>
+          <p className="text-xs text-slate-500">
+            Synchronize employee records, approved leaves, and attendance between SuperTime and Keka HR.
+          </p>
         </div>
 
         {/* Global Quick Action Buttons */}
