@@ -925,52 +925,51 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             </div>
 
             {/* Project Header Hero Card */}
-            <div className="p-6 lg:p-8 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800 relative overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="relative z-10 space-y-2">
+            <div className="p-6 lg:p-8 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   {selectedProject.isActive !== false && selectedProject.is_active !== false ? (
                     <>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${getStatusBadgeClass(selectedProject.status)}`}
+                        className={`px-3 py-1 text-xs font-bold capitalize border ${getStatusBadgeClass(selectedProject.status)}`}
                       >
                         {formatStatusName(selectedProject.status)}
                       </span>
                       {isMilestoneConfigured ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1 shadow-2xs">
+                        <span className="px-3 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
                           Milestone Configured
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-500/20 text-rose-300 border border-rose-400/30 flex items-center gap-1 shadow-2xs">
+                        <span className="px-3 py-1 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-2xs">
                           Milestone Not Configured
                         </span>
                       )}
-                      <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-2xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                      <span className="px-3 py-1 text-xs font-bold flex items-center gap-1 shadow-2xs bg-emerald-50 text-emerald-700 border border-emerald-200">
                         Active
                       </span>
                     </>
                   ) : (
-                    <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-2xs bg-rose-500/20 text-rose-300 border border-rose-400/30">
+                    <span className="px-3 py-1 text-xs font-bold flex items-center gap-1 shadow-2xs bg-rose-50 text-rose-700 border border-rose-200">
                       Inactive
                     </span>
                   )}
                 </div>
 
-                <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white">{selectedProject.name}</h1>
-                <p className="text-xs text-slate-300 font-medium">
-                  Client: <span className="font-bold text-white">{selectedProject.client}</span>
-                  {selectedProject.code && <span className="ml-3 text-slate-400 font-mono">({selectedProject.code})</span>}
+                <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-slate-900 font-heading">{selectedProject.name}</h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Client: <span className="font-bold text-slate-800">{selectedProject.client}</span>
+                  {selectedProject.code && <span className="ml-3 text-slate-500 font-mono">({selectedProject.code})</span>}
                 </p>
               </div>
 
-              <div className="relative z-10 flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setEditFormData(selectedProject);
                     setShowEditModal(true);
                   }}
-                  className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
                 >
                   <Edit3 className="w-4 h-4" />
                   <span>Edit Details</span>
@@ -979,7 +978,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             </div>
 
             {/* Project Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-white/80 backdrop-blur-md rounded-2xl px-4 py-1.5 shadow-2xs overflow-x-auto text-xs font-bold gap-1">
+            <div className="flex border-b border-slate-200 bg-white px-4 py-1.5 shadow-2xs overflow-x-auto text-xs font-bold gap-1">
               <button
                 onClick={() => setActiveTab('details')}
                 className={`py-2.5 px-4 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'details'
@@ -1033,7 +1032,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
             </div>
 
             {/* Tab Content Container */}
-            <div className="p-6 lg:p-8 bg-white/95 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-lg space-y-6 text-xs text-slate-800">
+            <div className="p-6 lg:p-8 bg-white border border-slate-200 shadow-xs space-y-6 text-xs text-slate-800">
               {/* TAB 1: DETAILS */}
               {activeTab === 'details' && (
                 <div className="space-y-6">

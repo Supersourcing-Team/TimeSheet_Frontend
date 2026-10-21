@@ -474,7 +474,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
       {/* Top Banner & Header */}
-      <div className="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-600">
@@ -506,48 +506,48 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
         </div>
 
         {/* Global Quick Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full lg:w-auto shrink-0">
           <button
             onClick={() => setShowAddKekaEmpModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Employee to Keka</span>
           </button>
 
           <button
             onClick={handleSyncEmployees}
             disabled={isSyncingEmployees}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingEmployees ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isSyncingEmployees ? 'animate-spin' : ''}`} />
             <span>{isSyncingEmployees ? 'Syncing...' : 'Sync Employees'}</span>
           </button>
 
           <button
             onClick={handleSyncDepartments}
             disabled={isSyncingDepartments}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <Layers className="w-3.5 h-3.5 shrink-0 text-sky-600" />
             <span>Sync Departments</span>
           </button>
 
           <button
             onClick={handleSyncHolidays}
             disabled={isSyncingHolidays}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <Calendar className="w-3.5 h-3.5 text-blue-600" />
+            <Calendar className="w-3.5 h-3.5 shrink-0 text-sky-600" />
             <span>Sync Holidays</span>
           </button>
 
           <button
             onClick={handleTestConnection}
             disabled={isTestingConn}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <Wifi className={`w-3.5 h-3.5 ${isTestingConn ? 'animate-spin' : ''}`} />
+            <Wifi className={`w-3.5 h-3.5 shrink-0 ${isTestingConn ? 'animate-spin' : ''}`} />
             <span>{isTestingConn ? 'Testing...' : 'Test Connection'}</span>
           </button>
 
@@ -555,9 +555,9 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
             onClick={handleClearCache}
             disabled={isClearingCache}
             title="Refresh the active connection with Keka HR"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 h-9 px-3.5 min-w-[170px] rounded-xl bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isClearingCache ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 text-slate-500 ${isClearingCache ? 'animate-spin' : ''}`} />
             <span>Reset Connection</span>
           </button>
         </div>
