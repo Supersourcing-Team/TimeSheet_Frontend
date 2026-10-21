@@ -440,7 +440,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
 
         {/* 2. Actual Spend */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -477,7 +477,7 @@ export const EmployeeUtilization: React.FC<EmployeeUtilizationProps> = ({
 
         {/* 3. Budget & Variance */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">

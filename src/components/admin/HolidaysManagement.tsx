@@ -340,7 +340,7 @@ export const HolidaysManagement: React.FC<HolidaysManagementProps> = ({
               {paginatedHolidays.map((holiday) => (
               <div
                 key={holiday.id}
-                className="p-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 to-white shadow-xs space-y-3 relative group hover:border-blue-400 transition-all"
+                className="p-4 rounded-2xl border border-blue-200 bg-white shadow-xs space-y-3 relative group hover:border-blue-400 transition-all"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex flex-col items-center justify-center text-center shadow-xs">

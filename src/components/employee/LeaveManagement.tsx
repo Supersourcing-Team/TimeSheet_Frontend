@@ -42,12 +42,12 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Bar */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <span>My Leaves</span>
           </h2>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             View your past and upcoming leaves history.
           </p>
         </div>

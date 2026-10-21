@@ -509,7 +509,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowAddKekaEmpModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm shadow-blue-500/25 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Employee to Keka</span>

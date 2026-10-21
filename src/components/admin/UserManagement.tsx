@@ -946,7 +946,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
             {/* Modal Scrollable Body */}
             <div className="p-6 overflow-y-auto space-y-5">
               {/* Keka Sync Integration Banner */}
-              <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-200/80 rounded-xl flex items-center justify-between">
+              <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-600/30 shrink-0">
                     <Sparkles className="w-4 h-4" />
