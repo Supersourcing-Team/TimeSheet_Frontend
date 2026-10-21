@@ -46,6 +46,8 @@ import {
   UploadCloud,
   File,
 } from 'lucide-react';
+import { getAttachmentUrl } from '../../utils/api';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface PMMyProjectsProps {
   currentUser: User;
@@ -246,14 +248,22 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
   // Achieve Milestone Modal
   const [showAchieveModal, setShowAchieveModal] = useState(false);
+  const [achieveMilestoneId, setAchieveMilestoneId] = useState<number | null>(null);
+  const [achieveDate, setAchieveDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   // Supporting documents state
   const [selectedCreateFiles, setSelectedCreateFiles] = useState<File[]>([]);
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
   const [uploadProjectDoc] = useUploadProjectDocumentMutation();
   const [deleteProjectDoc] = useDeleteProjectDocumentMutation();
-  const [achieveMilestoneId, setAchieveMilestoneId] = useState<number | null>(null);
-  const [achieveDate, setAchieveDate] = useState(new Date().toISOString().split('T')[0]);
+  // Submitting states for double-submission prevention
+  const [isSubmittingProject, setIsSubmittingProject] = useState(false);
+  const [isSubmittingMilestone, setIsSubmittingMilestone] = useState(false);
+  const [isSubmittingTool, setIsSubmittingTool] = useState(false);
+
+  // Confirm delete dialog state
+  const [deleteMilestoneConfirmId, setDeleteMilestoneConfirmId] = useState<number | null>(null);
+  const [isDeletingMilestone, setIsDeletingMilestone] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -337,8 +347,10 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       onShowToast('Validation Error', 'Please fill in all required fields.', 'error');
       return;
     }
+    if (isSubmittingProject) return;
 
     try {
+      setIsSubmittingProject(true);
       setIsUploadingDocs(true);
       const res: any = await onAddProject({
         name: newProject.name,
@@ -385,6 +397,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       // toast already handled
     } finally {
       setIsUploadingDocs(false);
+      setIsSubmittingProject(false);
     }
   };
 
@@ -568,41 +581,49 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
       return;
     }
 
-    onAddToolToMilestone(newTool.milestoneId, {
-      toolId: Number(newTool.masterToolId),
-      monthlyCost: Number(newTool.monthlyCost) || 0,
-      seats: Number(newTool.seats) || 1,
-      allocationDate: newTool.allocationDate,
-      deallocationDate: newTool.deallocationDate,
-    });
+    try {
+      setIsSubmittingTool(true);
+      onAddToolToMilestone(newTool.milestoneId, {
+        toolId: Number(newTool.masterToolId),
+        monthlyCost: Number(newTool.monthlyCost) || 0,
+        seats: Number(newTool.seats) || 1,
+        allocationDate: newTool.allocationDate,
+        deallocationDate: newTool.deallocationDate,
+      });
 
-    onShowToast('Tool Allocated', `Allocated ${toolName} to ${targetMilestone?.name || 'milestone'}`, 'success');
-    setShowAddToolModal(false);
-    setNewTool({
-      masterToolId: '',
-      milestoneId: '',
-      name: '',
-      category: 'AI',
-      monthlyCost: 0,
-      seats: 1,
-      allocationDate: new Date().toISOString().split('T')[0],
-      deallocationDate: '',
-      status: 'active',
-    });
+      onShowToast('Tool Allocated', `Allocated ${toolName} to ${targetMilestone?.name || 'milestone'}`, 'success');
+      setShowAddToolModal(false);
+      setNewTool({
+        masterToolId: '',
+        milestoneId: '',
+        name: '',
+        category: 'AI',
+        monthlyCost: 0,
+        seats: 1,
+        allocationDate: new Date().toISOString().split('T')[0],
+        deallocationDate: '',
+        status: 'active',
+      });
+    } finally {
+      setIsSubmittingTool(false);
+    }
   };
 
-  const handleRemoveTool = (toolId: string) => {
+  const handleRemoveTool = (tool: ProjectTool) => {
     if (!selectedProject) return;
-    onRemoveToolFromProject(selectedProject.id, toolId);
+    const allocId = tool.allocationId || tool.id;
+    onRemoveToolFromProject(selectedProject.id, allocId);
     onShowToast('Tool Deallocated', 'Deallocated tool resource from project.', 'info');
 
-    const updatedTools = (selectedProject.tools || []).filter((t) => t.id !== toolId);
+    const updatedTools = (selectedProject.tools || []).filter((t) => (t.allocationId || t.id) !== allocId);
     setSelectedProject({ ...selectedProject, tools: updatedTools });
   };
 
   const handleAddMilestoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProject || !newMilestone.name) return;
+    if (isSubmittingMilestone) return;
+
     const validationError = validateMilestone(newMilestone);
     if (validationError) {
       onShowToast('Validation Error', validationError, 'error');
@@ -610,6 +631,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     }
 
     try {
+      setIsSubmittingMilestone(true);
       await createMilestone({
         project_id: Number(selectedProject.id),
         name: newMilestone.name,
@@ -628,11 +650,10 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         expected_completion_date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().split('T')[0],
         weight_percentage: 10,
       });
-      // We don't locally update selectedProject here, rely on RTK query invalidation which refreshes the project list.
-      // Alternatively, we could refresh the modal or let the user close and open it.
-      // Note: In a real app we'd trigger a project refetch or local update.
     } catch (err: any) {
       onShowToast('Error', err?.data?.detail || 'Failed to create milestone', 'error');
+    } finally {
+      setIsSubmittingMilestone(false);
     }
   };
 
@@ -680,13 +701,21 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     }
   };
 
-  const handleDeleteMilestone = async (milestoneId: number) => {
-    if (!confirm('Are you sure you want to delete this milestone?')) return;
+  const handleDeleteMilestone = (milestoneId: number) => {
+    setDeleteMilestoneConfirmId(milestoneId);
+  };
+
+  const handleConfirmDeleteMilestone = async () => {
+    if (!deleteMilestoneConfirmId) return;
     try {
-      await deleteMilestone(milestoneId).unwrap();
+      setIsDeletingMilestone(true);
+      await deleteMilestone(deleteMilestoneConfirmId).unwrap();
       onShowToast('Deleted', 'Milestone deleted.', 'info');
+      setDeleteMilestoneConfirmId(null);
     } catch (err: any) {
       onShowToast('Error', err?.data?.detail || 'Failed to delete milestone', 'error');
+    } finally {
+      setIsDeletingMilestone(false);
     }
   };
 
@@ -1082,7 +1111,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                               </div>
                             </div>
                             <a
-                              href={doc.filePath}
+                              href={getAttachmentUrl(doc.filePath)}
                               target="_blank"
                               rel="noopener noreferrer"
                               download={doc.fileName}
@@ -1224,7 +1253,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                               </td>
                               <td className="py-3 px-3 text-right">
                                 <button
-                                  onClick={() => handleRemoveTool(t.id)}
+                                  onClick={() => handleRemoveTool(t)}
                                   className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold cursor-pointer"
                                   title="Deallocate tool"
                                 >
@@ -1654,9 +1683,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                disabled={isSubmittingProject}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
-                Create Project
+                {isSubmittingProject && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{isSubmittingProject ? 'Creating...' : 'Create Project'}</span>
               </button>
             </div>
           </form>
@@ -1805,7 +1836,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <a
-                          href={doc.filePath}
+                          href={getAttachmentUrl(doc.filePath)}
                           target="_blank"
                           rel="noopener noreferrer"
                           download={doc.fileName}
@@ -2062,10 +2093,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={masterTools.filter((t) => t.status !== 'Inactive').length === 0}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                disabled={masterTools.filter((t) => t.status !== 'Inactive').length === 0 || isSubmittingTool}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
               >
-                Allocate Tool
+                {isSubmittingTool && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{isSubmittingTool ? 'Allocating...' : 'Allocate Tool'}</span>
               </button>
             </div>
           </form>
@@ -2158,9 +2190,11 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                disabled={isSubmittingMilestone}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
-                Add Milestone
+                {isSubmittingMilestone && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{isSubmittingMilestone ? 'Adding...' : 'Add Milestone'}</span>
               </button>
             </div>
           </form>
@@ -2441,6 +2475,18 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
           </form>
         </div>
       )}
+
+      {/* Confirm Delete Milestone Dialog */}
+      <ConfirmModal
+        isOpen={deleteMilestoneConfirmId !== null}
+        title="Delete Milestone"
+        message="Are you sure you want to delete this milestone? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={isDeletingMilestone}
+        onConfirm={handleConfirmDeleteMilestone}
+        onCancel={() => setDeleteMilestoneConfirmId(null)}
+      />
     </div>
   );
 };

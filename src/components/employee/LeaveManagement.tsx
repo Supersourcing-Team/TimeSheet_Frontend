@@ -1,9 +1,11 @@
 import { Pagination } from '../common/Pagination';
-import React from 'react';
+import React, { useState } from 'react';
 import { User, LeaveBalance, LeaveRequest, LeaveTypeConfig } from '../../types';
 import {
   Trash2,
+  Plus,
 } from 'lucide-react';
+import { MarkLeaveModal } from './MarkLeaveModal';
 
 interface LeaveManagementProps {
   currentUser: User;
@@ -13,6 +15,7 @@ interface LeaveManagementProps {
   onApplyLeave: (request: Omit<LeaveRequest, 'id'>) => void;
   onCancelLeave: (id: string) => void;
   onShowToast: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
+  onOpenMarkLeave?: () => void;
 }
 
 export const LeaveManagement: React.FC<LeaveManagementProps> = ({
@@ -20,11 +23,21 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   leaveRequests,
   onCancelLeave,
   onShowToast,
+  onOpenMarkLeave,
 }) => {
+  const [showModal, setShowModal] = useState(false);
   const userRequests = (leaveRequests || []).filter((r) => r.userId === currentUser.id);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState(10);
   const paginatedRequests = userRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleApplyClick = () => {
+    if (onOpenMarkLeave) {
+      onOpenMarkLeave();
+    } else {
+      setShowModal(true);
+    }
+  };
 
   const getLeaveStatus = (req: LeaveRequest) => {
     const start = new Date(req.startDate);
@@ -48,10 +61,31 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
             <span>My Leaves</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            View your past and upcoming leaves history.
+            View your past and upcoming leaves history, or submit a new leave request.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={handleApplyClick}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-900/30 transition-all cursor-pointer shrink-0 self-start md:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Apply Leave</span>
+        </button>
       </div>
+
+      {showModal && (
+        <MarkLeaveModal
+          selectedDate={new Date().toISOString().split('T')[0]}
+          onClose={() => setShowModal(false)}
+          onSuccess={() => {
+            setShowModal(false);
+            onShowToast('Success', 'Leave request submitted', 'success');
+          }}
+          onShowToast={onShowToast}
+        />
+      )}
 
       {/* Leave Request History Table */}
       <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-lg space-y-4">
@@ -71,6 +105,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                 <th className="py-3 px-3">Total Days</th>
                 <th className="py-3 px-3">Reason</th>
                 <th className="py-3 px-3 text-center">Status</th>
+                <th className="py-3 px-3 text-center">Keka Sync</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -103,6 +138,37 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
                       >
                         {status}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                      {req.syncedToKeka ? (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          title={req.kekaLeaveRequestId ? `Keka Request ID: ${req.kekaLeaveRequestId}` : 'Synchronized with Keka'}
+                        >
+                          Synced
+                        </span>
+                      ) : req.leaveDurationType === 'partial_day' ? (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                          title="Internal timesheet accommodation"
+                        >
+                          Local Only
+                        </span>
+                      ) : req.lastSyncError ? (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                          title={req.lastSyncError}
+                        >
+                          Sync Failed
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-50 text-slate-500 border border-slate-200"
+                          title="Not synced to Keka"
+                        >
+                          Local Only
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">

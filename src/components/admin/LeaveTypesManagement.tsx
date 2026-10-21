@@ -36,6 +36,7 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   // Form State
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [daysPerYear, setDaysPerYear] = useState<number>(12);
   const [allocatedHours, setAllocatedHours] = useState<number | undefined>(undefined);
   const [description, setDescription] = useState('');
   const [kekaLeaveTypeId, setKekaLeaveTypeId] = useState('');
@@ -43,9 +44,13 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
+  const [editDaysPerYear, setEditDaysPerYear] = useState<number>(12);
   const [editAllocatedHours, setEditAllocatedHours] = useState<number | undefined>(undefined);
   const [editDescription, setEditDescription] = useState('');
   const [editKekaLeaveTypeId, setEditKekaLeaveTypeId] = useState('');
+
+  // Submitting state for double submission prevention
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredTypes = (leaveTypes || []).filter(
     (lt) =>
@@ -61,31 +66,45 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
       return;
     }
 
-    onAddLeaveType({
-      name,
-      code: code.toUpperCase(),
-      daysPerYear: 0,
-      allocatedHours,
-      isPaid: true,
-      status: 'active',
-      description,
-      requiresDocument: false,
-      keka_leave_type_id: kekaLeaveTypeId || undefined,
-    });
+    if (daysPerYear < 0 || daysPerYear > 365) {
+      onShowToast('Validation Error', 'Annual entitlement must be between 0 and 365 days.', 'error');
+      return;
+    }
 
-    onShowToast('Leave Type Created', `Added "${name} (${code.toUpperCase()})" to policies`, 'success');
-    setShowAddModal(false);
-    setName('');
-    setCode('');
-    setDescription('');
-    setAllocatedHours(undefined);
-    setKekaLeaveTypeId('');
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      onAddLeaveType({
+        name,
+        code: code.toUpperCase(),
+        daysPerYear: Number(daysPerYear),
+        allocatedHours,
+        isPaid: true,
+        status: 'active',
+        description,
+        requiresDocument: false,
+        keka_leave_type_id: kekaLeaveTypeId || undefined,
+      });
+
+      onShowToast('Leave Type Created', `Added "${name} (${code.toUpperCase()})" to policies`, 'success');
+      setShowAddModal(false);
+      setName('');
+      setCode('');
+      setDaysPerYear(12);
+      setDescription('');
+      setAllocatedHours(undefined);
+      setKekaLeaveTypeId('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOpenEdit = (lt: LeaveTypeConfig) => {
     setEditingType(lt);
     setEditName(lt.name);
     setEditCode(lt.code);
+    setEditDaysPerYear(typeof lt.daysPerYear === 'number' ? lt.daysPerYear : 12);
     setEditAllocatedHours(lt.allocatedHours);
     setEditDescription(lt.description);
     setEditKekaLeaveTypeId(lt.keka_leave_type_id || '');
@@ -95,17 +114,30 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
     e.preventDefault();
     if (!editingType) return;
 
-    onUpdateLeaveType({
-      ...editingType,
-      name: editName,
-      code: editCode.toUpperCase(),
-      allocatedHours: editAllocatedHours,
-      description: editDescription,
-      keka_leave_type_id: editKekaLeaveTypeId || undefined,
-    });
+    if (editDaysPerYear < 0 || editDaysPerYear > 365) {
+      onShowToast('Validation Error', 'Annual entitlement must be between 0 and 365 days.', 'error');
+      return;
+    }
 
-    onShowToast('Leave Type Updated', `Updated policy details for ${editName}`, 'success');
-    setEditingType(null);
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      onUpdateLeaveType({
+        ...editingType,
+        name: editName,
+        code: editCode.toUpperCase(),
+        daysPerYear: Number(editDaysPerYear),
+        allocatedHours: editAllocatedHours,
+        description: editDescription,
+        keka_leave_type_id: editKekaLeaveTypeId || undefined,
+      });
+
+      onShowToast('Leave Type Updated', `Updated policy details for ${editName}`, 'success');
+      setEditingType(null);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -306,17 +338,35 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Allocated Hrs
-                </label>
-                <input
-                  type="number"
-                  value={allocatedHours || ''}
-                  onChange={(e) => setAllocatedHours(parseInt(e.target.value) || undefined)}
-                  placeholder="e.g. 48 (Optional)"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Annual Entitlement (Days) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="365"
+                    value={daysPerYear}
+                    onChange={(e) => setDaysPerYear(parseInt(e.target.value) || 0)}
+                    placeholder="e.g. 12"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Allocated Hrs
+                  </label>
+                  <input
+                    type="number"
+                    value={allocatedHours || ''}
+                    onChange={(e) => setAllocatedHours(parseInt(e.target.value) || undefined)}
+                    placeholder="e.g. 48 (Optional)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -366,9 +416,16 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20"
+                disabled={isSubmitting}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
-                Save Leave Type
+                {isSubmitting && (
+                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                )}
+                <span>{isSubmitting ? 'Saving...' : 'Save Leave Type'}</span>
               </button>
             </div>
           </form>
@@ -422,17 +479,35 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Allocated Hrs
-                </label>
-                <input
-                  type="number"
-                  value={editAllocatedHours || ''}
-                  onChange={(e) => setEditAllocatedHours(parseInt(e.target.value) || undefined)}
-                  placeholder="e.g. 48 (Optional)"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Annual Entitlement (Days) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="365"
+                    value={editDaysPerYear}
+                    onChange={(e) => setEditDaysPerYear(parseInt(e.target.value) || 0)}
+                    placeholder="e.g. 12"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Allocated Hrs
+                  </label>
+                  <input
+                    type="number"
+                    value={editAllocatedHours || ''}
+                    onChange={(e) => setEditAllocatedHours(parseInt(e.target.value) || undefined)}
+                    placeholder="e.g. 48 (Optional)"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -481,9 +556,16 @@ export const LeaveTypesManagement: React.FC<LeaveTypesManagementProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20"
+                disabled={isSubmitting}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
-                Save Policy
+                {isSubmitting && (
+                  <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                )}
+                <span>{isSubmitting ? 'Saving...' : 'Save Policy'}</span>
               </button>
             </div>
           </form>

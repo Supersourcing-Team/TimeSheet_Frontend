@@ -4,6 +4,8 @@ import {
   useGetUpcomingLeavesQuery,
   useGetDailyEodPreviewQuery,
   useSendDailyEodToSlackMutation,
+  useApproveTimesheetMutation,
+  useRejectTimesheetMutation,
   DailyEodEntry,
 } from '../../store/api/dataApi';
 import { Project, User, TimesheetEntry } from '../../types';
@@ -28,13 +30,17 @@ import {
   Layers,
   Send,
   AlertCircle,
+  Check,
+  X,
 } from 'lucide-react';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface PMTimesheetReviewProps {
   currentUser: User;
   projects: Project[];
   allUsers: User[];
   timesheets: TimesheetEntry[];
+  onShowToast?: (title: string, desc?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
@@ -42,6 +48,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   projects = [],
   allUsers = [],
   timesheets = [],
+  onShowToast,
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [activeTab, setActiveTab] = useState<'review' | 'eod'>('review');
@@ -49,12 +56,18 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   // Review Tab State
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'submitted' | 'approved' | 'rejected'>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [viewingDesc, setViewingDesc] = useState<{ billable: string; nonBillable: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectConfirmId, setRejectConfirmId] = useState<string | null>(null);
+
+  const [approveTimesheet] = useApproveTimesheetMutation();
+  const [rejectTimesheet] = useRejectTimesheetMutation();
 
   // EOD Tab State
   const [eodDate, setEodDate] = useState<string>(today);
@@ -96,7 +109,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   // Apply filters for review tab
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedProject, selectedUser, dateFilter]);
+  }, [searchTerm, selectedProject, selectedUser, dateFilter, statusFilter]);
 
   const filteredTimesheets = useMemo(() => {
     const search = searchTerm.toLowerCase();
@@ -112,9 +125,17 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
       const matchesUser = selectedUser === 'all' || t.userId === selectedUser;
       const matchesDate = !dateFilter || t.date === dateFilter;
 
-      return matchesSearch && matchesProject && matchesUser && matchesDate;
+      // Status filter matching
+      const currentStatus = t.status || 'submitted';
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'submitted' && (currentStatus === 'submitted' || currentStatus === 'pending')) ||
+        (statusFilter === 'approved' && currentStatus === 'approved') ||
+        (statusFilter === 'rejected' && currentStatus === 'rejected');
+
+      return matchesSearch && matchesProject && matchesUser && matchesDate && matchesStatus;
     });
-  }, [pmTimesheets, searchTerm, selectedProject, selectedUser, dateFilter]);
+  }, [pmTimesheets, searchTerm, selectedProject, selectedUser, dateFilter, statusFilter]);
 
   // Calculate summary metrics for review tab
   const { totalLoggedHours, totalBillableHours, totalNonBillableHours, billableRatio } = useMemo(() => {
@@ -210,6 +231,44 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
         message: errDetail,
       });
       setTimeout(() => setSlackFeedback(null), 8000);
+    }
+  };
+
+  // Handle Approve Timesheet
+  const handleApprove = async (id: string) => {
+    if (processingId) return;
+    try {
+      setProcessingId(id);
+      await approveTimesheet(id).unwrap();
+      onShowToast?.('Success', 'Timesheet approved successfully', 'success');
+    } catch (err: any) {
+      const msg = err?.data?.message || err?.data?.detail || 'Failed to approve timesheet';
+      onShowToast?.('Action Failed', msg, 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Handle Reject Timesheet
+  const handleReject = (id: string) => {
+    if (processingId) return;
+    setRejectConfirmId(id);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectConfirmId || processingId) return;
+    const id = rejectConfirmId;
+
+    try {
+      setProcessingId(id);
+      await rejectTimesheet(id).unwrap();
+      onShowToast?.('Success', 'Timesheet rejected successfully', 'success');
+      setRejectConfirmId(null);
+    } catch (err: any) {
+      const msg = err?.data?.message || err?.data?.detail || 'Failed to reject timesheet';
+      onShowToast?.('Action Failed', msg, 'error');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -353,6 +412,20 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                 </select>
               </div>
 
+              {/* Status Filter */}
+              <div className="min-w-[150px]">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="submitted">Submitted / Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
               {/* Date Filter */}
               <div className="min-w-[140px]">
                 <input
@@ -405,6 +478,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                       <th className="py-3 px-4">Work Summary</th>
                       <th className="py-3 px-4 text-right">Hours (B / NB)</th>
                       <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -415,6 +489,11 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                       const isOnLeaveThisDay = userLeaves.some(
                         (l: any) => l.start_date <= ts.date && l.end_date >= ts.date
                       );
+                      const currentStatus = (ts.status || 'submitted').toLowerCase();
+                      const isPending = currentStatus === 'submitted' || currentStatus === 'pending';
+                      const isApproved = currentStatus === 'approved';
+                      const isRejected = currentStatus === 'rejected';
+                      const isProcessing = processingId === ts.id;
 
                       return (
                         <tr key={ts.id} className="hover:bg-blue-50/20 transition-colors">
@@ -435,7 +514,7 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[10px] text-slate-400 font-medium">Submitted</p>
+                                <p className="text-[10px] text-slate-400 font-medium capitalize">{currentStatus}</p>
                               </div>
                             </div>
                           </td>
@@ -485,9 +564,49 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
 
                           {/* Status Badge */}
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
-                              Submitted Log
-                            </span>
+                            {isApproved ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Approved
+                              </span>
+                            ) : isRejected ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200">
+                                Rejected
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
+                                Pending Review
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action Buttons */}
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {isPending ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  disabled={isProcessing}
+                                  onClick={() => handleApprove(ts.id)}
+                                  className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                                  title="Approve Timesheet"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isProcessing}
+                                  onClick={() => handleReject(ts.id)}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors disabled:opacity-50 cursor-pointer"
+                                  title="Reject Timesheet"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 font-medium italic">
+                                Reviewed
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -821,6 +940,18 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
           </div>
         </div>
       )}
+
+      {/* Reject Timesheet Confirmation Dialog */}
+      <ConfirmModal
+        isOpen={rejectConfirmId !== null}
+        title="Reject Timesheet Entry"
+        message="Are you sure you want to reject this timesheet entry? This action will mark the entry as rejected."
+        confirmText="Reject Timesheet"
+        variant="danger"
+        isLoading={processingId !== null}
+        onConfirm={handleConfirmReject}
+        onCancel={() => setRejectConfirmId(null)}
+      />
     </div>
   );
 });

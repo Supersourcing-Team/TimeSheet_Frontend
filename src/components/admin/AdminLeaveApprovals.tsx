@@ -621,7 +621,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
 
                       {/* Status */}
                       <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex flex-col items-center">
+                        <div className="inline-flex flex-col items-center gap-1">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
                               req.status === 'approved'
@@ -634,8 +634,30 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                             {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
                             {req.status === 'pending' && <Clock className="w-3 h-3 animate-spin" />}
                             {req.status === 'rejected' && <XCircle className="w-3 h-3" />}
-                            <span>{req.status}</span>
+                            <span>Local: {req.status}</span>
                           </span>
+                          {req.syncedToKeka ? (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200"
+                              title={req.kekaLeaveRequestId ? `Keka Request ID: ${req.kekaLeaveRequestId}` : 'Synchronized with Keka'}
+                            >
+                              Keka: Synced
+                            </span>
+                          ) : req.leaveDurationType === 'partial_day' ? (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                              title="Internal timesheet accommodation"
+                            >
+                              Local Only
+                            </span>
+                          ) : req.lastSyncError ? (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+                              title={req.lastSyncError}
+                            >
+                              Keka: Failed
+                            </span>
+                          ) : null}
                           {req.reviewedBy && (
                             <span className="text-[9px] text-slate-400 mt-0.5 font-medium">
                               By {req.reviewedBy}
@@ -937,28 +959,52 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                 </div>
               )}
 
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1">
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase">
-                  Approval Status
+                  Approval &amp; Keka Sync Status
                 </span>
                 <div className="flex items-center justify-between">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                      detailRequest.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : detailRequest.status === 'pending'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-rose-100 text-rose-800'
-                    }`}
-                  >
-                    {detailRequest.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
+                        detailRequest.status === 'approved'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : detailRequest.status === 'pending'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-rose-100 text-rose-800'
+                      }`}
+                    >
+                      Local: {detailRequest.status}
+                    </span>
+                    {detailRequest.syncedToKeka ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">
+                        Keka: Synced {detailRequest.kekaLeaveRequestId ? `(${detailRequest.kekaLeaveRequestId})` : ''}
+                      </span>
+                    ) : detailRequest.leaveDurationType === 'partial_day' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-200 text-slate-700">
+                        Local Only (Timesheet)
+                      </span>
+                    ) : detailRequest.lastSyncError ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                        Keka: Sync Failed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-200 text-slate-600">
+                        Keka: Unsynced
+                      </span>
+                    )}
+                  </div>
                   {detailRequest.reviewedBy && (
                     <span className="text-slate-500 text-[11px] font-medium">
                       Reviewed by: {detailRequest.reviewedBy}
                     </span>
                   )}
                 </div>
+                {detailRequest.lastSyncError && (
+                  <p className="text-[11px] text-rose-700 bg-rose-50 p-2 rounded border border-rose-200 font-medium">
+                    Sync Error: {detailRequest.lastSyncError}
+                  </p>
+                )}
                 {detailRequest.reviewComment && (
                   <p className="text-[11px] text-slate-600 italic mt-1 bg-white p-2 rounded border border-slate-200">
                     "{detailRequest.reviewComment}"

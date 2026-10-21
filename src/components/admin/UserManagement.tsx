@@ -1,7 +1,16 @@
 import { Pagination } from '../common/Pagination';
 import { getErrorMessage } from '../../utils/errorHandler';
-import React, { useState, useEffect, useCallback } from 'react';
-import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  useGetUpcomingLeavesQuery,
+  useGetKekaMappingPreviewQuery,
+  useSyncKekaEmployeesMutation,
+  useSyncKekaDepartmentsMutation,
+  useLazyGetKekaEmployeeDetailsQuery,
+  useLazyGetUserByIdQuery,
+} from '../../store/api/dataApi';
+import { KekaMappingPreviewItem } from '../../types';
+import { EmployeeDetailModal } from './EmployeeDetailModal';
 import {
   fetchUsersApi,
   createUserApi,
@@ -32,6 +41,7 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Hash,
   Building2,
   Trash2,
@@ -39,7 +49,14 @@ import {
   Sparkles,
   Globe,
   Briefcase,
+  Cloud,
+  Database,
+  Link2,
+  Unlink,
+  UserPlus,
+  Eye,
 } from 'lucide-react';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface UserManagementProps {
   currentUser?: { id: string } | null;
@@ -68,6 +85,14 @@ function statusBadgeClass(status: string): string {
   if (s === 'active') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
   if (s === 'inactive') return 'bg-rose-50 text-rose-700 border border-rose-200';
   if (s === 'pending') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  return 'bg-slate-100 text-slate-700 border border-slate-200';
+}
+
+function kekaStatusBadgeClass(status?: string | null): string {
+  const s = (status || '').toLowerCase();
+  if (s.includes('work') || s.includes('active')) return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+  if (s.includes('relieved') || s.includes('exit') || s.includes('inactive')) return 'bg-rose-50 text-rose-700 border border-rose-200';
+  if (s.includes('notice')) return 'bg-amber-50 text-amber-700 border border-amber-200';
   return 'bg-slate-100 text-slate-700 border border-slate-200';
 }
 
@@ -129,12 +154,67 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // ── Directory View Mode ───────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<'keka' | 'system'>('keka');
+
+  // ── Keka Directory query & mutations ──────────────────────────────────────
+  const {
+    data: kekaMappingData,
+    isLoading: isKekaLoading,
+    isFetching: isKekaFetching,
+    refetch: refetchKeka,
+    error: kekaError,
+  } = useGetKekaMappingPreviewQuery();
+
+  const [syncKekaEmployees, { isLoading: isSyncingKekaEmps }] = useSyncKekaEmployeesMutation();
+  const [syncKekaDepartments, { isLoading: isSyncingKekaDepts }] = useSyncKekaDepartmentsMutation();
+
+  const [syncingSingleId, setSyncingSingleId] = useState<string | null>(null);
+
+  // Keka Directory filters & pagination
+  const [kekaSearchQuery, setKekaSearchQuery] = useState('');
+  const [kekaSyncFilter, setKekaSyncFilter] = useState<'all' | 'mapped' | 'unmapped' | 'local_match'>('all');
+  const [kekaDeptFilter, setKekaDeptFilter] = useState<string>('');
+  const [kekaStatusFilter, setKekaStatusFilter] = useState<string>('');
+  const [kekaCurrentPage, setKekaCurrentPage] = useState(1);
+  const [kekaItemsPerPage, setKekaItemsPerPage] = useState(10);
+
   // ── Modals ────────────────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<BackendUser | null>(null);
   const [showRoleMatrixModal, setShowRoleMatrixModal] = useState(false);
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
   const [showManageDeptModal, setShowManageDeptModal] = useState(false);
+
+  // ── Employee Live Profile Modal ───────────────────────────────────────────
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailTarget, setDetailTarget] = useState<{
+    type: 'keka' | 'system';
+    id: string | number;
+    initialItem: any;
+  } | null>(null);
+
+  const [
+    triggerKekaDetails,
+    { data: kekaDetailData, isFetching: isKekaDetailLoading, error: kekaDetailError },
+  ] = useLazyGetKekaEmployeeDetailsQuery();
+
+  const [
+    triggerUserDetails,
+    { data: userDetailData, isFetching: isUserDetailLoading, error: userDetailError },
+  ] = useLazyGetUserByIdQuery();
+
+  const handleOpenEmployeeDetails = (type: 'keka' | 'system', item: any) => {
+    if (type === 'keka') {
+      setDetailTarget({ type: 'keka', id: item.keka_employee_id, initialItem: item });
+      setShowDetailModal(true);
+      triggerKekaDetails(item.keka_employee_id);
+    } else {
+      setDetailTarget({ type: 'system', id: item.id, initialItem: item });
+      setShowDetailModal(true);
+      triggerUserDetails(item.id);
+    }
+  };
 
   // ── Department forms ──────────────────────────────────────────────────────
   const [newDeptForm, setNewDeptForm] = useState({ name: '', code: '', description: '' });
@@ -232,6 +312,110 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedRoleId, selectedDeptId, selectedStatus]);
+
+  // ── Keka Items Memoization & Filtering ────────────────────────────────────
+  const kekaItems = kekaMappingData?.items || [];
+
+  const kekaDepartments = useMemo(() => {
+    const set = new Set<string>();
+    kekaItems.forEach((item) => {
+      if (item.keka_department) set.add(item.keka_department);
+    });
+    return Array.from(set).sort();
+  }, [kekaItems]);
+
+  const kekaStatuses = useMemo(() => {
+    const set = new Set<string>();
+    kekaItems.forEach((item) => {
+      if (item.employment_status) set.add(item.employment_status);
+    });
+    return Array.from(set).sort();
+  }, [kekaItems]);
+
+  const filteredKekaItems = useMemo(() => {
+    return kekaItems.filter((item) => {
+      if (kekaSearchQuery.trim()) {
+        const q = kekaSearchQuery.toLowerCase();
+        const nameMatch = item.keka_name?.toLowerCase().includes(q);
+        const emailMatch = item.keka_email?.toLowerCase().includes(q);
+        const empNumMatch = item.keka_employee_number?.toLowerCase().includes(q);
+        const titleMatch = item.keka_job_title?.toLowerCase().includes(q);
+        if (!nameMatch && !emailMatch && !empNumMatch && !titleMatch) return false;
+      }
+
+      if (kekaSyncFilter !== 'all') {
+        if (kekaSyncFilter === 'mapped' && item.status !== 'mapped') return false;
+        if (kekaSyncFilter === 'unmapped' && item.status !== 'unmapped') return false;
+        if (kekaSyncFilter === 'local_match' && item.status !== 'local_match') return false;
+      }
+
+      if (kekaDeptFilter && item.keka_department !== kekaDeptFilter) {
+        return false;
+      }
+
+      if (kekaStatusFilter && item.employment_status !== kekaStatusFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [kekaItems, kekaSearchQuery, kekaSyncFilter, kekaDeptFilter, kekaStatusFilter]);
+
+  const totalKekaPages = Math.max(1, Math.ceil(filteredKekaItems.length / kekaItemsPerPage));
+  const paginatedKekaItems = useMemo(() => {
+    const start = (kekaCurrentPage - 1) * kekaItemsPerPage;
+    return filteredKekaItems.slice(start, start + kekaItemsPerPage);
+  }, [filteredKekaItems, kekaCurrentPage, kekaItemsPerPage]);
+
+  useEffect(() => {
+    setKekaCurrentPage(1);
+  }, [kekaSearchQuery, kekaSyncFilter, kekaDeptFilter, kekaStatusFilter]);
+
+  const handleSyncAllFromKeka = async () => {
+    try {
+      onShowToast('Sync Initiated', 'Synchronizing employees and departments from Keka API…', 'info');
+      try {
+        await syncKekaDepartments().unwrap();
+      } catch (err) {
+        console.warn('Departments sync warning:', err);
+      }
+      const res = await syncKekaEmployees({ update_existing: true, create_missing: true }).unwrap();
+      await refetchKeka();
+      await loadUsers();
+      await loadDepartments();
+      const count = res?.total_keka_employees || res?.created_count || 'All';
+      onShowToast(
+        'Keka Sync Complete',
+        `Successfully synchronized ${count} Keka employees with local Timesheet system.`,
+        'success'
+      );
+    } catch (e: any) {
+      onShowToast('Sync Failed', getErrorMessage(e, 'Failed to synchronize with Keka.'), 'error');
+    }
+  };
+
+  const handleSyncSingleEmployee = async (item: KekaMappingPreviewItem) => {
+    setSyncingSingleId(item.keka_employee_id);
+    try {
+      await syncKekaEmployees({
+        keka_employee_id: item.keka_employee_id,
+        update_existing: true,
+        create_missing: true,
+      }).unwrap();
+      await refetchKeka();
+      await loadUsers();
+      await loadDepartments();
+      onShowToast(
+        'Employee Synced',
+        `${item.keka_name || 'Employee'} has been successfully imported and linked to Timesheet!`,
+        'success'
+      );
+    } catch (e: any) {
+      onShowToast('Sync Failed', getErrorMessage(e, 'Failed to sync employee.'), 'error');
+    } finally {
+      setSyncingSingleId(null);
+    }
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -429,15 +613,28 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
     }
   };
 
-  const handleDeleteDepartment = async (deptId: number, deptName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the department "${deptName}"?`)) return;
+  // Delete department confirmation state
+  const [deleteDeptConfirm, setDeleteDeptConfirm] = useState<{ id: number; name: string } | null>(null);
+  const [isDeletingDept, setIsDeletingDept] = useState(false);
+
+  const handleDeleteDepartment = (deptId: number, deptName: string) => {
+    setDeleteDeptConfirm({ id: deptId, name: deptName });
+  };
+
+  const handleConfirmDeleteDepartment = async () => {
+    if (!deleteDeptConfirm || isDeletingDept) return;
+    const { id: deptId, name: deptName } = deleteDeptConfirm;
     try {
+      setIsDeletingDept(true);
       await deleteDepartmentApi(deptId);
       onShowToast('Department Deleted', `Department "${deptName}" was removed.`, 'success');
+      setDeleteDeptConfirm(null);
       await loadDepartments();
       loadUsers();
     } catch (e: any) {
       onShowToast('Cannot Delete', getErrorMessage(e, 'Failed to delete department. Make sure no employees are assigned.'), 'error');
+    } finally {
+      setIsDeletingDept(false);
     }
   };
 
@@ -453,26 +650,73 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   return (
     <div className="space-y-6">
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
               <UserCog className="w-6 h-6 text-sky-600" />
               <span>User &amp; Department Management</span>
             </h1>
-            <span className="px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
-              {total} Total Users
-            </span>
+
+            {/* View Switcher Pills */}
+            <div className="inline-flex p-1 bg-slate-100 border border-slate-200 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('keka')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'keka'
+                    ? 'bg-white text-sky-700 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Cloud className="w-3.5 h-3.5 text-sky-600" />
+                <span>Keka Directory</span>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-800 font-extrabold">
+                  {kekaMappingData?.total_keka_employees ?? kekaItems.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('system')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'system'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Database className="w-3.5 h-3.5 text-slate-500" />
+                <span>Timesheet Users</span>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-200 text-slate-700 font-extrabold">
+                  {total}
+                </span>
+              </button>
+            </div>
+
             <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
               {departments.length} Departments
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage system access, assign employees to configured departments, manage roles, and review account statuses.
+            {viewMode === 'keka'
+              ? 'Real-time directory fetched from Keka HR API. Review synchronization status and sync employees to Timesheet.'
+              : 'System users registered in local Timesheet database. Assign departments, manage roles, and review account statuses.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Sync All from Keka button */}
+          <button
+            type="button"
+            onClick={handleSyncAllFromKeka}
+            disabled={isSyncingKekaEmps || isSyncingKekaDepts}
+            className="flex items-center gap-2 px-3.5 py-2 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition-all cursor-pointer shadow-sm disabled:opacity-50"
+            title="Import all missing employees & departments from Keka API into local Timesheet system"
+          >
+            <RefreshCw className={`w-4 h-4 text-emerald-700 ${isSyncingKekaEmps || isSyncingKekaDepts ? 'animate-spin' : ''}`} />
+            <span>{isSyncingKekaEmps || isSyncingKekaDepts ? 'Syncing Keka…' : 'Sync All from Keka'}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowManageDeptModal(true)}
@@ -503,234 +747,579 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
       </div>
 
       {/* ── FILTER & SEARCH BAR ──────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search box */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, or employee ID..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+      {viewMode === 'keka' ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Search box */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={kekaSearchQuery}
+                onChange={(e) => setKekaSearchQuery(e.target.value)}
+                placeholder="Search Keka employees by name, email, employee ID, or job title..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Sync status filter */}
+            <select
+              value={kekaSyncFilter}
+              onChange={(e) => setKekaSyncFilter(e.target.value as any)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+            >
+              <option value="all">All Sync Statuses ({kekaItems.length})</option>
+              <option value="mapped">Synced ({kekaMappingData?.summary?.mapped ?? 0})</option>
+              <option value="unmapped">Not Synced ({kekaMappingData?.summary?.unmapped ?? 0})</option>
+              <option value="local_match">Ready to Map ({kekaMappingData?.summary?.local_match ?? 0})</option>
+            </select>
+
+            {/* Department filter */}
+            <select
+              value={kekaDeptFilter}
+              onChange={(e) => setKekaDeptFilter(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+            >
+              <option value="">All Departments ({kekaDepartments.length})</option>
+              {kekaDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
+            {/* Employment Status filter */}
+            <select
+              value={kekaStatusFilter}
+              onChange={(e) => setKekaStatusFilter(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+            >
+              <option value="">All Keka Statuses</option>
+              {kekaStatuses.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+
+            {/* Refresh button */}
+            <button
+              type="button"
+              onClick={() => refetchKeka()}
+              disabled={isKekaFetching}
+              className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Refresh Keka directory"
+            >
+              <RefreshCw className={`w-4 h-4 ${isKekaFetching ? 'animate-spin text-sky-600' : ''}`} />
+            </button>
           </div>
-
-          {/* Department filter */}
-          <select
-            value={selectedDeptId}
-            onChange={(e) => setSelectedDeptId(e.target.value === '' ? '' : Number(e.target.value))}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-          >
-            <option value="">All Departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} ({d.employee_count ?? 0})
-              </option>
-            ))}
-          </select>
-
-          {/* Role filter */}
-          <select
-            value={selectedRoleId}
-            onChange={(e) => setSelectedRoleId(e.target.value === '' ? '' : Number(e.target.value))}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-          >
-            <option value="">All Roles</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {roleLabel(r.name)}
-              </option>
-            ))}
-          </select>
-
-          {/* Status filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-          >
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Pending">Pending</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-
-          {/* Refresh button */}
-          <button
-            type="button"
-            onClick={() => { loadUsers(); loadDepartments(); }}
-            disabled={loading}
-            className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors disabled:opacity-50"
-            title="Refresh list"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
-          </button>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Search box */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, email, or employee ID..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
 
-      {/* ── USERS TABLE ─────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        {error && (
-          <div className="p-4 bg-rose-50 border-b border-rose-100 flex items-center gap-2 text-rose-700 text-xs font-semibold">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+            {/* Department filter */}
+            <select
+              value={selectedDeptId}
+              onChange={(e) => setSelectedDeptId(e.target.value === '' ? '' : Number(e.target.value))}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.employee_count ?? 0})
+                </option>
+              ))}
+            </select>
+
+            {/* Role filter */}
+            <select
+              value={selectedRoleId}
+              onChange={(e) => setSelectedRoleId(e.target.value === '' ? '' : Number(e.target.value))}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Roles</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {roleLabel(r.name)}
+                </option>
+              ))}
+            </select>
+
+            {/* Status filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Pending">Pending</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+
+            {/* Refresh button */}
+            <button
+              type="button"
+              onClick={() => { loadUsers(); loadDepartments(); }}
+              disabled={loading}
+              className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Refresh list"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-3">Employee</th>
-                <th className="py-3 px-3">Employee ID</th>
-                <th className="py-3 px-3">Role</th>
-                <th className="py-3 px-3">Department</th>
-                <th className="py-3 px-3">Joining Date</th>
-                <th className="py-3 px-3 text-center">Status</th>
-                <th className="py-3 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-500 mx-auto" />
-                    <p className="text-slate-400 mt-2 font-medium">Loading users…</p>
-                  </td>
+      {/* ── TABLE VIEW (KEKA DIRECTORY OR SYSTEM USERS) ─────────────────── */}
+      {viewMode === 'keka' ? (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-3">Keka Employee</th>
+                  <th className="py-3 px-3">Employee ID</th>
+                  <th className="py-3 px-3">Role / Designation</th>
+                  <th className="py-3 px-3">Department</th>
+                  <th className="py-3 px-3">Joining Date</th>
+                  <th className="py-3 px-3 text-center">Employment Status</th>
+                  <th className="py-3 px-3 text-center">Sync Status</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
-                    No users matching the selected filters.
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                    {/* Employee */}
-                    <td className="py-3.5 px-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-900 font-bold text-sm shrink-0">
-                          {user.first_name?.[0]?.toUpperCase() ?? '?'}
-                          {user.last_name?.[0]?.toUpperCase() ?? ''}
-                        </div>
-                        <div>
-                          <p className="font-extrabold text-slate-900">
-                            {user.first_name} {user.last_name}
-                          </p>
-                          <p className="text-[11px] text-slate-500 font-medium">{user.email}</p>
-                        </div>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isKekaLoading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-sky-500 mx-auto" />
+                      <p className="text-slate-400 mt-2 font-medium">Fetching real-time employee directory from Keka API…</p>
                     </td>
-
-                    {/* Employee ID */}
-                    <td className="py-3.5 px-3">
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg font-semibold">
-                        <Hash className="w-3 h-3 text-slate-400" />
-                        {user.employee_id}
-                      </span>
-                    </td>
-
-                    {/* Role */}
-                    <td className="py-3.5 px-3">
-                      <span
-                        className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${roleBadgeClass(
-                          user.role?.name ?? ''
-                        )}`}
-                      >
-                        {roleLabel(user.role?.name ?? '')}
-                      </span>
-                    </td>
-
-                    {/* Department */}
-                    <td className="py-3.5 px-3">
-                      {user.department?.name ? (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold border ${departmentBadgeClass(
-                            user.department.name
-                          )}`}
-                        >
-                          <Building2 className="w-2.5 h-2.5 opacity-70" />
-                          {user.department.name}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs italic">Unassigned</span>
-                      )}
-                    </td>
-
-                    {/* Joining Date */}
-                    <td className="py-3.5 px-3 text-slate-500 font-medium">
-                      {user.joining_date
-                        ? new Date(user.joining_date).toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : '—'}
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-3 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(
-                          user.status
-                        )}`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Status toggle button */}
-                        {currentUserId !== user.id && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStatus(user)}
-                            disabled={togglingIds.has(user.id)}
-                            className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
-                            title={user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
-                          >
-                            {togglingIds.has(user.id) ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
-                            ) : user.status === 'Active' ? (
-                              <UserX className="w-3.5 h-3.5 text-rose-600" />
-                            ) : (
-                              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                            )}
-                          </button>
-                        )}
-
-                        {/* Edit User */}
+                  </tr>
+                ) : kekaError ? (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center">
+                      <div className="max-w-md mx-auto p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800">
+                        <AlertTriangle className="w-6 h-6 text-rose-600 mx-auto mb-2" />
+                        <p className="font-bold text-sm">Failed to load Keka Directory</p>
+                        <p className="text-xs text-rose-600 mt-1">
+                          {getErrorMessage(kekaError, 'Could not retrieve employee list from Keka API.')}
+                        </p>
                         <button
                           type="button"
-                          onClick={() => handleOpenEdit(user)}
-                          className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-600 transition-all cursor-pointer"
-                          title="Edit User"
+                          onClick={() => refetchKeka()}
+                          className="mt-3 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
                         >
-                          <Edit className="w-3.5 h-3.5" />
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Retry Fetch</span>
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : filteredKekaItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center text-slate-400 font-medium">
+                      {kekaItems.length === 0
+                        ? 'No Keka employees returned from Keka API.'
+                        : 'No Keka employees found matching the filters.'}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedKekaItems.map((emp) => {
+                    const initials = emp.keka_name
+                      ? emp.keka_name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                          .substring(0, 2)
+                          .toUpperCase()
+                      : '?';
 
-        {/* Pagination bar */}
-        <Pagination
-          currentPage={currentPage}
-          totalItems={total}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
-        />
-      </div>
+                    return (
+                      <tr
+                        key={emp.keka_employee_id}
+                        onClick={() => handleOpenEmployeeDetails('keka', emp)}
+                        className="hover:bg-sky-50/40 transition-colors cursor-pointer group"
+                      >
+                        {/* Employee Name & Email */}
+                        <td className="py-3.5 px-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gradient-to-br from-sky-100 to-blue-200 border border-sky-300 flex items-center justify-center text-sky-900 font-bold text-sm shrink-0 rounded-lg shadow-2xs group-hover:scale-105 transition-transform">
+                              {initials}
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-slate-900 group-hover:text-sky-700 transition-colors flex items-center gap-1.5">
+                                <span>{emp.keka_name || 'Unnamed Employee'}</span>
+                              </p>
+                              <p className="text-[11px] text-slate-500 font-medium">{emp.keka_email || '—'}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Employee ID */}
+                        <td className="py-3.5 px-3">
+                          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg font-semibold border border-slate-200">
+                            <Hash className="w-3 h-3 text-slate-400" />
+                            {emp.keka_employee_number || '—'}
+                          </span>
+                        </td>
+
+                        {/* Role / Job Title */}
+                        <td className="py-3.5 px-3">
+                          <span className="font-semibold text-slate-800">
+                            {emp.keka_job_title || '—'}
+                          </span>
+                        </td>
+
+                        {/* Department */}
+                        <td className="py-3.5 px-3">
+                          {emp.keka_department ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold border rounded bg-sky-50 text-sky-900 border-sky-200">
+                              <Building2 className="w-2.5 h-2.5 opacity-70" />
+                              {emp.keka_department}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">Unassigned</span>
+                          )}
+                        </td>
+
+                        {/* Joining Date */}
+                        <td className="py-3.5 px-3 text-slate-500 font-medium">
+                          {emp.date_of_joining
+                            ? new Date(emp.date_of_joining).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : '—'}
+                        </td>
+
+                        {/* Keka Employment Status */}
+                        <td className="py-3.5 px-3 text-center">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full ${kekaStatusBadgeClass(
+                              emp.employment_status
+                            )}`}
+                          >
+                            {emp.employment_status || 'Active'}
+                          </span>
+                        </td>
+
+                        {/* Keka Sync Status (Sync or Not Sync) */}
+                        <td className="py-3.5 px-3 text-center">
+                          {emp.status === 'mapped' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-full">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Synced
+                            </span>
+                          ) : emp.status === 'local_match' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-300 rounded-full" title={`Matched local user: ${emp.matched_local_user_name || emp.matched_local_user_email}`}>
+                              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                              Ready to Link
+                            </span>
+                          ) : emp.status === 'conflict' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-300 rounded-full" title={emp.reason}>
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                              Conflict
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-300 rounded-full">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                              Not Synced
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Action buttons */}
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* View Details Eye Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEmployeeDetails('keka', emp);
+                              }}
+                              className="p-1.5 border border-slate-200 bg-white hover:bg-sky-50 text-slate-600 hover:text-sky-600 rounded-lg transition-all cursor-pointer shadow-2xs"
+                              title="View Full Employee Details"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+
+                            {emp.status === 'mapped' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                Linked
+                              </span>
+                            ) : emp.status === 'local_match' ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSyncSingleEmployee(emp);
+                                }}
+                                disabled={syncingSingleId === emp.keka_employee_id}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                title="Link Keka profile with matching Timesheet user"
+                              >
+                                {syncingSingleId === emp.keka_employee_id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin text-sky-600" />
+                                ) : (
+                                  <Link2 className="w-3 h-3 text-sky-600" />
+                                )}
+                                <span>Link Account</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSyncSingleEmployee(emp);
+                                }}
+                                disabled={syncingSingleId === emp.keka_employee_id}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:text-emerald-800 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                title="Import and provision this Keka employee into local Timesheet system"
+                              >
+                                {syncingSingleId === emp.keka_employee_id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                                ) : (
+                                  <UserPlus className="w-3 h-3 text-emerald-600" />
+                                )}
+                                <span>Sync to System</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination bar for Keka Directory */}
+          <Pagination
+            currentPage={kekaCurrentPage}
+            totalItems={filteredKekaItems.length}
+            itemsPerPage={kekaItemsPerPage}
+            onPageChange={setKekaCurrentPage}
+            onItemsPerPageChange={setKekaItemsPerPage}
+          />
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          {error && (
+            <div className="p-4 bg-rose-50 border-b border-rose-100 flex items-center gap-2 text-rose-700 text-xs font-semibold">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-3">Employee</th>
+                  <th className="py-3 px-3">Employee ID</th>
+                  <th className="py-3 px-3">Role / Designation</th>
+                  <th className="py-3 px-3">Department</th>
+                  <th className="py-3 px-3">Joining Date</th>
+                  <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-3 text-center">Sync Status</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-sky-500 mx-auto" />
+                      <p className="text-slate-400 mt-2 font-medium">Loading users…</p>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                      No users matching the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr
+                      key={user.id}
+                      onClick={() => handleOpenEmployeeDetails('system', user)}
+                      className="hover:bg-sky-50/40 transition-colors cursor-pointer group"
+                    >
+                      {/* Employee */}
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gradient-to-br from-sky-100 to-blue-200 border border-sky-300 flex items-center justify-center text-sky-900 font-bold text-sm shrink-0 rounded-lg shadow-2xs group-hover:scale-105 transition-transform">
+                            {user.first_name?.[0]?.toUpperCase() ?? '?'}
+                            {user.last_name?.[0]?.toUpperCase() ?? ''}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900 group-hover:text-sky-700 transition-colors flex items-center gap-1.5 flex-wrap">
+                              <span>{user.first_name} {user.last_name}</span>
+                              {(!user.ctc || Number(user.ctc) <= 0) && (
+                                <span
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded-full"
+                                  title="Missing CTC: Default fallback rate (₹500/hr) applies for project cost calculations"
+                                >
+                                  <AlertTriangle className="w-2.5 h-2.5 text-amber-600" /> No CTC
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-medium">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Employee ID */}
+                      <td className="py-3.5 px-3">
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg font-semibold border border-slate-200">
+                          <Hash className="w-3 h-3 text-slate-400" />
+                          {user.employee_id || '—'}
+                        </span>
+                      </td>
+
+                      {/* Role */}
+                      <td className="py-3.5 px-3">
+                        <span className="font-semibold text-slate-800">
+                          {roleLabel(user.role?.name ?? '')}
+                        </span>
+                      </td>
+
+                      {/* Department */}
+                      <td className="py-3.5 px-3">
+                        {user.department?.name ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold border rounded bg-sky-50 text-sky-900 border-sky-200">
+                            <Building2 className="w-2.5 h-2.5 opacity-70" />
+                            {user.department.name}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">Unassigned</span>
+                        )}
+                      </td>
+
+                      {/* Joining Date */}
+                      <td className="py-3.5 px-3 text-slate-500 font-medium">
+                        {user.joining_date
+                          ? new Date(user.joining_date).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : '—'}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-3 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full ${statusBadgeClass(
+                            user.status
+                          )}`}
+                        >
+                          {user.status || 'Active'}
+                        </span>
+                      </td>
+
+                      {/* Keka Sync Status */}
+                      <td className="py-3.5 px-3 text-center">
+                        {user.is_keka_synced ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-full">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Synced
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200 rounded-full">
+                            <Unlink className="w-3.5 h-3.5 text-slate-400" />
+                            Local Only
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* View Details Eye Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEmployeeDetails('system', user);
+                            }}
+                            className="p-1.5 border border-slate-200 bg-white hover:bg-sky-50 text-slate-600 hover:text-sky-600 rounded-lg transition-all cursor-pointer shadow-2xs"
+                            title="View Full Profile Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Status toggle button */}
+                          {currentUserId !== user.id && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleStatus(user);
+                              }}
+                              disabled={togglingIds.has(user.id)}
+                              className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                              title={user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
+                            >
+                              {togglingIds.has(user.id) ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
+                              ) : user.status === 'Active' ? (
+                                <UserX className="w-3.5 h-3.5 text-rose-600" />
+                              ) : (
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              )}
+                            </button>
+                          )}
+
+                          {/* Edit User */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEdit(user);
+                            }}
+                            className="p-1.5 border border-slate-200 bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-600 rounded-lg transition-all cursor-pointer shadow-2xs"
+                            title="Edit User"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination bar */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={total}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
+      )}
 
       {/* ── EDIT USER MODAL ─────────────────────────────────────────────── */}
       {editingUser && editForm && (
@@ -838,6 +1427,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     className={inputCls}
                     placeholder="E.g., 500000"
                   />
+                  {(!editForm.ctc || Number(editForm.ctc) <= 0) && (
+                    <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 mt-0.5">
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      Fallback rate (₹500/hr) will apply in project financials if unset.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1187,6 +1782,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                       className={inputCls}
                       placeholder="e.g. 750000"
                     />
+                    {(!createForm.ctc || Number(createForm.ctc) <= 0) && (
+                      <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 mt-0.5">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        Fallback rate (₹500/hr) will apply in project financials if left blank.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1525,6 +2126,46 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
           </div>
         </div>
       )}
+
+      {/* ── EMPLOYEE LIVE DETAIL MODAL ───────────────────────────────── */}
+      <EmployeeDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setDetailTarget(null);
+        }}
+        type={detailTarget?.type || 'keka'}
+        kekaDetails={kekaDetailData}
+        userDetails={userDetailData}
+        initialItem={detailTarget?.initialItem}
+        isLoading={detailTarget?.type === 'keka' ? isKekaDetailLoading : isUserDetailLoading}
+        error={detailTarget?.type === 'keka' ? kekaDetailError : userDetailError}
+        onRetry={() => {
+          if (detailTarget?.type === 'keka') {
+            triggerKekaDetails(String(detailTarget.id));
+          } else if (detailTarget) {
+            triggerUserDetails(Number(detailTarget.id));
+          }
+        }}
+        onSyncSingleKeka={handleSyncSingleEmployee}
+        isSyncingSingle={syncingSingleId === detailTarget?.id}
+        onOpenEditUser={(u) => {
+          setShowDetailModal(false);
+          handleOpenEdit(u);
+        }}
+      />
+
+      {/* Delete Department Confirmation Dialog */}
+      <ConfirmModal
+        isOpen={deleteDeptConfirm !== null}
+        title="Delete Department"
+        message={`Are you sure you want to delete the department "${deleteDeptConfirm?.name}"? Make sure no active employees are assigned to this department.`}
+        confirmText="Delete Department"
+        variant="danger"
+        isLoading={isDeletingDept}
+        onConfirm={handleConfirmDeleteDepartment}
+        onCancel={() => setDeleteDeptConfirm(null)}
+      />
     </div>
   );
 };

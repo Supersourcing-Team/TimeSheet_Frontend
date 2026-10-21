@@ -96,6 +96,7 @@ const HolidaysManagement = React.lazy(() => import('./components/admin/HolidaysM
 const LeaveTypesManagement = React.lazy(() => import('./components/admin/LeaveTypesManagement').then(m => ({ default: m.LeaveTypesManagement })));
 const WorkingCalendar = React.lazy(() => import('./components/admin/WorkingCalendar').then(m => ({ default: m.WorkingCalendar })));
 const KekaManagement = React.lazy(() => import('./components/admin/KekaManagement').then(m => ({ default: m.KekaManagement })));
+const SettingsManagement = React.lazy(() => import('./components/admin/SettingsManagement').then(m => ({ default: m.SettingsManagement })));
 
 // Initial fallbacks for things not yet in backend API endpoints
 import { INITIAL_ACTIVITIES, INITIAL_WORKING_CALENDAR, INITIAL_SETTINGS } from './data/initialData';
@@ -320,6 +321,19 @@ export default function App() {
   const [editingTimesheet, setEditingTimesheet] = useState<TimesheetEntry | null>(null);
   const [defaultSubmitDate, setDefaultSubmitDate] = useState<string | null>(null);
   const [openMarkLeaveModal, setOpenMarkLeaveModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // RTK Queries (Skipped if not logged in)
   const skip = !currentUser;
@@ -451,20 +465,32 @@ export default function App() {
   // --- Timesheet Handlers ---
   const handleTimesheetSubmit = React.useCallback(async (entries: Omit<TimesheetEntry, 'id'>[]) => {
     try {
-      const payload = entries.map(e => ({
-        project_assignment_id: Number(e.projectId),
-        timesheet_date: e.date,
-        billable_hours: e.billableHours,
-        non_billable_hours: e.nonBillableHours,
-        billable_work_summary: e.billableDescription || e.description,
-        non_billable_work_summary: e.nonBillableDescription,
-      }));
+      const payload: any[] = [];
+      for (const e of entries) {
+        const assignment = myProjectAssignments.find(a => String(a.project_id) === String(e.projectId));
+        if (!assignment) {
+          showToast(
+            'Assignment Missing',
+            `You are not assigned to project ID ${e.projectId}. Please contact your Project Manager.`,
+            'error'
+          );
+          return;
+        }
+        payload.push({
+          project_assignment_id: assignment.id,
+          timesheet_date: e.date,
+          billable_hours: e.billableHours,
+          non_billable_hours: e.nonBillableHours,
+          billable_work_summary: e.billableDescription || e.description,
+          non_billable_work_summary: e.nonBillableDescription,
+        });
+      }
       await createTimesheets(payload as any).unwrap();
       showToast('Success', 'Timesheets submitted', 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to submit timesheets'), 'error');
     }
-  }, [createTimesheets, showToast]);
+  }, [createTimesheets, myProjectAssignments, showToast]);
 
   const handleDeleteTimesheet = React.useCallback(async (id: string) => {
     try {
@@ -541,10 +567,17 @@ export default function App() {
   const handleRequestWeekendWork = React.useCallback(async (req: Omit<WeekendWorkRequest, 'id'>) => {
     try {
       const assignment = myProjectAssignments.find(a => String(a.project_id) === req.projectId);
-      const assignmentId = assignment ? assignment.id : Number(req.projectId); // fallback
+      if (!assignment) {
+        showToast(
+          'Assignment Missing',
+          `You are not assigned to project ID ${req.projectId}. Please contact your Project Manager.`,
+          'error'
+        );
+        return;
+      }
 
       await submitWeekendWork({
-        project_assignment_id: assignmentId,
+        project_assignment_id: assignment.id,
         work_date: req.workDate,
         planned_hours: req.plannedHours,
         billable_hours: req.billableHours || 0,
@@ -710,6 +743,7 @@ export default function App() {
       showToast('Success', 'Holiday Added', 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to add holiday'), 'error');
+      throw e;
     }
   }, [createHoliday, showToast]);
 
@@ -719,6 +753,7 @@ export default function App() {
       showToast('Success', 'Holiday Updated', 'success');
     } catch (e: any) {
       showToast('Action Failed', getErrorMessage(e, 'Failed to update holiday'), 'error');
+      throw e;
     }
   }, [updateHoliday, showToast]);
 
@@ -728,6 +763,7 @@ export default function App() {
       showToast('Success', 'Holiday deleted', 'success');
     } catch (e) {
       showToast('Action Failed', 'Failed to delete holiday', 'error');
+      throw e;
     }
   }, [deleteHoliday, showToast]);
 
@@ -775,6 +811,15 @@ export default function App() {
       showToast('Action Failed', getErrorMessage(e, 'Failed to toggle status'), 'error');
     }
   }, [deleteLeaveType, showToast]);
+
+  const handleUpdateSettings = React.useCallback(async (newSettings: import('./types').SystemSettingsConfig) => {
+    try {
+      await updateSettingsMutation(newSettings).unwrap();
+      showToast('Success', 'Settings updated successfully', 'success');
+    } catch (e: any) {
+      showToast('Action Failed', getErrorMessage(e, 'Failed to update settings'), 'error');
+    }
+  }, [updateSettingsMutation, showToast]);
 
   // Memoized Sidebar & Header callbacks
   const handleTogglePortalMode = React.useCallback((mode: ActivePortalMode) => {
@@ -844,29 +889,66 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+      {/* Network Offline Banner Guard */}
+      {isOffline && (
+        <div
+          role="alert"
+          className="bg-amber-500 text-white px-4 py-2 text-xs font-bold flex items-center justify-between sticky top-0 z-50 shadow-md animate-fade-in"
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-2.829-6.364 9 9 0 012.829-6.364m0 0L3 3m5.464 5.464a5 5 0 017.072 0" />
+            </svg>
+            <span>You are currently working offline. Changes may not sync until connection is restored.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white text-[11px] font-bold cursor-pointer transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
       <Header
         currentUser={currentUser}
         portalMode={portalMode}
         onTogglePortalMode={handleTogglePortalMode}
         pendingApprovalsCount={pendingApprovalsTotal}
         onLogout={handleLogout}
+        onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
       />
 
       <div className="flex flex-1">
         <Sidebar
           portalMode={portalMode}
           activeEmployeeTab={activeEmployeeTab}
-          onSelectEmployeeTab={handleSelectEmployeeTab}
+          onSelectEmployeeTab={(tab) => {
+            handleSelectEmployeeTab(tab);
+            setMobileMenuOpen(false);
+          }}
           activePmTab={activePmTab}
-          onSelectPmTab={handleSelectPmTab}
+          onSelectPmTab={(tab) => {
+            handleSelectPmTab(tab);
+            setMobileMenuOpen(false);
+          }}
           activeAcTab={activeAcTab}
-          onSelectAcTab={handleSelectAcTab}
+          onSelectAcTab={(tab) => {
+            handleSelectAcTab(tab);
+            setMobileMenuOpen(false);
+          }}
           activeAdminTab={activeAdminTab}
-          onSelectAdminTab={handleSelectAdminTab}
+          onSelectAdminTab={(tab) => {
+            handleSelectAdminTab(tab);
+            setMobileMenuOpen(false);
+          }}
           pendingTimesheetsCount={pendingTimesheetsCount}
           pendingLeavesCount={pendingLeavesCount}
           pendingWeekendCount={pendingWeekendCount}
           onQuickAddTimesheet={handleQuickAddTimesheet}
+          mobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
         />
 
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full min-w-0">
@@ -951,6 +1033,10 @@ export default function App() {
                   onApplyLeave={handleApplyLeave}
                   onCancelLeave={handleCancelLeave}
                   onShowToast={showToast}
+                  onOpenMarkLeave={() => {
+                    setOpenMarkLeaveModal(true);
+                    setActiveEmployeeTab('submit_timesheet');
+                  }}
                 />
               )}
 
@@ -1062,6 +1148,7 @@ export default function App() {
                   projects={projects}
                   allUsers={users}
                   timesheets={timesheets}
+                  onShowToast={showToast}
                 />
               )}
 
@@ -1170,6 +1257,14 @@ export default function App() {
 
                 {activeAdminTab === 'admin_keka' && (
                   <KekaManagement onShowToast={showToast} />
+                )}
+
+                {activeAdminTab === 'admin_settings' && (
+                  <SettingsManagement
+                    settings={settings}
+                    onUpdateSettings={handleUpdateSettings}
+                    onShowToast={showToast}
+                  />
                 )}
               </React.Suspense>
             </ErrorBoundary>

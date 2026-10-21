@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Sparkles,
 } from 'lucide-react';
+import { getAttachmentUrl } from '../../utils/api';
 
 interface MyProjectsProps {
   currentUser: User;
@@ -367,7 +368,7 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                           </div>
                         </div>
                         <a
-                          href={doc.filePath}
+                          href={getAttachmentUrl(doc.filePath)}
                           target="_blank"
                           rel="noopener noreferrer"
                           download={doc.fileName}
