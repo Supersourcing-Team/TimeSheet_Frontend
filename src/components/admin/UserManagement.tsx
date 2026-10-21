@@ -483,6 +483,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
         if (createForm.location.trim()) kekaPayload.location = createForm.location.trim();
         if (createForm.legal_entity.trim()) kekaPayload.legalEntity = createForm.legal_entity.trim();
         if (createForm.nationality.trim()) kekaPayload.nationality = createForm.nationality.trim();
+        if (createForm.role_id) kekaPayload.role_id = createForm.role_id;
+        if (createForm.ctc !== undefined && createForm.ctc !== null) kekaPayload.ctc = createForm.ctc;
 
         const res = await createKekaEmployeeApi(kekaPayload);
         onShowToast(
@@ -501,6 +503,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
           joining_date: createForm.joining_date || null,
           status: createForm.status,
           ctc: createForm.ctc,
+          middle_name: createForm.middle_name.trim() || undefined,
+          display_name: createForm.display_name.trim() || undefined,
+          mobile_number: createForm.mobile_number.trim() || undefined,
+          job_title: createForm.job_title.trim() || undefined,
+          secondary_job_title: createForm.secondary_job_title.trim() || undefined,
+          business_unit: createForm.business_unit.trim() || undefined,
+          gender: createForm.gender ? (createForm.gender === 1 ? 'Male' : createForm.gender === 2 ? 'Female' : 'Other') : undefined,
+          date_of_birth: createForm.date_of_birth || undefined,
+          nationality: createForm.nationality.trim() || undefined,
+          location: createForm.location.trim() || undefined,
+          legal_entity: createForm.legal_entity.trim() || undefined,
         });
         onShowToast('Employee Created', `Account for ${createForm.first_name} ${createForm.last_name} created locally.`, 'success');
       }
@@ -1547,9 +1560,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-extrabold text-slate-900 text-xs">Provision directly in Keka HRMS</span>
+                    <span className="font-extrabold text-slate-900 text-xs">Also create profile in Keka HR</span>
                     <p className="text-[11px] text-slate-500 leading-tight">
-                      Executes official <code className="font-mono text-blue-700 bg-blue-100/60 px-1 py-0.5 rounded text-[10px]">POST /hris/employees</code> API and maps local account
+                      Creates employee profile in Keka HR and links the account
                     </p>
                   </div>
                 </div>
@@ -1796,7 +1809,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider pb-1 border-b border-slate-100">
                   <Globe className="w-3.5 h-3.5 text-blue-600" />
-                  <span>3. Personal & Location (Keka Fields)</span>
+                  <span>3. Personal & Location Details</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">

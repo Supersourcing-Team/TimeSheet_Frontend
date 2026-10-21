@@ -371,10 +371,10 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
   const handleClearCache = async () => {
     try {
       await clearTokenCache().unwrap();
-      onShowToast('Token Cache Cleared', 'Cached bearer token cleared successfully', 'success');
+      onShowToast('Connection Reset', 'Keka session refreshed successfully', 'success');
       refetchStatus();
     } catch (err: any) {
-      onShowToast('Error', getErrorMessage(err, 'Failed to clear token cache'), 'error');
+      onShowToast('Reset Failed', getErrorMessage(err, 'Failed to reset Keka connection'), 'error');
     }
   };
 
@@ -499,7 +499,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Bidirectional synchronization of employee directories, approved leave requests, and daily attendance logs.
+                Synchronize employee records, approved leaves, and attendance between SuperTime and Keka HR.
               </p>
             </div>
           </div>
@@ -530,7 +530,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-blue-600" />
-            <span>Sync Depts</span>
+            <span>Sync Departments</span>
           </button>
 
           <button
@@ -554,11 +554,11 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
           <button
             onClick={handleClearCache}
             disabled={isClearingCache}
-            title="Invalidate cached access token and force renewal"
+            title="Refresh the active connection with Keka HR"
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isClearingCache ? 'animate-spin' : ''}`} />
-            <span>Clear Token Cache</span>
+            <span>Reset Connection</span>
           </button>
         </div>
       </div>
@@ -641,7 +641,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
               <div className="space-y-1 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm">
-                    {testResult.success ? 'Handshake Successful' : 'Handshake Failed'}
+                    {testResult.success ? 'Connection Successful' : 'Connection Failed'}
                   </span>
                   <span className="text-[10px] text-slate-500 font-medium">
                     Tested at {testResult.testedAt}
@@ -649,9 +649,14 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 </div>
                 <p className="font-medium">{testResult.message}</p>
                 {testResult.details && (
-                  <pre className="mt-2 p-2 rounded-lg bg-black/5 font-mono text-[11px] overflow-x-auto">
-                    {JSON.stringify(testResult.details, null, 2)}
-                  </pre>
+                  <details className="mt-2 text-[11px]">
+                    <summary className="text-slate-500 hover:text-slate-700 cursor-pointer font-medium select-none">
+                      View Technical Diagnostics
+                    </summary>
+                    <pre className="mt-1.5 p-2 rounded-lg bg-black/5 font-mono text-[11px] overflow-x-auto">
+                      {JSON.stringify(testResult.details, null, 2)}
+                    </pre>
+                  </details>
                 )}
               </div>
             </div>
@@ -661,7 +666,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500">API Connection</span>
+                <span className="text-xs font-bold text-slate-500">Connection Status</span>
                 <Wifi className={`w-4 h-4 ${isConfigured ? 'text-emerald-500' : 'text-amber-500'}`} />
               </div>
               <div>
@@ -670,36 +675,36 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {isConfigured
-                    ? 'Environment variables verified in backend'
-                    : 'Set KEKA_CLIENT_ID & KEKA_CLIENT_SECRET'}
+                    ? 'Connected and ready to sync'
+                    : 'Keka credentials are required to enable sync'}
                 </p>
               </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500">OAuth Grant Type</span>
+                <span className="text-xs font-bold text-slate-500">Access & Security</span>
                 <Key className="w-4 h-4 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-black text-slate-900">Client Credentials</p>
+                <p className="text-2xl font-black text-slate-900">Enterprise API Access</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Scope: <code className="text-blue-600 font-bold">kekaapi</code>
+                  Authorized for employee & attendance sync
                 </p>
               </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500">Access Token State</span>
+                <span className="text-xs font-bold text-slate-500">Session Status</span>
                 <ShieldCheck className="w-4 h-4 text-purple-500" />
               </div>
               <div>
                 <p className="text-2xl font-black text-slate-900">
-                  {statusData?.is_token_cached ? 'Cached (Active)' : 'Refreshed On-Demand'}
+                  {statusData?.is_token_cached ? 'Active Session' : 'Ready on Demand'}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Automated renewal with in-memory mutex lock
+                  Refreshes automatically in the background
                 </p>
               </div>
             </div>
@@ -709,25 +714,25 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4 text-xs">
             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
               <Settings className="w-4 h-4 text-slate-600" />
-              <span>Current Integration Endpoints &amp; Parameters</span>
+              <span>Integration Details &amp; Settings</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">
-                  Authentication Token Endpoint
+                  Authentication Service
                 </span>
-                <p className="font-mono text-slate-800 break-all">
-                  {statusData?.token_endpoint || 'https://login.keka.com/connect/token'}
+                <p className="font-semibold text-slate-800 break-all">
+                  Keka Identity Service ({statusData?.token_endpoint ? 'Configured' : 'login.keka.com'})
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">
-                  Environment &amp; Target Platform
+                  Platform Environment
                 </span>
-                <p className="font-mono text-slate-800 break-all">
-                  {statusData?.environment ? `${statusData.environment.toUpperCase()} (Keka HR API)` : 'PRODUCTION (Keka HR API)'}
+                <p className="font-semibold text-slate-800 break-all">
+                  {statusData?.environment ? statusData.environment.toUpperCase() : 'Production'}
                 </p>
               </div>
 
@@ -735,8 +740,8 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">
                   Client ID
                 </span>
-                <p className="font-mono text-slate-800">
-                  {statusData?.has_client_id ? '•••••••••••••••• (Configured)' : 'Missing'}
+                <p className="font-semibold text-slate-800">
+                  {statusData?.has_client_id ? 'Configured' : 'Not Configured'}
                 </p>
               </div>
 
@@ -744,8 +749,8 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">
                   Client Secret
                 </span>
-                <p className="font-mono text-slate-800">
-                  {statusData?.has_client_secret ? '•••••••••••••••• (Configured)' : 'Missing'}
+                <p className="font-semibold text-slate-800">
+                  {statusData?.has_client_secret ? 'Configured' : 'Not Configured'}
                 </p>
               </div>
             </div>
@@ -753,11 +758,9 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
             <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3">
               <Zap className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="font-bold">Automated Synchronization Features</p>
+                <p className="font-bold">Automated Synchronization</p>
                 <p className="text-slate-600 text-[11px] leading-relaxed">
-                  When employee mappings are active, approving a leave request in Timesheet Portal will automatically forward
-                  the leave request to Keka HR API via the Leave Module. Attendance logs can be queried and synchronized daily
-                  to detect missing timesheet entries.
+                  When employee accounts are linked, approved leave requests automatically sync to Keka HR, and attendance records sync to keep timesheet entries accurate.
                 </p>
               </div>
             </div>
@@ -1009,7 +1012,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
             </h3>
             <p className="text-xs text-slate-500">
               When an employee submits a leave request and it gets approved by Admin/Manager,
-              it will be automatically synchronized with Keka HR under the selected Keka leave type identifier.
+              it will be automatically synchronized with Keka HR under the corresponding Keka leave category.
             </p>
           </div>
 
@@ -1330,7 +1333,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900">Provision Employee in Keka HR</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Executes official POST /hris/employees with all tenant-supported fields</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Create employee profile and automatically sync details to Keka HR</p>
                 </div>
               </div>
               <button
@@ -1842,7 +1845,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Keka Employee Identifier (UUID or EMP Number) *</label>
+                <label className="font-bold text-slate-700">Keka Employee ID or Number *</label>
                 <input
                   type="text"
                   value={punchForm.employeeIdentifier}
@@ -1854,7 +1857,7 @@ export const KekaManagement: React.FC<KekaManagementProps> = ({ onShowToast }) =
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Timestamp (ISO format) *</label>
+                <label className="font-bold text-slate-700">Date & Time *</label>
                 <input
                   type="datetime-local"
                   value={punchForm.timestamp ? punchForm.timestamp.slice(0, 16) : ''}

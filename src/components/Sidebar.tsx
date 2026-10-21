@@ -276,7 +276,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         id: 'admin_keka',
         label: 'Keka Integration',
         icon: Network,
-        desc: 'HR API, Sync & Attendance',
+        desc: 'HR & Attendance Sync',
       },
       {
         id: 'admin_settings',

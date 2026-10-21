@@ -99,6 +99,17 @@ export interface BackendUser {
   joining_date: string | null;
   status: string;
   ctc?: number;
+  middle_name?: string | null;
+  display_name?: string | null;
+  mobile_number?: string | null;
+  job_title?: string | null;
+  secondary_job_title?: string | null;
+  business_unit?: string | null;
+  gender?: string | null;
+  date_of_birth?: string | null;
+  nationality?: string | null;
+  location?: string | null;
+  legal_entity?: string | null;
   created_at: string;
   updated_at: string;
   role: { id: number; name: string; description: string | null; created_at: string };
@@ -124,6 +135,17 @@ export interface UserCreatePayload {
   joining_date?: string | null;
   status?: string;
   ctc?: number;
+  middle_name?: string;
+  display_name?: string;
+  mobile_number?: string;
+  job_title?: string;
+  secondary_job_title?: string;
+  business_unit?: string;
+  gender?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  location?: string;
+  legal_entity?: string;
 }
 
 export interface UserUpdatePayload {
@@ -136,6 +158,17 @@ export interface UserUpdatePayload {
   joining_date?: string | null;
   status?: string;
   ctc?: number;
+  middle_name?: string;
+  display_name?: string;
+  mobile_number?: string;
+  job_title?: string;
+  secondary_job_title?: string;
+  business_unit?: string;
+  gender?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  location?: string;
+  legal_entity?: string;
 }
 
 function authHeader() {
