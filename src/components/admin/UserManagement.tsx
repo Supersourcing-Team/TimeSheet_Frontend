@@ -125,7 +125,7 @@ const defaultCreate = {
   location: '',
   legal_entity: '',
   nationality: 'Indian',
-  sync_to_keka: true,
+  sync_to_keka: false,
 };
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
@@ -155,7 +155,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // ── Directory View Mode ───────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<'keka' | 'system'>('keka');
+  const [viewMode, setViewMode] = useState<'keka' | 'system'>('system');
 
   // ── Keka Directory query & mutations ──────────────────────────────────────
   const {
