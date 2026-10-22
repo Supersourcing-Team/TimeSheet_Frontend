@@ -188,6 +188,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     description: '',
+    project_manager_id: currentUser?.id || '',
   });
 
   // Edit Project Form
@@ -352,13 +353,15 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
     try {
       setIsSubmittingProject(true);
       setIsUploadingDocs(true);
+      const selectedPmId = newProject.project_manager_id || currentUser.id;
+      const selectedPmUser = allUsers.find((u) => String(u.id) === String(selectedPmId));
       const res: any = await onAddProject({
         name: newProject.name,
         code: 'PRJ-' + Math.floor(1000 + Math.random() * 9000),
         client: newProject.client,
         accountManagerName: '',
-        pmName: currentUser.name,
-        pmAvatar: currentUser.avatar,
+        pmName: selectedPmUser?.name || currentUser.name,
+        pmAvatar: selectedPmUser?.avatar || currentUser.avatar,
         status: newProject.status,
         budget: Number(newProject.budget),
         loggedHours: 0,
@@ -367,8 +370,9 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
         endDate: newProject.endDate,
         description: newProject.description,
         tools: [],
-        assignedUserIds: [currentUser.id],
-      });
+        assignedUserIds: [String(selectedPmId)],
+        project_manager_id: selectedPmId,
+      } as any);
 
       const newProjId = res?.id || res?.data?.id;
       if (newProjId && selectedCreateFiles.length > 0) {
@@ -1566,7 +1570,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                 </select>
               </div>
 
-              {currentUser?.role === 'ac_manager' && (
+              {(currentUser?.role === 'ac_manager' || currentUser?.role === 'admin') && (
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Budget (₹ INR)</label>
                   <input
@@ -1576,6 +1580,26 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                     onChange={(e) => setNewProject({ ...newProject, budget: e.target.value === '' ? 0 : Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+              )}
+
+              {currentUser?.role === 'admin' && (
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Project Manager</label>
+                  <select
+                    value={newProject.project_manager_id || currentUser.id}
+                    onChange={(e) => setNewProject({ ...newProject, project_manager_id: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={currentUser.id}>{currentUser.name} (Admin - You)</option>
+                    {allUsers
+                      .filter((u) => String(u.id) !== String(currentUser.id))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} {u.title ? `(${u.title})` : `(${u.role})`}
+                        </option>
+                      ))}
+                  </select>
                 </div>
               )}
 

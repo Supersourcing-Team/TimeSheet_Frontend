@@ -48,6 +48,7 @@ export type ACManagerTab =
 
 export type AdminTab =
   | 'admin_overview'
+  | 'admin_projects'
   | 'user_management'
   | 'admin_tools'
   | 'admin_leave_approvals'
@@ -241,6 +242,12 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         label: 'Dashboard',
         icon: LayoutDashboard,
         desc: 'Master KPIs & User Activity',
+      },
+      {
+        id: 'admin_projects',
+        label: 'Projects & Clients',
+        icon: Briefcase,
+        desc: 'Projects, Milestones, Clients & Teams',
       },
       {
         id: 'user_management',

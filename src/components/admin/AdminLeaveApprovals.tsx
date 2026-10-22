@@ -66,7 +66,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // User details helper map
+  // User details helper
   const userMap = new Map<string, User>(users.map((u) => [u.id, u]));
 
   // Metrics
@@ -204,8 +204,7 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
     const rows = sortedRequests
       .map(
         (r) =>
-          `"${r.id}","${r.userName}","${r.type}","${r.startDate}","${r.endDate}",${
-            r.daysCount
+          `"${r.id}","${r.userName}","${r.type}","${r.startDate}","${r.endDate}",${r.daysCount
           },"${r.reason.replace(/"/g, '""')}","${(r.backupContact || '').replace(
             /"/g,
             '""'
@@ -260,11 +259,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
         <button
           type="button"
           onClick={() => setSelectedStatusTab('pending')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            selectedStatusTab === 'pending'
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${selectedStatusTab === 'pending'
               ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-400/20 shadow-md'
               : 'bg-white border-slate-200 hover:border-amber-300 shadow-2xs'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
@@ -286,11 +284,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
         <button
           type="button"
           onClick={() => setSelectedStatusTab('approved')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            selectedStatusTab === 'approved'
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${selectedStatusTab === 'approved'
               ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-400/20 shadow-md'
               : 'bg-white border-slate-200 hover:border-emerald-300 shadow-2xs'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
@@ -311,11 +308,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
         <button
           type="button"
           onClick={() => setSelectedStatusTab('rejected')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            selectedStatusTab === 'rejected'
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${selectedStatusTab === 'rejected'
               ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-400/20 shadow-md'
               : 'bg-white border-slate-200 hover:border-rose-300 shadow-2xs'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-rose-100 text-rose-700 rounded-xl">
@@ -358,22 +354,20 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
             <button
               type="button"
               onClick={() => setSelectedStatusTab('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                selectedStatusTab === 'all'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedStatusTab === 'all'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               All Requests ({leaveRequests.length})
             </button>
             <button
               type="button"
               onClick={() => setSelectedStatusTab('pending')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                selectedStatusTab === 'pending'
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedStatusTab === 'pending'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>Pending</span>
               {pendingCount > 0 && (
@@ -385,22 +379,20 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
             <button
               type="button"
               onClick={() => setSelectedStatusTab('approved')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                selectedStatusTab === 'approved'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedStatusTab === 'approved'
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               Approved ({approvedCount})
             </button>
             <button
               type="button"
               onClick={() => setSelectedStatusTab('rejected')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                selectedStatusTab === 'rejected'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedStatusTab === 'rejected'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
-              }`}
+                }`}
             >
               Rejected ({rejectedCount})
             </button>
@@ -531,9 +523,8 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                   return (
                     <tr
                       key={req.id}
-                      className={`hover:bg-blue-50/30 transition-colors ${
-                        isSelected ? 'bg-blue-50/50' : ''
-                      }`}
+                      className={`hover:bg-blue-50/30 transition-colors ${isSelected ? 'bg-blue-50/50' : ''
+                        }`}
                     >
                       <td className="py-3.5 px-3 text-center">
                         <input
@@ -570,15 +561,14 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                       {/* Leave Type */}
                       <td className="py-3.5 px-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold ${
-                            req.type === 'Annual Leave'
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold ${req.type === 'Annual Leave'
                               ? 'bg-blue-100 text-blue-800'
                               : req.type === 'Sick Leave'
-                              ? 'bg-amber-100 text-amber-800'
-                              : req.type === 'Parental Leave'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
+                                ? 'bg-amber-100 text-amber-800'
+                                : req.type === 'Parental Leave'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                            }`}
                         >
                           <Palmtree className="w-3 h-3" />
                           <span>{req.type}</span>
@@ -623,13 +613,12 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                       <td className="py-3.5 px-3 text-center">
                         <div className="inline-flex flex-col items-center gap-1">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                              req.status === 'approved'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${req.status === 'approved'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : req.status === 'pending'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-rose-100 text-rose-800'
-                            }`}
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
                           >
                             {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
                             {req.status === 'pending' && <Clock className="w-3 h-3 animate-spin" />}
@@ -753,11 +742,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <div
-                  className={`p-2 rounded-xl ${
-                    reviewAction === 'approve'
+                  className={`p-2 rounded-xl ${reviewAction === 'approve'
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-rose-100 text-rose-700'
-                  }`}
+                    }`}
                 >
                   {reviewAction === 'approve' ? (
                     <CheckCircle2 className="w-5 h-5" />
@@ -815,11 +803,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                   <button
                     type="button"
                     onClick={() => setReviewAction('approve')}
-                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
-                      reviewAction === 'approve'
+                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${reviewAction === 'approve'
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     <Check className="w-4 h-4" />
                     <span>Approve Leave</span>
@@ -827,11 +814,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                   <button
                     type="button"
                     onClick={() => setReviewAction('reject')}
-                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
-                      reviewAction === 'reject'
+                    className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${reviewAction === 'reject'
                         ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     <X className="w-4 h-4" />
                     <span>Reject Leave</span>
@@ -868,11 +854,10 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className={`px-5 py-2 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer ${
-                    reviewAction === 'approve'
+                  className={`px-5 py-2 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer ${reviewAction === 'approve'
                       ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
                       : 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
-                  }`}
+                    }`}
                 >
                   {reviewAction === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
                 </button>
@@ -966,13 +951,12 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                        detailRequest.status === 'approved'
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${detailRequest.status === 'approved'
                           ? 'bg-emerald-100 text-emerald-800'
                           : detailRequest.status === 'pending'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
                     >
                       Local: {detailRequest.status}
                     </span>

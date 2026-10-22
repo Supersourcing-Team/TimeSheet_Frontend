@@ -123,10 +123,10 @@ export const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
   const joiningDateStr = rawKeka.joiningDate || initialItem?.date_of_joining;
   const formattedJoiningDate = joiningDateStr
     ? new Date(joiningDateStr).toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
     : '—';
 
   // For System User
@@ -137,11 +137,11 @@ export const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
 
   const systemInitials = isKeka
     ? kekaDisplayName
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase()
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
     : `${systemUser?.first_name?.[0] || '?'}${systemUser?.last_name?.[0] || ''}`.toUpperCase();
 
   return (
@@ -232,15 +232,14 @@ export const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
 
               {/* Status Badge */}
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                  isKeka
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${isKeka
                     ? kekaEmploymentStatus.toLowerCase().includes('work') || kekaEmploymentStatus.toLowerCase().includes('active')
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                       : 'bg-rose-50 text-rose-800 border-rose-200'
                     : systemUser?.status === 'Active'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border-rose-200'
+                  }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 <span>{isKeka ? kekaEmploymentStatus : systemUser?.status || 'Active'}</span>
@@ -422,10 +421,10 @@ export const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
                   <p className="font-bold text-slate-800 mt-0.5">
                     {rawKeka.dateOfBirth
                       ? new Date(rawKeka.dateOfBirth).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
                       : '—'}
                   </p>
                 </div>

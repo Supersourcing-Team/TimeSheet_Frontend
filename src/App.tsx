@@ -639,9 +639,12 @@ export default function App() {
   const handleAddProject = React.useCallback(async (newProj: Omit<Project, 'id'>) => {
     if (!currentUser) return;
     try {
+      const pmId = (newProj as any).project_manager_id
+        ? Number((newProj as any).project_manager_id)
+        : Number(currentUser.id);
       const res = await createProjectMutation({
         client_id: Number(newProj.client), // using client field to pass client_id
-        project_manager_id: Number(currentUser.id),
+        project_manager_id: pmId,
         project_name: newProj.name,
         description: newProj.description,
         budget: newProj.budget,
@@ -1192,6 +1195,25 @@ export default function App() {
                     activities={activities}
                     onNavigateTab={(tab) => setActiveAdminTab(tab)}
                     onApproveLeave={handleApproveLeave}
+                    onShowToast={showToast}
+                  />
+                )}
+
+                {activeAdminTab === 'admin_projects' && (
+                  <PMMyProjects
+                    currentUser={currentUser}
+                    projects={projects}
+                    allUsers={users}
+                    clients={clients}
+                    timesheets={timesheets}
+                    onAddProject={handleAddProject}
+                    onUpdateProject={handleUpdateProject}
+                    onCreateClient={handleCreateClient}
+                    onAssignUserToProject={handleAssignUserToProject}
+                    onRemoveUserFromProject={handleRemoveUserFromProject}
+                    onAddToolToMilestone={handleAddToolToMilestone}
+                    onUpdateToolInProject={handleUpdateToolInProject}
+                    onRemoveToolFromProject={handleRemoveToolFromProject}
                     onShowToast={showToast}
                   />
                 )}
