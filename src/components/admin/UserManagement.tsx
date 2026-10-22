@@ -125,7 +125,7 @@ const defaultCreate = {
   location: '',
   legal_entity: '',
   nationality: 'Indian',
-  sync_to_keka: true,
+  sync_to_keka: false,
 };
 
 export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onShowToast }) => {
@@ -155,7 +155,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // ── Directory View Mode ───────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<'keka' | 'system'>('keka');
+  const [viewMode, setViewMode] = useState<'keka' | 'system'>('system');
 
   // ── Keka Directory query & mutations ──────────────────────────────────────
   const {
@@ -675,22 +675,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
             <div className="inline-flex p-1 bg-slate-100 border border-slate-200 rounded-xl gap-1">
               <button
                 type="button"
-                onClick={() => setViewMode('keka')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'keka'
-                    ? 'bg-white text-sky-700 shadow-sm border border-slate-200/80'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Cloud className="w-3.5 h-3.5 text-sky-600" />
-                <span>Keka Directory</span>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-800 font-extrabold">
-                  {kekaMappingData?.total_keka_employees ?? kekaItems.length}
-                </span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setViewMode('system')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'system'
@@ -702,6 +686,22 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
                 <span>Timesheet Users</span>
                 <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-slate-200 text-slate-700 font-extrabold">
                   {total}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode('keka')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'keka'
+                    ? 'bg-white text-sky-700 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Cloud className="w-3.5 h-3.5 text-sky-600" />
+                <span>Keka Directory</span>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-800 font-extrabold">
+                  {kekaMappingData?.total_keka_employees ?? kekaItems.length}
                 </span>
               </button>
             </div>
