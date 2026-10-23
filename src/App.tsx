@@ -1199,25 +1199,6 @@ export default function App() {
                   />
                 )}
 
-                {activeAdminTab === 'admin_projects' && (
-                  <PMMyProjects
-                    currentUser={currentUser}
-                    projects={projects}
-                    allUsers={users}
-                    clients={clients}
-                    timesheets={timesheets}
-                    onAddProject={handleAddProject}
-                    onUpdateProject={handleUpdateProject}
-                    onCreateClient={handleCreateClient}
-                    onAssignUserToProject={handleAssignUserToProject}
-                    onRemoveUserFromProject={handleRemoveUserFromProject}
-                    onAddToolToMilestone={handleAddToolToMilestone}
-                    onUpdateToolInProject={handleUpdateToolInProject}
-                    onRemoveToolFromProject={handleRemoveToolFromProject}
-                    onShowToast={showToast}
-                  />
-                )}
-
                 {activeAdminTab === 'user_management' && (
                   <UserManagement
                     currentUser={currentUser}
