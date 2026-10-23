@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, Project, TimesheetEntry } from '../../types';
-import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery, useGetHolidaysQuery } from '../../store/api/dataApi';
+import { ProjectAssignment, TimesheetCreatePayload, useCreateTimesheetsMutation, useGetLeaveForDateQuery, useGetHolidaysQuery, useGetWorkingCalendarQuery } from '../../store/api/dataApi';
 import { MarkLeaveModal } from './MarkLeaveModal';
 import {
   Clock,
@@ -25,6 +25,8 @@ import {
   Bot,
   CalendarX,
   ExternalLink,
+  ListOrdered,
+  Lock,
 } from 'lucide-react';
 
 interface SubmitTimesheetProps {
@@ -46,6 +48,7 @@ interface SubmitTimesheetProps {
 
 interface FormRow {
   projectId: string;
+  milestoneId: string;
   date: string;
   billableHours: number;
   nonBillableHours: number;
@@ -80,6 +83,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const [showMarkLeaveModal, setShowMarkLeaveModal] = useState(false);
 
+  // Dynamic lock window from Admin Working Calendar configuration
+  const { data: workingCalendarConfig } = useGetWorkingCalendarQuery();
+  const lockHours = workingCalendarConfig?.timesheetLockHours ?? 24;
+  const maxPastDays = Math.max(1, Math.ceil(lockHours / 24));
+  const minDateObj = new Date();
+  minDateObj.setDate(minDateObj.getDate() - maxPastDays);
+  const minAllowedDate = minDateObj.toISOString().split('T')[0];
+
   useEffect(() => {
     if (initialOpenMarkLeave) {
       setShowMarkLeaveModal(true);
@@ -90,20 +101,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   }, [initialOpenMarkLeave, onCloseMarkLeaveModal]);
   
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
-  const assignedProjects = (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id));
+  const assignedProjects = useMemo(
+    () => (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id)),
+    [projects, currentUser.id]
+  );
   const displaySidebarProjects = assignedProjects;
-
-  // Sync initial empty projectId when projects load
-  useEffect(() => {
-    if (assignedProjects.length > 0 && rows.length > 0 && !rows[0].projectId) {
-      setRows(prev => prev.map((r, i) => i === 0 ? { ...r, projectId: assignedProjects[0].id } : r));
-    }
-  }, [assignedProjects]);
 
   const [rows, setRows] = useState<FormRow[]>(() => {
     if (editingEntry) {
       return [{
         projectId: editingEntry.projectId,
+        milestoneId: editingEntry.milestoneId ? String(editingEntry.milestoneId) : '',
         date: editingEntry.date,
         billableHours: editingEntry.billableHours,
         nonBillableHours: editingEntry.nonBillableHours,
@@ -112,7 +120,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }];
     }
     return [{
-      projectId: assignedProjects[0]?.id || '',
+      projectId: '',
+      milestoneId: '',
       date: defaultDate || today,
       billableHours: 0,
       nonBillableHours: 0,
@@ -125,7 +134,8 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     setRows([
       ...rows,
       {
-        projectId: assignedProjects[0]?.id || '',
+        projectId: '',
+        milestoneId: '',
         date: today,
         billableHours: 2.0,
         nonBillableHours: 0,
@@ -150,7 +160,241 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   ) => {
     const updated = [...rows];
     updated[index][field] = value;
+    if (field === 'projectId') {
+      const targetProj = projects.find((p) => p.id === value);
+      const projMilestones = targetProj?.milestones || [];
+      updated[index].milestoneId = projMilestones.length === 1 ? String(projMilestones[0].id) : '';
+    }
     setRows(updated);
+  };
+
+  const isNumberedList = (val: string) => {
+    const nonBlank = val.split('\n').filter((l) => l.trim().length > 0);
+    return nonBlank.length > 0 && nonBlank.every((l) => /^\s*\d+\.\s*/.test(l));
+  };
+
+  const toggleNumberFormat = (
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription'
+  ) => {
+    const currentVal = rows[rowIndex][field];
+    if (!currentVal.trim()) {
+      handleRowChange(rowIndex, field, '1. ');
+      return;
+    }
+    const lines = currentVal.split('\n');
+    const isNumbered = isNumberedList(currentVal);
+
+    let itemIdx = 0;
+    const formatted = lines.map((line) => {
+      const clean = line.replace(/^(\s*)(•|-|\*|\d+\.)\s*/, '').trim();
+      if (!clean) return line;
+      itemIdx++;
+      return isNumbered ? `• ${clean}` : `${itemIdx}. ${clean}`;
+    });
+    handleRowChange(rowIndex, field, formatted.join('\n'));
+  };
+
+  const handleDescriptionFocus = (
+    e: React.FocusEvent<HTMLTextAreaElement>,
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription'
+  ) => {
+    const currentVal = rows[rowIndex][field];
+    if (!currentVal || !currentVal.trim()) {
+      handleRowChange(rowIndex, field, '• ');
+      const target = e.currentTarget;
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = 2;
+      }, 0);
+    }
+  };
+
+  const handleDescriptionBlur = (
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription'
+  ) => {
+    const currentVal = rows[rowIndex][field];
+    if (currentVal && !currentVal.replace(/^[•\s]+$/, '')) {
+      handleRowChange(rowIndex, field, '');
+    }
+  };
+
+  const handleDescriptionChange = (
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription',
+    newVal: string
+  ) => {
+    const prevVal = rows[rowIndex][field];
+    // If field was empty and user typed or pasted text without bullet/number prefix
+    if (!prevVal && newVal.length > 0) {
+      if (!newVal.startsWith('• ') && !/^\s*(\d+\.|-|\*)\s+/.test(newVal)) {
+        if (newVal === '•' || newVal === '') {
+          handleRowChange(rowIndex, field, '');
+          return;
+        }
+        const formatted = newVal
+          .split('\n')
+          .map((line) => {
+            const trimmed = line.trim();
+            if (!trimmed) return line;
+            if (/^\s*(•|-|\*|\d+\.)\s*/.test(line)) return line;
+            return `• ${trimmed}`;
+          })
+          .join('\n');
+        handleRowChange(rowIndex, field, formatted);
+        return;
+      }
+    }
+    handleRowChange(rowIndex, field, newVal);
+  };
+
+  const handleDescriptionPaste = (
+    e: React.ClipboardEvent<HTMLTextAreaElement>,
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription'
+  ) => {
+    const pasteText = e.clipboardData.getData('text');
+    if (!pasteText) return;
+
+    const textarea = e.currentTarget;
+    const { selectionStart, selectionEnd } = textarea;
+    const val = rows[rowIndex][field];
+
+    const lines = pasteText.split(/\r?\n/);
+    const hasBulletsOrNumbers = lines.some((l) => /^\s*(•|-|\*|\d+\.)\s+/.test(l));
+
+    if (!hasBulletsOrNumbers && (lines.length > 1 || !val.trim())) {
+      e.preventDefault();
+      const formattedPaste = lines
+        .map((line) => {
+          const clean = line.trim();
+          return clean ? `• ${clean}` : '';
+        })
+        .join('\n');
+
+      const beforeCursor = val.substring(0, selectionStart);
+      const afterCursor = val.substring(selectionEnd);
+      const lastNewline = beforeCursor.lastIndexOf('\n');
+      const currentLine = beforeCursor.substring(lastNewline + 1);
+
+      if (currentLine === '• ') {
+        const lineStart = lastNewline + 1;
+        const newText = val.substring(0, lineStart) + formattedPaste + afterCursor;
+        handleRowChange(rowIndex, field, newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = lineStart + formattedPaste.length;
+        }, 0);
+        return;
+      }
+
+      const newText = beforeCursor + formattedPaste + afterCursor;
+      handleRowChange(rowIndex, field, newText);
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = selectionStart + formattedPaste.length;
+      }, 0);
+    }
+  };
+
+  const handleSummaryKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    rowIndex: number,
+    field: 'billableDescription' | 'nonBillableDescription'
+  ) => {
+    const textarea = e.currentTarget;
+    const { selectionStart, selectionEnd } = textarea;
+    const val = rows[rowIndex][field];
+
+    // Clean backspace when cursor is right after "• "
+    if (e.key === 'Backspace' && selectionStart === selectionEnd) {
+      const beforeCursor = val.substring(0, selectionStart);
+      const afterCursor = val.substring(selectionEnd);
+      const lastNewline = beforeCursor.lastIndexOf('\n');
+      const currentLine = beforeCursor.substring(lastNewline + 1);
+
+      if (currentLine === '• ') {
+        e.preventDefault();
+        const lineStart = lastNewline + 1;
+        const newText = val.substring(0, lineStart) + afterCursor;
+        handleRowChange(rowIndex, field, newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = lineStart;
+        }, 0);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const beforeCursor = val.substring(0, selectionStart);
+      const afterCursor = val.substring(selectionEnd);
+      const lastNewline = beforeCursor.lastIndexOf('\n');
+      const currentLine = beforeCursor.substring(lastNewline + 1);
+
+      // Check bullet prefix
+      const bulletMatch = currentLine.match(/^(\s*)(•|-|\*)\s+/);
+      if (bulletMatch) {
+        e.preventDefault();
+        const prefix = bulletMatch[0];
+        const content = currentLine.substring(prefix.length).trim();
+
+        if (!content) {
+          const lineStart = lastNewline + 1;
+          const newText = val.substring(0, lineStart) + afterCursor;
+          handleRowChange(rowIndex, field, newText);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = lineStart;
+          }, 0);
+          return;
+        }
+
+        const insert = '\n• ';
+        const newText = beforeCursor + insert + afterCursor;
+        handleRowChange(rowIndex, field, newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart + insert.length;
+        }, 0);
+        return;
+      }
+
+      // Check numbered list prefix
+      const numMatch = currentLine.match(/^(\s*)(\d+)\.\s+/);
+      if (numMatch) {
+        e.preventDefault();
+        const prefix = numMatch[0];
+        const currentNum = parseInt(numMatch[2], 10);
+        const content = currentLine.substring(prefix.length).trim();
+
+        if (!content) {
+          const lineStart = lastNewline + 1;
+          const newText = val.substring(0, lineStart) + afterCursor;
+          handleRowChange(rowIndex, field, newText);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = lineStart;
+          }, 0);
+          return;
+        }
+
+        const insert = `\n${currentNum + 1}. `;
+        const newText = beforeCursor + insert + afterCursor;
+        handleRowChange(rowIndex, field, newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart + insert.length;
+        }, 0);
+        return;
+      }
+
+      // Default to bullet on next line when typing in description
+      if (currentLine.trim()) {
+        e.preventDefault();
+        const insert = '\n• ';
+        const newText = beforeCursor + insert + afterCursor;
+        handleRowChange(rowIndex, field, newText);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = selectionStart + insert.length;
+        }, 0);
+        return;
+      }
+    }
   };
 
   const totalBillable = rows.reduce((sum, r) => sum + (Number(r.billableHours) || 0), 0);
@@ -198,31 +442,67 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       return;
     }
 
+    const isLockedDate = rows.some((r) => r.date < minAllowedDate);
+    if (isLockedDate) {
+      onShowToast(
+        'Submission Locked',
+        `Timesheet submission is locked for dates older than ${lockHours} hours (${minAllowedDate}). Please contact your Project Manager or Admin.`,
+        'error'
+      );
+      return;
+    }
+
     if (editingEntry && onUpdateTimesheet) {
       const row = rows[0];
 
-      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
+      if (!row.projectId) {
+        onShowToast('Validation Error', 'Please select a project.', 'error');
+        return;
+      }
+
+      const hasRealText = (desc: string) => desc.replace(/[•\s-]/g, '').length > 0;
+
+      if (Number(row.billableHours) > 0 && !hasRealText(row.billableDescription)) {
         onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
         return;
       }
 
-      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
+      if (Number(row.nonBillableHours) > 0 && !hasRealText(row.nonBillableDescription)) {
         onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
         return;
       }
 
       const targetProject = projects.find((p) => p.id === row.projectId);
+      const milestones = targetProject?.milestones || [];
+      if (milestones.length > 0 && !row.milestoneId) {
+        onShowToast('Validation Error', `Please select a milestone for project "${targetProject?.name}".`, 'error');
+        return;
+      }
+
+      const targetMilestone = targetProject?.milestones?.find((m) => String(m.id) === String(row.milestoneId));
+      const cleanDesc = (text: string) =>
+        text
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l && l !== '•')
+          .join('\n');
+
+      const cleanedBillable = cleanDesc(row.billableDescription);
+      const cleanedNonBillable = cleanDesc(row.nonBillableDescription);
+
       const updated: TimesheetEntry = {
         ...editingEntry,
         projectId: row.projectId,
         projectName: targetProject ? targetProject.name : editingEntry.projectName,
+        milestoneId: row.milestoneId ? Number(row.milestoneId) : undefined,
+        milestoneName: targetMilestone?.name,
         date: row.date,
         billableHours: Number(row.billableHours),
         nonBillableHours: Number(row.nonBillableHours),
         category: editingEntry.category || 'Development',
-        description: row.billableDescription || 'Updated work log',
-        billableDescription: row.billableDescription,
-        nonBillableDescription: row.nonBillableDescription,
+        description: cleanedBillable || 'Updated work log',
+        billableDescription: cleanedBillable,
+        nonBillableDescription: cleanedNonBillable,
       };
 
       try {
@@ -240,6 +520,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       const totalHours = Number(row.billableHours || 0) + Number(row.nonBillableHours || 0);
       if (totalHours === 0) continue;
 
+      if (!row.projectId) {
+        onShowToast('Validation Error', 'Please select a project for all active rows.', 'error');
+        return;
+      }
+
       // Resolve project_assignment_id from the user's assignments
       const assignmentForProject = projectAssignments.find(
         (a) => String(a.project_id) === String(row.projectId)
@@ -254,19 +539,42 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         return;
       }
 
-      if (Number(row.billableHours) > 0 && !row.billableDescription.trim()) {
+      const targetProject = projects.find((p) => String(p.id) === String(row.projectId));
+      const milestones = targetProject?.milestones || [];
+      if (milestones.length > 0 && !row.milestoneId) {
+        onShowToast(
+          'Validation Error',
+          `Milestone selection is required for project "${targetProject?.name || 'Selected Project'}".`,
+          'error'
+        );
+        return;
+      }
+
+      const hasRealText = (desc: string) => desc.replace(/[•\s-]/g, '').length > 0;
+
+      if (Number(row.billableHours) > 0 && !hasRealText(row.billableDescription)) {
         onShowToast('Validation Error', 'Billable work description is required when billable hours are logged.', 'error');
         return;
       }
 
-      if (Number(row.nonBillableHours) > 0 && !row.nonBillableDescription.trim()) {
+      if (Number(row.nonBillableHours) > 0 && !hasRealText(row.nonBillableDescription)) {
         onShowToast('Validation Error', 'Non-billable work description is required when non-billable hours are logged.', 'error');
         return;
       }
 
+      const cleanDesc = (text: string) =>
+        text
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l && l !== '•')
+          .join('\n');
+
+      const cleanedBillable = cleanDesc(row.billableDescription);
+      const cleanedNonBillable = cleanDesc(row.nonBillableDescription);
+
       const combinedWorkSummary = [
-        row.billableDescription ? `[Billable] ${row.billableDescription}` : '',
-        row.nonBillableDescription ? `[Non-Billable] ${row.nonBillableDescription}` : '',
+        cleanedBillable ? `[Billable] ${cleanedBillable}` : '',
+        cleanedNonBillable ? `[Non-Billable] ${cleanedNonBillable}` : '',
       ]
         .filter(Boolean)
         .join(' | ') || 'Routine project work';
@@ -274,10 +582,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       payloads.push({
         project_assignment_id: assignmentForProject.id,
         timesheet_date: row.date,
+        milestone_id: row.milestoneId ? Number(row.milestoneId) : undefined,
         billable_hours: Number(row.billableHours),
-        billable_work_summary: row.billableDescription || undefined,
+        billable_work_summary: cleanedBillable || undefined,
         non_billable_hours: Number(row.nonBillableHours),
-        non_billable_work_summary: row.nonBillableDescription || undefined,
+        non_billable_work_summary: cleanedNonBillable || undefined,
       });
     }
 
@@ -297,6 +606,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       setRows([
         {
           projectId: assignedProjects[0]?.id || '',
+          milestoneId: '',
           date: defaultDate || today,
           billableHours: 0,
           nonBillableHours: 0,
@@ -491,10 +801,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 key={idx}
                 className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 transition-all hover:border-slate-300"
               >
-                {/* Project, Date, Hours Selection Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                {/* Project, Milestone, Date, Hours Selection Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                   {/* Project Selection */}
-                  <div className="md:col-span-4 space-y-1">
+                  <div className="md:col-span-3 space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Project
                     </label>
@@ -502,6 +812,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       value={row.projectId}
                       onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
                       disabled={!!editingEntry}
+                      required
                       className="w-full bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
                     >
                       <option value="">Select a Project...</option>
@@ -513,18 +824,72 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     </select>
                   </div>
 
-                  {/* Date Input */}
+                  {/* Milestone Selection */}
                   <div className="md:col-span-3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Date
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <span>Milestone</span>
+                        {(() => {
+                          const targetProj = projects.find((p) => p.id === row.projectId);
+                          const count = targetProj?.milestones?.length || 0;
+                          return count > 0 ? <span className="text-rose-500 font-bold">*</span> : null;
+                        })()}
+                      </span>
+                      {(() => {
+                        const targetProj = projects.find((p) => p.id === row.projectId);
+                        const count = targetProj?.milestones?.length || 0;
+                        return count > 0 ? (
+                          <span className="text-[9px] text-blue-600 font-semibold bg-blue-50 px-1 rounded">
+                            {count} Available
+                          </span>
+                        ) : null;
+                      })()}
+                    </label>
+                    {(() => {
+                      const targetProj = projects.find((p) => p.id === row.projectId);
+                      const milestones = targetProj?.milestones || [];
+                      const hasMilestones = milestones.length > 0;
+                      return (
+                        <select
+                          value={row.milestoneId || ''}
+                          onChange={(e) => handleRowChange(idx, 'milestoneId', e.target.value)}
+                          disabled={!!editingEntry || !row.projectId}
+                          required={hasMilestones}
+                          className="w-full bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer truncate"
+                        >
+                          <option value="">
+                            {!row.projectId
+                              ? 'Select a Project first'
+                              : hasMilestones
+                              ? '-- Select Milestone --'
+                              : 'No Milestones Configured'}
+                          </option>
+                          {milestones.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} ({m.status})
+                            </option>
+                          ))}
+                        </select>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Date Input */}
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span>Date</span>
+                      <span className="text-[9px] text-slate-400 font-normal" title={`Configured lock cutoff: within past ${lockHours} hours`}>
+                        &ge; {minAllowedDate.slice(5)}
+                      </span>
                     </label>
                     <input
                       type="date"
                       value={row.date}
+                      min={minAllowedDate}
                       max={today}
                       onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
                       disabled={!!editingEntry}
-                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
+                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
                     />
                   </div>
 
@@ -548,9 +913,9 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   </div>
 
                   {/* Non-Billable Hours */}
-                  <div className="md:col-span-2 space-y-1">
+                  <div className="md:col-span-1 space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Non-Billable (h)
+                      Non-Bill
                     </label>
                     <input
                       type="number"
@@ -562,7 +927,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       onChange={(e) =>
                         handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                       }
-                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
 
@@ -584,35 +949,77 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200/80">
                   {/* Billable Work Description */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center justify-between">
-                      <span>Billable Work Description / Client Scope</span>
-                      <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                        Invoiced to Client
-                      </span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Billable Work Description</span>
+                        <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                          Client Scope
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleNumberFormat(idx, 'billableDescription')}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
+                            isNumberedList(row.billableDescription)
+                              ? 'bg-sky-50 border-sky-300 text-sky-700'
+                              : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
+                          }`}
+                          title="Toggle between numbered list and default bullets"
+                        >
+                          <ListOrdered className="w-3 h-3 text-slate-500" />
+                          <span>1. Numbers</span>
+                        </button>
+                      </div>
+                    </div>
                     <textarea
                       rows={8}
                       value={row.billableDescription}
-                      onChange={(e) => handleRowChange(idx, 'billableDescription', e.target.value)}
-                      placeholder="E.g. Built API endpoint, fixed payment bug, wrote design specs..."
-                      className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y shadow-2xs leading-relaxed"
+                      onFocus={(e) => handleDescriptionFocus(e, idx, 'billableDescription')}
+                      onBlur={() => handleDescriptionBlur(idx, 'billableDescription')}
+                      onChange={(e) => handleDescriptionChange(idx, 'billableDescription', e.target.value)}
+                      onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'billableDescription')}
+                      onPaste={(e) => handleDescriptionPaste(e, idx, 'billableDescription')}
+                      placeholder="• Built and deployed user auth API&#10;• Configured milestone endpoints&#10;• Unit tests in pytest"
+                      className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y shadow-2xs leading-relaxed font-mono"
                     />
                   </div>
 
                   {/* Non-Billable Work Description */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-                      <span>Non-Billable Description / Internal Notes</span>
-                      <span className="text-[9px] text-slate-500 font-semibold bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">
-                        Internal Overhead
-                      </span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Non-Billable Description</span>
+                        <span className="text-[9px] text-slate-500 font-semibold bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">
+                          Internal Overhead
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleNumberFormat(idx, 'nonBillableDescription')}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
+                            isNumberedList(row.nonBillableDescription)
+                              ? 'bg-sky-50 border-sky-300 text-sky-700'
+                              : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
+                          }`}
+                          title="Toggle between numbered list and default bullets"
+                        >
+                          <ListOrdered className="w-3 h-3 text-slate-500" />
+                          <span>1. Numbers</span>
+                        </button>
+                      </div>
+                    </div>
                     <textarea
                       rows={8}
                       value={row.nonBillableDescription}
-                      onChange={(e) => handleRowChange(idx, 'nonBillableDescription', e.target.value)}
-                      placeholder="E.g. Daily standup meeting, local docker debugging, JIRA updates..."
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y shadow-2xs leading-relaxed"
+                      onFocus={(e) => handleDescriptionFocus(e, idx, 'nonBillableDescription')}
+                      onBlur={() => handleDescriptionBlur(idx, 'nonBillableDescription')}
+                      onChange={(e) => handleDescriptionChange(idx, 'nonBillableDescription', e.target.value)}
+                      onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'nonBillableDescription')}
+                      onPaste={(e) => handleDescriptionPaste(e, idx, 'nonBillableDescription')}
+                      placeholder="• Daily team sync and PM review&#10;• Environment setup and dependency resolution"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y shadow-2xs leading-relaxed font-mono"
                     />
                   </div>
                 </div>

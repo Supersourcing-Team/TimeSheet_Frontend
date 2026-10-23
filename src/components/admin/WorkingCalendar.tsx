@@ -26,7 +26,8 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
 }) => {
   const [fullDayHours, setFullDayHours] = useState(config.fullDayHours);
   const [halfDayHours, setHalfDayHours] = useState(config.halfDayHours);
-      const [workingDays, setWorkingDays] = useState(config.workingDays);
+  const [timesheetLockHours, setTimesheetLockHours] = useState(config.timesheetLockHours ?? 24);
+  const [workingDays, setWorkingDays] = useState(config.workingDays);
   const [timeZone, setTimeZone] = useState(config.timeZone);
 
   const handleToggleDay = (dayKey: keyof WorkingCalendarConfig['workingDays']) => {
@@ -53,6 +54,7 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
       partialDayMaxHours: config.partialDayMaxHours || 7.5,
       workingDays,
       timeZone,
+      timesheetLockHours: Number(timesheetLockHours) || 24,
     };
 
     onUpdateConfig(updatedConfig);
@@ -153,6 +155,30 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium">
                   Threshold for half-day leave deductions and timesheet submissions.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <label className="font-extrabold text-slate-800 uppercase tracking-wider text-[10px] block flex items-center justify-between">
+                  <span>Timesheet Lock Window</span>
+                  <span className="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[9px]">Universal Lock</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    max="720"
+                    placeholder="24"
+                    value={timesheetLockHours === 0 ? '' : timesheetLockHours}
+                    onChange={(e) => setTimesheetLockHours(e.target.value === '' ? 0 : parseInt(e.target.value, 10) || 0)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-blue-600 font-black text-base focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    required
+                  />
+                  <span className="font-extrabold text-slate-500 shrink-0">hours</span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Cutoff window after which past timesheets cannot be logged (e.g. 24h = today & yesterday only).
                 </p>
               </div>
 

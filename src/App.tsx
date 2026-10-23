@@ -457,6 +457,7 @@ export default function App() {
         non_billable_hours: e.nonBillableHours,
         billable_work_summary: e.billableDescription || e.description,
         non_billable_work_summary: e.nonBillableDescription,
+        milestone_id: e.milestoneId,
       }));
       await createTimesheets(payload as any).unwrap();
       showToast('Success', 'Timesheets submitted', 'success');
@@ -483,6 +484,7 @@ export default function App() {
         billable_work_summary: updatedEntry.billableDescription || updatedEntry.description,
         non_billable_work_summary: updatedEntry.nonBillableDescription,
         timesheet_date: updatedEntry.date,
+        milestone_id: updatedEntry.milestoneId,
       }).unwrap();
       showToast('Success', 'Timesheet entry updated', 'success');
     } catch (e: any) {

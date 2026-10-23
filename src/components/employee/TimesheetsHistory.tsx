@@ -1,7 +1,7 @@
 import { Pagination } from '../common/Pagination';
 import React, { useState, useEffect } from 'react';
 import { User, TimesheetEntry, Project, LeaveRequest, HolidayItem } from '../../types';
-import { useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
+import { useGetMyLeaveRequestsQuery, useGetWorkingCalendarQuery } from '../../store/api/dataApi';
 import {
   Calendar as CalendarIcon,
   ListFilter,
@@ -95,6 +95,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
+
+  // Dynamic lock window from Admin Working Calendar configuration
+  const { data: workingCalendarConfig } = useGetWorkingCalendarQuery();
+  const lockHours = workingCalendarConfig?.timesheetLockHours ?? 24;
+  const maxPastDays = Math.max(1, Math.ceil(lockHours / 24));
+  const minDateObj = new Date();
+  minDateObj.setDate(minDateObj.getDate() - maxPastDays);
+  const minAllowedDate = minDateObj.toISOString().split('T')[0];
 
   // Fetch leave requests for leave status visualization
   const { data: leaveData } = useGetMyLeaveRequestsQuery(undefined as any);
@@ -314,6 +322,10 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span>Partial (&lt;8h)</span>
               </span>
+              <span className="flex items-center gap-1.5 text-red-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <span>Missing Timesheet</span>
+              </span>
               <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
                 <span>Leave Day</span>
@@ -355,6 +367,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
               const todayStr = new Date().toISOString().split('T')[0];
               const isFutureDate = dateStr > todayStr;
+              const isMissingTimesheet = !isFutureDate && dateStr < todayStr && !isWeekend && !holidayForDay && !isFullDayLeave && dayTotalHours === 0;
 
               return (
                 <button
@@ -369,6 +382,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       }
                       if (holidayForDay) {
                         onShowToast('Company Holiday', `This date is a company holiday (${holidayForDay.name}). Timesheet logging is disabled.`, 'info');
+                        setSelectedDateModal(dateStr);
+                        return;
+                      }
+                      if (isMissingTimesheet && dateStr < minAllowedDate) {
+                        // Past lock cutoff
                         setSelectedDateModal(dateStr);
                         return;
                       }
@@ -397,11 +415,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                                 ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                                 : leaveForDay
                                   ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                                  : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                  : isMissingTimesheet
+                                    ? 'bg-red-50/70 border-red-300 text-red-900 hover:border-red-500 hover:bg-red-100 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                    : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-extrabold text-slate-900">
+                    <span className={`text-xs font-extrabold ${isMissingTimesheet ? 'text-red-950 font-black' : 'text-slate-900'}`}>
                       {dateStr.split('-')[2]}
                     </span>
                     {dayTotalHours > 0 && (
@@ -413,6 +433,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         }`}
                       >
                         {dayTotalHours}h
+                      </span>
+                    )}
+                    {isMissingTimesheet && (
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                        Missing
                       </span>
                     )}
                     {leaveForDay && dayTotalHours === 0 && (
@@ -450,7 +475,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       </div>
                     )}
                     {dayEntries.length === 0 && !leaveForDay && !holidayForDay && !isWeekend && !isFutureDate && (
-                      <span className="text-[10px] text-slate-400 italic">Click to log</span>
+                      isMissingTimesheet ? (
+                        <span className="text-[10px] text-red-600 font-bold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
+                          <span>Not Submitted</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">Click to log</span>
+                      )
                     )}
                     {dayEntries.length === 0 && holidayForDay && !leaveForDay && !isFutureDate && (
                       <span className="text-[10px] text-orange-400 italic">Holiday</span>
@@ -554,7 +586,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 {paginatedTimesheets.map((ts) => (
                   <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>
-                    <td className="py-3.5 px-3 font-bold text-blue-600">{ts.projectName}</td>
+                    <td className="py-3.5 px-3">
+                      <div className="font-bold text-blue-600">{ts.projectName}</div>
+                      {ts.milestoneName && (
+                        <div className="text-[10px] text-indigo-700 font-semibold mt-0.5">
+                          🎯 {ts.milestoneName}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-3.5 px-3 text-slate-800 max-w-xs font-medium">
                       {ts.billableDescription || ts.description}
                     </td>
@@ -679,6 +718,24 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   );
                 }
 
+                const isPastLock = selectedDateModal && selectedDateModal < minAllowedDate;
+                if (isPastLock) {
+                  return (
+                    <div className="text-center py-6 text-slate-600 text-xs space-y-3 bg-red-50/80 rounded-2xl border border-red-200 p-5 shadow-xs">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold">
+                        <AlertCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-extrabold text-sm text-red-950">Submission Window Closed ({selectedDateModal})</p>
+                        <p className="text-red-800 text-xs max-w-sm mx-auto leading-relaxed">
+                          Timesheet submission for this date is locked. Submissions are only permitted within {lockHours} hours of the date.
+                          Please contact your Project Manager or Admin to request an unlock.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="text-center py-8 text-slate-500 text-xs space-y-3">
                     <p>No hours logged for this date.</p>
@@ -709,7 +766,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-blue-600">{entry.projectName}</span>
+                      <div>
+                        <span className="font-bold text-blue-600">{entry.projectName}</span>
+                        {entry.milestoneName && (
+                          <div className="text-[10px] font-semibold text-indigo-700">
+                            🎯 Milestone: {entry.milestoneName}
+                          </div>
+                        )}
+                      </div>
                       <span className="font-extrabold text-slate-900">
                         {entry.billableHours + entry.nonBillableHours}h ({entry.billableHours}h billable)
                       </span>
