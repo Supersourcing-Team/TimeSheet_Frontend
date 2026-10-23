@@ -162,7 +162,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     updated[index][field] = value;
     if (field === 'projectId') {
       const targetProj = projects.find((p) => p.id === value);
-      const projMilestones = targetProj?.milestones || [];
+      const projMilestones = (targetProj?.milestones || []).filter((m) => m.status !== 'achieved');
       updated[index].milestoneId = projMilestones.length === 1 ? String(projMilestones[0].id) : '';
     }
     setRows(updated);
@@ -473,8 +473,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }
 
       const targetProject = projects.find((p) => p.id === row.projectId);
-      const milestones = targetProject?.milestones || [];
-      if (milestones.length > 0 && !row.milestoneId) {
+      const activeMilestones = (targetProject?.milestones || []).filter(
+        (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
+      );
+      if (activeMilestones.length > 0 && !row.milestoneId) {
         onShowToast('Validation Error', `Please select a milestone for project "${targetProject?.name}".`, 'error');
         return;
       }
@@ -540,8 +542,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }
 
       const targetProject = projects.find((p) => String(p.id) === String(row.projectId));
-      const milestones = targetProject?.milestones || [];
-      if (milestones.length > 0 && !row.milestoneId) {
+      const activeMilestones = (targetProject?.milestones || []).filter(
+        (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
+      );
+      if (activeMilestones.length > 0 && !row.milestoneId) {
         onShowToast(
           'Validation Error',
           `Milestone selection is required for project "${targetProject?.name || 'Selected Project'}".`,
@@ -831,42 +835,51 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                         <span>Milestone</span>
                         {(() => {
                           const targetProj = projects.find((p) => p.id === row.projectId);
-                          const count = targetProj?.milestones?.length || 0;
-                          return count > 0 ? <span className="text-rose-500 font-bold">*</span> : null;
+                          const activeMilestones = (targetProj?.milestones || []).filter(
+                            (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
+                          );
+                          return activeMilestones.length > 0 ? <span className="text-rose-500 font-bold">*</span> : null;
                         })()}
                       </span>
                       {(() => {
                         const targetProj = projects.find((p) => p.id === row.projectId);
-                        const count = targetProj?.milestones?.length || 0;
-                        return count > 0 ? (
+                        const activeMilestones = (targetProj?.milestones || []).filter(
+                          (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
+                        );
+                        return activeMilestones.length > 0 ? (
                           <span className="text-[9px] text-blue-600 font-semibold bg-blue-50 px-1 rounded">
-                            {count} Available
+                            {activeMilestones.length} Available
                           </span>
                         ) : null;
                       })()}
                     </label>
                     {(() => {
                       const targetProj = projects.find((p) => p.id === row.projectId);
-                      const milestones = targetProj?.milestones || [];
-                      const hasMilestones = milestones.length > 0;
+                      const allMilestones = targetProj?.milestones || [];
+                      const activeMilestones = allMilestones.filter(
+                        (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
+                      );
+                      const hasActive = activeMilestones.length > 0;
                       return (
                         <select
                           value={row.milestoneId || ''}
                           onChange={(e) => handleRowChange(idx, 'milestoneId', e.target.value)}
                           disabled={!!editingEntry || !row.projectId}
-                          required={hasMilestones}
+                          required={hasActive}
                           className="w-full bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer truncate"
                         >
                           <option value="">
                             {!row.projectId
                               ? 'Select a Project first'
-                              : hasMilestones
+                              : hasActive
                               ? '-- Select Milestone --'
+                              : allMilestones.length > 0
+                              ? 'All Milestones Achieved'
                               : 'No Milestones Configured'}
                           </option>
-                          {milestones.map((m) => (
+                          {activeMilestones.map((m) => (
                             <option key={m.id} value={m.id}>
-                              {m.name} ({m.status})
+                              {m.name} ({m.status.replace('_', ' ')})
                             </option>
                           ))}
                         </select>
