@@ -140,8 +140,8 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
     skip: activeTab !== 'eod',
   });
 
-  // PM's project IDs
-  const pmProjects = useMemo(() => {
+  // PM's projects (all projects managed by PM, for timesheet record resolution)
+  const allPmProjects = useMemo(() => {
     return (projects || []).filter(
       (p) =>
         (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
@@ -150,14 +150,19 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
     );
   }, [projects, currentUser]);
 
-  const pmProjectIds = useMemo(() => pmProjects.map((p) => p.id), [pmProjects]);
+  // Active PM Projects (only active projects should be visible in filters and compliance monitoring)
+  const pmProjects = useMemo(() => {
+    return allPmProjects.filter((p) => p.isActive !== false && p.is_active !== false);
+  }, [allPmProjects]);
+
+  const allPmProjectIds = useMemo(() => allPmProjects.map((p) => p.id), [allPmProjects]);
 
   // Filter timesheets for PM's managed projects
   const pmTimesheets = useMemo(() => {
     return (timesheets || []).filter(
-      (t) => pmProjectIds.length === 0 || pmProjectIds.includes(t.projectId)
+      (t) => allPmProjectIds.length === 0 || allPmProjectIds.includes(t.projectId)
     );
-  }, [timesheets, pmProjectIds]);
+  }, [timesheets, allPmProjectIds]);
 
   // Apply filters for review tab
   useEffect(() => {

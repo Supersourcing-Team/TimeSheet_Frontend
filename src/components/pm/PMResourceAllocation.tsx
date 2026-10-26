@@ -131,13 +131,15 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   const [toolAllocationDate, setToolAllocationDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [toolDeallocationDate, setToolDeallocationDate] = useState<string>('');
 
-  // PM's projects
+  // PM's projects (only active projects)
   const pmProjects = React.useMemo(() => {
     return (projects || []).filter(
       (p) =>
-        (p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
-        currentUser?.role === 'admin' ||
-        currentUser?.role === 'pm'
+        ((p.pmName && currentUser?.name && p.pmName.toLowerCase() === currentUser.name.toLowerCase()) ||
+          currentUser?.role === 'admin' ||
+          currentUser?.role === 'pm') &&
+        p.isActive !== false &&
+        p.is_active !== false
     );
   }, [projects, currentUser]);
 
