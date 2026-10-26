@@ -202,7 +202,7 @@ export const dataApi = apiSlice.injectEndpoints({
           id: String(p.id),
           name: p.project_name,
           code: `PRJ-${p.id}`,
-          client: p.client_name || 'Unknown',
+          client: p.client_name || '',
           pmName: p.project_manager_name || 'Unknown',
           pmAvatar: '',
           status: p.status || 'Milestone Planning',
@@ -256,7 +256,7 @@ export const dataApi = apiSlice.injectEndpoints({
       providesTags: ['Project'],
     }),
     createProject: builder.mutation<any, {
-      client_id: number; project_manager_id: number; project_name: string;
+      client_id?: number; project_manager_id: number; project_name: string;
       description?: string; budget?: number; start_date?: string; end_date?: string;
     }>({
       query: (body) => ({ url: '/projects', method: 'POST', body }),

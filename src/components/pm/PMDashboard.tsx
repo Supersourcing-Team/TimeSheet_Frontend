@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 import { Project, User, TimesheetEntry, WeekendWorkRequest } from '../../types';
 import {
   Briefcase,
-  CheckCircle2,
   Clock,
   Users,
   CheckSquare,
   Moon,
-  TrendingUp,
-  AlertCircle,
   ChevronRight,
   ArrowUpRight,
   Calendar,
@@ -336,103 +333,6 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
         </div>
       </div>
 
-      {/* Weekly Hours Distribution & Compliance Alert Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Weekly Split Bar */}
-        <div className="p-4 bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-800 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-sky-600" />
-              <span>Weekly Team Hours Distribution</span>
-            </span>
-            <span className="font-black text-slate-900">
-              {thisWeekTotalHours.toFixed(1)}h logged
-            </span>
-          </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden flex">
-            <div
-              style={{ width: `${thisWeekBillableRatio}%` }}
-              className="bg-emerald-500 transition-all duration-500"
-              title={`Billable: ${thisWeekBillableHours.toFixed(1)}h (${thisWeekBillableRatio}%)`}
-            />
-            <div
-              style={{ width: `${100 - thisWeekBillableRatio}%` }}
-              className="bg-sky-400 transition-all duration-500"
-              title={`Non-Billable: ${thisWeekNonBillableHours.toFixed(1)}h (${100 - thisWeekBillableRatio}%)`}
-            />
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-            <span className="flex items-center gap-1.5 font-bold text-emerald-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-              <span>Billable: {thisWeekBillableHours.toFixed(1)}h ({thisWeekBillableRatio}%)</span>
-            </span>
-            <span className="flex items-center gap-1.5 font-bold text-sky-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0" />
-              <span>Non-Billable: {thisWeekNonBillableHours.toFixed(1)}h ({100 - thisWeekBillableRatio}%)</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Team Compliance Alert Card */}
-        <div
-          onClick={() => onNavigateTab('pm_timesheet_review')}
-          className={`p-4 border transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-            teamMembersWithMissing.length > 0
-              ? 'bg-rose-50/70 border-rose-200 hover:border-rose-400'
-              : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold flex items-center gap-1.5 text-slate-800">
-              {teamMembersWithMissing.length > 0 ? (
-                <>
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span className="text-rose-950 font-black">Missing Timesheets Alert</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="text-emerald-950 font-black">Timesheet Compliance: 100%</span>
-                </>
-              )}
-            </span>
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-              teamMembersWithMissing.length > 0
-                ? 'bg-rose-100 text-rose-800 border-rose-200'
-                : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-            }`}>
-              {teamMembersWithMissing.length > 0 ? `${teamMembersWithMissing.length} Missing` : 'All On Track'}
-            </span>
-          </div>
-
-          <div className="text-[11px] text-slate-600 mt-2">
-            {teamMembersWithMissing.length > 0 ? (
-              <p>
-                <span className="font-bold text-rose-800">
-                  {teamMembersWithMissing.slice(0, 3).map((m) => m.name).join(', ')}
-                  {teamMembersWithMissing.length > 3 ? ` +${teamMembersWithMissing.length - 3} more` : ''}
-                </span>{' '}
-                have unsubmitted past working days this week.
-              </p>
-            ) : (
-              <p className="text-emerald-800 font-medium">
-                All team members have submitted their timesheets for all past working days this week.
-              </p>
-            )}
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <span className="text-[11px] font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1">
-              <span>View Team Compliance Calendar</span>
-              <ChevronRight className="w-3 h-3" />
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Grid: Projects Overview & Recent Timesheet Submissions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols): Project Progress Overview */}
@@ -489,7 +389,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
 
                     <div>
                       <h3 className="font-extrabold text-slate-900 text-sm">{proj.name}</h3>
-                      <p className="text-slate-500 text-[11px] font-medium">{proj.client}</p>
+                      {proj.code && <p className="text-sky-700 text-[11px] font-bold font-mono">{proj.code}</p>}
                     </div>
 
                     {/* Hours */}

@@ -76,6 +76,44 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
 
   // Review Tab State
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
+
+  // Consolidate leave requests and upcoming leaves to ensure complete and robust coverage
+  const consolidatedLeaves = useMemo(() => {
+    const list: Array<{ userId: string; status: string; startDate: string; endDate: string; reason?: string; type?: string }> = [];
+    const seen = new Set<string>();
+
+    leaveRequests.forEach((l) => {
+      const id = String(l.id || (String(l.userId) + "-" + String(l.startDate)));
+      if (!seen.has(id)) {
+        seen.add(id);
+        list.push({
+          userId: String(l.userId),
+          status: (l.status || '').toLowerCase(),
+          startDate: l.startDate,
+          endDate: l.endDate,
+          reason: l.reason,
+          type: l.type,
+        });
+      }
+    });
+
+    upcomingLeaves.forEach((l: any) => {
+      const id = String(l.id || (String(l.user_id || l.userId) + "-" + String(l.start_date || l.startDate)));
+      if (!seen.has(id)) {
+        seen.add(id);
+        list.push({
+          userId: String(l.user_id || l.userId),
+          status: (l.status || '').toLowerCase(),
+          startDate: l.start_date || l.startDate,
+          endDate: l.end_date || l.endDate,
+          reason: l.reason,
+          type: l.leave_type?.name || l.type || 'Leave',
+        });
+      }
+    });
+
+    return list;
+  }, [leaveRequests, upcomingLeaves]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<string>('all');
@@ -910,10 +948,10 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
         complianceTeam.forEach((user) => {
           monthDays.forEach((day) => {
             const isHoliday = holidays.find((h) => h.date === day.dateStr);
-            const isLeave = leaveRequests.find(
+            const isLeave = consolidatedLeaves.find(
               (l) =>
                 String(l.userId) === String(user.id) &&
-                l.status === 'approved' &&
+                (l.status || '').toLowerCase() === 'approved' &&
                 l.startDate <= day.dateStr &&
                 l.endDate >= day.dateStr
             );
@@ -1146,10 +1184,10 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                         let userMissingCount = 0;
                         monthDays.forEach((d) => {
                           const isHoliday = holidays.find((h) => h.date === d.dateStr);
-                          const isLeave = leaveRequests.find(
+                          const isLeave = consolidatedLeaves.find(
                             (l) =>
                               String(l.userId) === String(user.id) &&
-                              l.status === 'approved' &&
+                              (l.status || '').toLowerCase() === 'approved' &&
                               l.startDate <= d.dateStr &&
                               l.endDate >= d.dateStr
                           );
@@ -1202,10 +1240,10 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
                             {/* Day Cells */}
                             {monthDays.map((d) => {
                               const isHoliday = holidays.find((h) => h.date === d.dateStr);
-                              const isLeave = leaveRequests.find(
+                              const isLeave = consolidatedLeaves.find(
                                 (l) =>
                                   String(l.userId) === String(user.id) &&
-                                  l.status === 'approved' &&
+                                  (l.status || '').toLowerCase() === 'approved' &&
                                   l.startDate <= d.dateStr &&
                                   l.endDate >= d.dateStr
                               );

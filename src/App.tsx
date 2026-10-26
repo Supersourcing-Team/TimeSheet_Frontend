@@ -608,7 +608,7 @@ export default function App() {
     if (!currentUser) return;
     try {
       const res = await createProjectMutation({
-        client_id: Number(newProj.client), // using client field to pass client_id
+        client_id: newProj.client ? Number(newProj.client) : undefined,
         project_manager_id: Number(currentUser.id),
         project_name: newProj.name,
         description: newProj.description,
