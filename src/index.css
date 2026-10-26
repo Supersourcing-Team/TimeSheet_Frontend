@@ -1,105 +1,106 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: oklch(0.975 0.008 233);
-  --color-foreground: oklch(0.22 0.038 246);
-  --color-card: oklch(1 0 0);
-  --color-primary: oklch(0.59 0.18 238);
-  --color-primary-foreground: oklch(1 0 0);
-  --color-secondary: oklch(0.94 0.028 230);
-  --color-secondary-foreground: oklch(0.31 0.1 236);
-  --color-muted: oklch(0.955 0.008 232);
-  --color-muted-foreground: oklch(0.52 0.027 241);
-  --color-accent: oklch(0.94 0.028 230);
-  --color-border: oklch(0.9 0.015 234);
-  --color-ring: oklch(0.59 0.18 238);
-  --color-surface: oklch(0.985 0.005 230);
-  --sky-soft: oklch(0.94 0.035 233);
-  --sky-deep: oklch(0.37 0.11 245);
-  --color-success: oklch(0.5 0.12 163);
-  --color-warning: oklch(0.57 0.13 73);
-  --color-destructive: oklch(0.57 0.19 25);
+  --color-background: oklch(0.935 0.015 242);
+  --color-foreground: oklch(0.20 0.038 250);
+  --color-card: #ffffff;
+  --color-primary: oklch(0.55 0.22 255);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: oklch(0.92 0.025 240);
+  --color-secondary-foreground: oklch(0.25 0.08 250);
+  --color-muted: oklch(0.905 0.020 240);
+  --color-muted-foreground: oklch(0.50 0.030 240);
+  --color-accent: oklch(0.92 0.028 240);
+  --color-border: oklch(0.855 0.025 240);
+  --color-ring: oklch(0.55 0.22 255);
+  --color-surface: oklch(0.96 0.010 240);
+  --sky-soft: oklch(0.92 0.035 240);
+  --sky-deep: oklch(0.35 0.12 250);
+  --color-success: oklch(0.55 0.18 160);
+  --color-warning: oklch(0.65 0.18 75);
+  --color-destructive: oklch(0.58 0.22 25);
 
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Global Color Re-mapping for Sky Blue & White Palette */
-  --color-blue-50: oklch(0.97 0.02 233);
-  --color-blue-100: oklch(0.94 0.035 233);
-  --color-blue-200: oklch(0.9 0.05 235);
-  --color-blue-300: oklch(0.8 0.1 236);
-  --color-blue-400: oklch(0.7 0.15 237);
-  --color-blue-500: oklch(0.63 0.17 238);
-  --color-blue-600: oklch(0.59 0.18 238);
-  --color-blue-700: oklch(0.48 0.15 240);
-  --color-blue-800: oklch(0.37 0.11 245);
-  --color-blue-900: oklch(0.26 0.06 246);
-  --color-blue-950: oklch(0.22 0.038 246);
+  /* Global Color Re-mapping for Rich Sapphire & Elegant Palette */
+  --color-blue-50: oklch(0.965 0.025 245);
+  --color-blue-100: oklch(0.925 0.055 245);
+  --color-blue-200: oklch(0.86 0.09 248);
+  --color-blue-300: oklch(0.76 0.14 250);
+  --color-blue-400: oklch(0.66 0.18 253);
+  --color-blue-500: oklch(0.59 0.21 255);
+  --color-blue-600: oklch(0.53 0.23 257);
+  --color-blue-700: oklch(0.45 0.20 258);
+  --color-blue-800: oklch(0.36 0.16 260);
+  --color-blue-900: oklch(0.26 0.09 262);
+  --color-blue-950: oklch(0.19 0.05 262);
 
-  --color-sky-50: oklch(0.97 0.02 233);
-  --color-sky-100: oklch(0.94 0.035 233);
-  --color-sky-200: oklch(0.9 0.05 235);
-  --color-sky-300: oklch(0.8 0.1 236);
-  --color-sky-400: oklch(0.7 0.15 237);
-  --color-sky-500: oklch(0.63 0.17 238);
-  --color-sky-600: oklch(0.59 0.18 238);
-  --color-sky-700: oklch(0.48 0.15 240);
-  --color-sky-800: oklch(0.37 0.11 245);
-  --color-sky-900: oklch(0.26 0.06 246);
-  --color-sky-950: oklch(0.22 0.038 246);
+  --color-sky-50: oklch(0.97 0.025 225);
+  --color-sky-100: oklch(0.93 0.05 225);
+  --color-sky-200: oklch(0.87 0.08 228);
+  --color-sky-300: oklch(0.78 0.12 230);
+  --color-sky-400: oklch(0.68 0.15 232);
+  --color-sky-500: oklch(0.60 0.17 235);
+  --color-sky-600: oklch(0.52 0.18 238);
+  --color-sky-700: oklch(0.44 0.15 240);
+  --color-sky-800: oklch(0.36 0.12 242);
+  --color-sky-900: oklch(0.26 0.07 245);
+  --color-sky-950: oklch(0.20 0.04 246);
 
-  --color-indigo-50: oklch(0.97 0.02 233);
-  --color-indigo-100: oklch(0.94 0.035 233);
-  --color-indigo-200: oklch(0.9 0.05 235);
-  --color-indigo-400: oklch(0.7 0.15 237);
-  --color-indigo-500: oklch(0.63 0.17 238);
-  --color-indigo-600: oklch(0.59 0.18 238);
-  --color-indigo-700: oklch(0.48 0.15 240);
-  --color-indigo-800: oklch(0.37 0.11 245);
-  --color-indigo-900: oklch(0.26 0.06 246);
-  --color-indigo-950: oklch(0.22 0.038 246);
+  --color-indigo-50: oklch(0.965 0.025 270);
+  --color-indigo-100: oklch(0.925 0.055 270);
+  --color-indigo-200: oklch(0.86 0.09 272);
+  --color-indigo-400: oklch(0.66 0.19 275);
+  --color-indigo-500: oklch(0.58 0.23 277);
+  --color-indigo-600: oklch(0.51 0.24 280);
+  --color-indigo-700: oklch(0.43 0.21 282);
+  --color-indigo-800: oklch(0.35 0.16 284);
+  --color-indigo-900: oklch(0.25 0.09 286);
+  --color-indigo-950: oklch(0.19 0.05 286);
 
-  --color-purple-50: oklch(0.97 0.02 233);
-  --color-purple-100: oklch(0.94 0.035 233);
-  --color-purple-600: oklch(0.59 0.18 238);
-  --color-purple-700: oklch(0.37 0.11 245);
+  --color-purple-50: oklch(0.965 0.025 300);
+  --color-purple-100: oklch(0.925 0.055 300);
+  --color-purple-600: oklch(0.55 0.23 300);
+  --color-purple-700: oklch(0.45 0.20 300);
 
-  --color-slate-50: oklch(0.985 0.005 230);
-  --color-slate-100: oklch(0.955 0.008 232);
-  --color-slate-200: oklch(0.9 0.015 234);
-  --color-slate-300: oklch(0.85 0.02 235);
-  --color-slate-400: oklch(0.65 0.025 240);
-  --color-slate-500: oklch(0.52 0.027 241);
-  --color-slate-600: oklch(0.42 0.03 243);
-  --color-slate-700: oklch(0.32 0.035 245);
-  --color-slate-800: oklch(0.26 0.038 246);
-  --color-slate-900: oklch(0.22 0.038 246);
-  --color-slate-950: oklch(0.18 0.038 246);
+  /* Rich Slate Palette: Darkened Canvas & Crisp Borders */
+  --color-slate-50: oklch(0.935 0.015 242);   /* Darker, rich slate canvas (#e9edf4) */
+  --color-slate-100: oklch(0.905 0.020 240);  /* Soft secondary surfaces (#dce3ed) */
+  --color-slate-200: oklch(0.855 0.025 240);  /* Clean card borders (#cbd5e1) */
+  --color-slate-300: oklch(0.75 0.028 240);
+  --color-slate-400: oklch(0.62 0.028 240);
+  --color-slate-500: oklch(0.50 0.030 240);
+  --color-slate-600: oklch(0.40 0.032 245);
+  --color-slate-700: oklch(0.30 0.035 250);
+  --color-slate-800: oklch(0.24 0.038 250);
+  --color-slate-900: oklch(0.18 0.038 250);
+  --color-slate-950: oklch(0.14 0.038 250);
 }
 
 :root {
-  --background: oklch(0.975 0.008 233);        /* near-white with cool tint */
-  --foreground: oklch(0.22 0.038 246);         /* dark navy text */
-  --card: oklch(1 0 0);                        /* pure white cards */
-  --primary: oklch(0.59 0.18 238);             /* sky blue — buttons, links, active states */
-  --primary-foreground: oklch(1 0 0);          /* white text on sky blue */
-  --secondary: oklch(0.94 0.028 230);          /* soft sky-blue tint for secondary buttons */
-  --secondary-foreground: oklch(0.31 0.1 236);
-  --muted: oklch(0.955 0.008 232);
-  --muted-foreground: oklch(0.52 0.027 241);   /* secondary text */
-  --accent: oklch(0.94 0.028 230);
-  --border: oklch(0.9 0.015 234);
-  --ring: oklch(0.59 0.18 238);
-  --surface: oklch(0.985 0.005 230);
-  --sky-soft: oklch(0.94 0.035 233);           /* light sky-blue fills, selected rows */
-  --sky-deep: oklch(0.37 0.11 245);            /* dark sky-blue for emphasis text */
-  --success: oklch(0.5 0.12 163);
-  --warning: oklch(0.57 0.13 73);
-  --destructive: oklch(0.57 0.19 25);
+  --background: oklch(0.935 0.015 242);        /* Darker, rich slate canvas */
+  --foreground: oklch(0.20 0.038 250);         /* Dark slate text */
+  --card: #ffffff;                             /* Crisp white cards against slate canvas */
+  --primary: oklch(0.55 0.22 255);             /* Vibrant Sapphire Blue */
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.92 0.025 240);
+  --secondary-foreground: oklch(0.25 0.08 250);
+  --muted: oklch(0.905 0.020 240);
+  --muted-foreground: oklch(0.50 0.030 240);
+  --accent: oklch(0.92 0.028 240);
+  --border: oklch(0.855 0.025 240);
+  --ring: oklch(0.55 0.22 255);
+  --surface: oklch(0.96 0.010 240);
+  --sky-soft: oklch(0.92 0.035 240);
+  --sky-deep: oklch(0.35 0.12 250);
+  --success: oklch(0.55 0.18 160);
+  --warning: oklch(0.65 0.18 75);
+  --destructive: oklch(0.58 0.22 25);
   --radius: 0px !important;
 }
 
-/* ── 1. RECTANGULAR EVERYWHERE: Remove ALL rounded corners ── */
+/* ── 1. RECTANGULAR EVERYWHERE ── */
 *,
 *::before,
 *::after {
@@ -156,15 +157,7 @@ button span,
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
-/* ── 3. FLAT FILLS (NO GRADIENTS) ── */
-[class*="bg-gradient-"],
-[class*="from-"],
-[class*="via-"],
-[class*="to-"] {
-  background-image: none !important;
-}
-
-/* ── 4. FOCUS STATES ── */
+/* ── 3. FOCUS STATES ── */
 *:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -172,17 +165,28 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--ring) !important;
   outline-offset: 1px !important;
-  box-shadow: none !important;
 }
 
-/* ── 5. CARDS & SURFACES ── */
+/* ── 4. CARDS & SURFACES ── */
 .bg-white {
   background-color: var(--card) !important;
 }
 
-[class*="shadow-"],
-[class*="rounded-"] {
-  box-shadow: none !important;
+/* Refined Subtle Elevation Shadows */
+.shadow-2xs {
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-xs {
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-sm {
+  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-md {
+  box-shadow: 0 4px 8px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04) !important;
+}
+.shadow-lg {
+  box-shadow: 0 10px 18px -3px rgba(15, 23, 42, 0.10), 0 4px 6px -4px rgba(15, 23, 42, 0.05) !important;
 }
 
 /* Modals & Popovers rectangular with 1px border */
@@ -191,9 +195,10 @@ textarea:focus-visible {
   border-radius: 0 !important;
   border: 1px solid var(--border) !important;
   background-color: var(--card) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15) !important;
 }
 
-/* ── 6. SIDEBAR CLEAN WHITE STYLING ── */
+/* ── 5. SIDEBAR STYLING ── */
 aside {
   background-color: #ffffff !important;
   border-right: 1px solid var(--border) !important;
@@ -203,6 +208,7 @@ aside button {
   background-color: transparent !important;
   color: var(--foreground) !important;
   border: none !important;
+  transition: all 0.15s ease-in-out;
 }
 
 aside button:hover {
@@ -222,7 +228,7 @@ aside button[data-active="true"] div {
   color: #ffffff !important;
 }
 
-/* ── 7. NUMBER INPUTS ── */
+/* ── 6. NUMBER INPUTS ── */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -234,7 +240,7 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* ── 8. SCROLLBARS ── */
+/* ── 7. SCROLLBARS ── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

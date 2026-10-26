@@ -24,6 +24,8 @@ import {
   Layers,
   Bot,
   CalendarX,
+  Calendar,
+  Briefcase,
   ExternalLink,
   ListOrdered,
   Lock,
@@ -805,19 +807,20 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 key={idx}
                 className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 transition-all hover:border-slate-300"
               >
-                {/* Project, Milestone, Date, Hours Selection Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                {/* Project, Milestone, Date Selection Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
                   {/* Project Selection */}
-                  <div className="md:col-span-3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Project
+                  <div className="md:col-span-5 lg:col-span-4 space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5 h-4">
+                      <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Project</span>
                     </label>
                     <select
                       value={row.projectId}
                       onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
                       disabled={!!editingEntry}
                       required
-                      className="w-full bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
+                      className="w-full h-10 bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs"
                     >
                       <option value="">Select a Project...</option>
                       {assignedProjects.map((p) => (
@@ -829,30 +832,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   </div>
 
                   {/* Milestone Selection */}
-                  <div className="md:col-span-3 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <span>Milestone</span>
-                        {(() => {
-                          const targetProj = projects.find((p) => p.id === row.projectId);
-                          const activeMilestones = (targetProj?.milestones || []).filter(
-                            (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
-                          );
-                          return activeMilestones.length > 0 ? <span className="text-rose-500 font-bold">*</span> : null;
-                        })()}
-                      </span>
-                      {(() => {
-                        const targetProj = projects.find((p) => p.id === row.projectId);
-                        const activeMilestones = (targetProj?.milestones || []).filter(
-                          (m) => m.status !== 'achieved' || String(m.id) === String(row.milestoneId)
-                        );
-                        return activeMilestones.length > 0 ? (
-                          <span className="text-[9px] text-blue-600 font-semibold bg-blue-50 px-1 rounded">
-                            {activeMilestones.length} Available
-                          </span>
-                        ) : null;
-                      })()}
-                    </label>
+                  <div className="md:col-span-4 lg:col-span-4 space-y-1.5">
                     {(() => {
                       const targetProj = projects.find((p) => p.id === row.projectId);
                       const allMilestones = targetProj?.milestones || [];
@@ -861,37 +841,54 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       );
                       const hasActive = activeMilestones.length > 0;
                       return (
-                        <select
-                          value={row.milestoneId || ''}
-                          onChange={(e) => handleRowChange(idx, 'milestoneId', e.target.value)}
-                          disabled={!!editingEntry || !row.projectId}
-                          required={hasActive}
-                          className="w-full bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer truncate"
-                        >
-                          <option value="">
-                            {!row.projectId
-                              ? 'Select a Project first'
-                              : hasActive
-                              ? '-- Select Milestone --'
-                              : allMilestones.length > 0
-                              ? 'All Milestones Achieved'
-                              : 'No Milestones Configured'}
-                          </option>
-                          {activeMilestones.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.name} ({m.status.replace('_', ' ')})
+                        <>
+                          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between h-4">
+                            <span className="flex items-center gap-1.5">
+                              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>Milestone</span>
+                              {hasActive && <span className="text-rose-500 font-bold">*</span>}
+                            </span>
+                            {hasActive && (
+                              <span className="text-[9px] text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                                {activeMilestones.length} Available
+                              </span>
+                            )}
+                          </label>
+                          <select
+                            value={row.milestoneId || ''}
+                            onChange={(e) => handleRowChange(idx, 'milestoneId', e.target.value)}
+                            disabled={!!editingEntry || !row.projectId}
+                            required={hasActive}
+                            className="w-full h-10 bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer truncate shadow-2xs"
+                          >
+                            <option value="">
+                              {!row.projectId
+                                ? 'Select a Project first'
+                                : hasActive
+                                ? '-- Select Milestone --'
+                                : allMilestones.length > 0
+                                ? 'All Milestones Achieved'
+                                : 'No Milestones Configured'}
                             </option>
-                          ))}
-                        </select>
+                            {activeMilestones.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name} ({m.status.replace('_', ' ')})
+                              </option>
+                            ))}
+                          </select>
+                        </>
                       );
                     })()}
                   </div>
 
                   {/* Date Input */}
-                  <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                      <span>Date</span>
-                      <span className="text-[9px] text-slate-400 font-normal" title={`Configured lock cutoff: within past ${lockHours} hours`}>
+                  <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between h-4">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Date</span>
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-medium" title={`Configured lock cutoff: within past ${lockHours} hours`}>
                         &ge; {minAllowedDate.slice(5)}
                       </span>
                     </label>
@@ -902,55 +899,18 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       max={today}
                       onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
                       disabled={!!editingEntry}
-                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Billable Hours */}
-                  <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
-                      Billable (h)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      max="24"
-                      placeholder="0"
-                      value={row.billableHours === 0 ? '' : row.billableHours}
-                      onChange={(e) =>
-                        handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
-                      }
-                      className="w-full bg-white border border-emerald-300 text-emerald-800 font-extrabold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Non-Billable Hours */}
-                  <div className="md:col-span-1 space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Non-Bill
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      max="24"
-                      placeholder="0"
-                      value={row.nonBillableHours === 0 ? '' : row.nonBillableHours}
-                      onChange={(e) =>
-                        handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
-                      }
-                      className="w-full bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full h-10 bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs"
                     />
                   </div>
 
                   {/* Delete Button */}
-                  <div className="md:col-span-1 flex justify-end">
+                  <div className="md:col-span-1 flex flex-col justify-end items-center">
+                    <div className="h-4" />
                     <button
                       type="button"
                       onClick={() => handleRemoveRow(idx)}
                       disabled={rows.length === 1}
-                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors border border-rose-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="h-10 w-10 flex items-center justify-center rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 transition-colors border border-rose-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs"
                       title="Remove Task Row"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -959,81 +919,146 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 </div>
 
                 {/* SEPARATE DESCRIPTIONS FOR BILLABLE AND NON-BILLABLE HOURS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200/80">
-                  {/* Billable Work Description */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>Billable Work Description</span>
-                        <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
+                  {/* Billable Work Column */}
+                  <div className="p-4 rounded-2xl bg-white border border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all">
+                    {/* Billable Header & Hours Input Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-emerald-100">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+                        <span className="text-xs font-black text-emerald-950 uppercase tracking-wide">
+                          Billable Work
+                        </span>
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                           Client Scope
                         </span>
-                      </label>
-                      <div className="flex items-center gap-1">
+                      </div>
+
+                      {/* Compact Hours Input Pill */}
+                      <div className="flex items-center gap-2 bg-emerald-50/80 px-1.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                        <label className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                          Billable (h):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="24"
+                          placeholder="0.0"
+                          value={row.billableHours === 0 ? '' : row.billableHours}
+                          onChange={(e) =>
+                            handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
+                          }
+                          className="w-45 h-7 text-center bg-white border border-emerald-300 text-emerald-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs"
+                        />
+                        <span className="text-[11px] font-bold text-emerald-700">hrs</span>
+                      </div>
+                    </div>
+
+                    {/* Billable Work Description Subheader & Textarea */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>Deliverables & Activities</span>
+                          <span className="text-rose-500 font-bold">*</span>
+                        </label>
                         <button
                           type="button"
                           onClick={() => toggleNumberFormat(idx, 'billableDescription')}
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
                             isNumberedList(row.billableDescription)
                               ? 'bg-sky-50 border-sky-300 text-sky-700'
                               : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
                           }`}
                           title="Toggle between numbered list and default bullets"
                         >
-                          <ListOrdered className="w-3 h-3 text-slate-500" />
+                          <ListOrdered className="w-3.5 h-3.5 text-slate-500" />
                           <span>1. Numbers</span>
                         </button>
                       </div>
+
+                      <textarea
+                        rows={6}
+                        value={row.billableDescription}
+                        onFocus={(e) => handleDescriptionFocus(e, idx, 'billableDescription')}
+                        onBlur={() => handleDescriptionBlur(idx, 'billableDescription')}
+                        onChange={(e) => handleDescriptionChange(idx, 'billableDescription', e.target.value)}
+                        onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'billableDescription')}
+                        onPaste={(e) => handleDescriptionPaste(e, idx, 'billableDescription')}
+                        placeholder="• Built and deployed user auth API&#10;• Configured milestone endpoints&#10;• Unit tests in pytest"
+                        className="w-full bg-slate-50/60 border border-emerald-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs"
+                      />
                     </div>
-                    <textarea
-                      rows={8}
-                      value={row.billableDescription}
-                      onFocus={(e) => handleDescriptionFocus(e, idx, 'billableDescription')}
-                      onBlur={() => handleDescriptionBlur(idx, 'billableDescription')}
-                      onChange={(e) => handleDescriptionChange(idx, 'billableDescription', e.target.value)}
-                      onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'billableDescription')}
-                      onPaste={(e) => handleDescriptionPaste(e, idx, 'billableDescription')}
-                      placeholder="• Built and deployed user auth API&#10;• Configured milestone endpoints&#10;• Unit tests in pytest"
-                      className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y shadow-2xs leading-relaxed font-mono"
-                    />
                   </div>
 
-                  {/* Non-Billable Work Description */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>Non-Billable Description</span>
-                        <span className="text-[9px] text-slate-500 font-semibold bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">
+                  {/* Non-Billable Work Column */}
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
+                    {/* Non-Billable Header & Hours Input Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 ring-4 ring-slate-100" />
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                          Non-Billable Work
+                        </span>
+                        <span className="text-[10px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                           Internal Overhead
                         </span>
-                      </label>
-                      <div className="flex items-center gap-1">
+                      </div>
+
+                      {/* Compact Hours Input Pill */}
+                      <div className="flex items-center gap-2 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                          Non-Bill (h):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="24"
+                          placeholder="0.0"
+                          value={row.nonBillableHours === 0 ? '' : row.nonBillableHours}
+                          onChange={(e) =>
+                            handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
+                          }
+                          className="w-45 h-7 text-center bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
+                        />
+                        <span className="text-[11px] font-bold text-slate-600">hrs</span>
+                      </div>
+                    </div>
+
+                    {/* Non-Billable Work Description Subheader & Textarea */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-600">
+                          Internal Tasks & Meetings Description
+                        </label>
                         <button
                           type="button"
                           onClick={() => toggleNumberFormat(idx, 'nonBillableDescription')}
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
                             isNumberedList(row.nonBillableDescription)
                               ? 'bg-sky-50 border-sky-300 text-sky-700'
                               : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
                           }`}
                           title="Toggle between numbered list and default bullets"
                         >
-                          <ListOrdered className="w-3 h-3 text-slate-500" />
+                          <ListOrdered className="w-3.5 h-3.5 text-slate-500" />
                           <span>1. Numbers</span>
                         </button>
                       </div>
+
+                      <textarea
+                        rows={6}
+                        value={row.nonBillableDescription}
+                        onFocus={(e) => handleDescriptionFocus(e, idx, 'nonBillableDescription')}
+                        onBlur={() => handleDescriptionBlur(idx, 'nonBillableDescription')}
+                        onChange={(e) => handleDescriptionChange(idx, 'nonBillableDescription', e.target.value)}
+                        onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'nonBillableDescription')}
+                        onPaste={(e) => handleDescriptionPaste(e, idx, 'nonBillableDescription')}
+                        placeholder="• Daily team sync and PM review&#10;• Environment setup and dependency resolution"
+                        className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs"
+                      />
                     </div>
-                    <textarea
-                      rows={8}
-                      value={row.nonBillableDescription}
-                      onFocus={(e) => handleDescriptionFocus(e, idx, 'nonBillableDescription')}
-                      onBlur={() => handleDescriptionBlur(idx, 'nonBillableDescription')}
-                      onChange={(e) => handleDescriptionChange(idx, 'nonBillableDescription', e.target.value)}
-                      onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'nonBillableDescription')}
-                      onPaste={(e) => handleDescriptionPaste(e, idx, 'nonBillableDescription')}
-                      placeholder="• Daily team sync and PM review&#10;• Environment setup and dependency resolution"
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y shadow-2xs leading-relaxed font-mono"
-                    />
                   </div>
                 </div>
               </div>
