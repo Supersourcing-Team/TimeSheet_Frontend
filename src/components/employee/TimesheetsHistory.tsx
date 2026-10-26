@@ -894,9 +894,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   required
                 >
                   <option value="">-- Choose Project --</option>
-                  {assignedProjects.map((p) => (
+                  {assignedProjects.filter((p) => p.isActive !== false && p.is_active !== false).map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.client})
+                      {p.name} ({p.code || `PRJ-${p.id}`})
                     </option>
                   ))}
                 </select>

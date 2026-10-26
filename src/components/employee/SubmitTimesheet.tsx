@@ -104,7 +104,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const assignedProjects = useMemo(
-    () => (projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id)),
+    () => (projects || []).filter((p) => 
+      p.assignedUserIds?.includes(currentUser.id) && 
+      p.isActive !== false && 
+      p.is_active !== false
+    ),
     [projects, currentUser.id]
   );
   const displaySidebarProjects = assignedProjects;
