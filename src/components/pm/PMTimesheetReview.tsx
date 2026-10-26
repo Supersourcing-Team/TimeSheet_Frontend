@@ -4,6 +4,8 @@ import {
   useGetUpcomingLeavesQuery,
   useGetDailyEodPreviewQuery,
   useSendDailyEodToSlackMutation,
+  useGetHolidaysQuery,
+  useGetLeaveRequestsQuery,
   DailyEodEntry,
 } from '../../store/api/dataApi';
 import { Project, User, TimesheetEntry } from '../../types';
@@ -28,6 +30,12 @@ import {
   Layers,
   Send,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Check,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface PMTimesheetReviewProps {
@@ -44,7 +52,27 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
   timesheets = [],
 }) => {
   const today = new Date().toISOString().split('T')[0];
-  const [activeTab, setActiveTab] = useState<'review' | 'eod'>('review');
+  const [activeTab, setActiveTab] = useState<'review' | 'eod' | 'compliance_calendar'>('review');
+
+  // Queries for Compliance Calendar
+  const { data: holidays = [] } = useGetHolidaysQuery();
+  const { data: leaveRequests = [] } = useGetLeaveRequestsQuery();
+
+  // Compliance Calendar State
+  const currentDate = new Date();
+  const [complianceYear, setComplianceYear] = useState<number>(currentDate.getFullYear());
+  const [complianceMonth, setComplianceMonth] = useState<number>(currentDate.getMonth()); // 0-indexed
+  const [complianceProjectFilter, setComplianceProjectFilter] = useState<string>('all');
+  const [complianceUserSearch, setComplianceUserSearch] = useState<string>('');
+  const [complianceDrilldown, setComplianceDrilldown] = useState<{
+    user: User;
+    dateStr: string;
+    entries: TimesheetEntry[];
+    isMissing: boolean;
+    holidayName?: string;
+    leaveReason?: string;
+  } | null>(null);
+  const [copiedReminder, setCopiedReminder] = useState<boolean>(false);
 
   // Review Tab State
   const { data: upcomingLeaves = [] } = useGetUpcomingLeavesQuery();
@@ -239,6 +267,17 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Timesheet Log</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('compliance_calendar')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'compliance_calendar'
+                ? 'bg-white text-sky-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <CalendarDays className="w-3.5 h-3.5 text-sky-600" />
+            <span>Team Compliance Calendar</span>
           </button>
           <button
             onClick={() => setActiveTab('eod')}
@@ -782,6 +821,729 @@ export const PMTimesheetReview: React.FC<PMTimesheetReviewProps> = React.memo(({
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: TEAM COMPLIANCE CALENDAR (MISSING HIGHLIGHTED IN VIBRANT RED) */}
+      {/* ========================================================================= */}
+      {activeTab === 'compliance_calendar' && (() => {
+        // Month navigation helpers
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        const handlePrevMonth = () => {
+          if (complianceMonth === 0) {
+            setComplianceMonth(11);
+            setComplianceYear((y) => y - 1);
+          } else {
+            setComplianceMonth((m) => m - 1);
+          }
+        };
+
+        const handleNextMonth = () => {
+          if (complianceMonth === 11) {
+            setComplianceMonth(0);
+            setComplianceYear((y) => y + 1);
+          } else {
+            setComplianceMonth((m) => m + 1);
+          }
+        };
+
+        const handleResetToCurrentMonth = () => {
+          const now = new Date();
+          setComplianceYear(now.getFullYear());
+          setComplianceMonth(now.getMonth());
+        };
+
+        // Days in the selected month
+        const daysInSelectedMonth = new Date(complianceYear, complianceMonth + 1, 0).getDate();
+        const monthDays: { dayNum: number; dateStr: string; isWeekend: boolean; dayName: string }[] = [];
+        const weekdayShort = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+        for (let d = 1; d <= daysInSelectedMonth; d++) {
+          const dateObj = new Date(complianceYear, complianceMonth, d);
+          const dateStr = `${complianceYear}-${String(complianceMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const dayOfWeek = dateObj.getDay();
+          monthDays.push({
+            dayNum: d,
+            dateStr,
+            isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+            dayName: weekdayShort[dayOfWeek],
+          });
+        }
+
+        // Filter projects for compliance
+        const activeComplianceProjects = complianceProjectFilter === 'all'
+          ? pmProjects
+          : pmProjects.filter((p) => String(p.id) === String(complianceProjectFilter));
+
+        // Filter timesheets according to the selected project filter
+        const complianceTimesheets = complianceProjectFilter === 'all'
+          ? pmTimesheets
+          : pmTimesheets.filter((t) => String(t.projectId) === String(complianceProjectFilter));
+
+        // Get assigned employee users (active only)
+        const assignedIds = new Set<string>();
+        activeComplianceProjects.forEach((p) => {
+          (p.assignedUserIds || []).forEach((uid) => assignedIds.add(String(uid)));
+        });
+
+        const complianceTeam = allUsers
+          .filter((u) => u.role === 'employee' && assignedIds.has(String(u.id)) && (!u.status || u.status.toLowerCase() === 'active'))
+          .filter((u) => {
+            if (!complianceUserSearch.trim()) return true;
+            const q = complianceUserSearch.toLowerCase();
+            return (
+              u.name.toLowerCase().includes(q) ||
+              u.email.toLowerCase().includes(q) ||
+              (u.department && u.department.toLowerCase().includes(q))
+            );
+          });
+
+        // Compute metrics across the team for this month
+        let totalMissingSubmissionsCount = 0;
+        let totalCompletedSubmissionsCount = 0;
+        let totalPartialSubmissionsCount = 0;
+        let totalLeaveDaysCount = 0;
+
+        complianceTeam.forEach((user) => {
+          monthDays.forEach((day) => {
+            const isHoliday = holidays.find((h) => h.date === day.dateStr);
+            const isLeave = leaveRequests.find(
+              (l) =>
+                String(l.userId) === String(user.id) &&
+                l.status === 'approved' &&
+                l.startDate <= day.dateStr &&
+                l.endDate >= day.dateStr
+            );
+            const daySheets = complianceTimesheets.filter(
+              (t) => String(t.userId) === String(user.id) && t.date === day.dateStr
+            );
+            const dayTotal = daySheets.reduce(
+              (s, t) => s + (Number(t.billableHours) || 0) + (Number(t.nonBillableHours) || 0),
+              0
+            );
+
+            if (isLeave) {
+              totalLeaveDaysCount++;
+            } else if (day.dateStr < today && !day.isWeekend && !isHoliday && dayTotal === 0) {
+              totalMissingSubmissionsCount++;
+            } else if (dayTotal >= 8) {
+              totalCompletedSubmissionsCount++;
+            } else if (dayTotal > 0 && dayTotal < 8) {
+              totalPartialSubmissionsCount++;
+            }
+          });
+        });
+
+        return (
+          <div className="space-y-6">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Missing Timesheets - Refined Soft Rose */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1 hover:border-rose-300 transition-colors">
+                <span className="text-[10px] uppercase font-black text-rose-700 tracking-wider flex items-center justify-between">
+                  <span>Missing Submissions</span>
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                </span>
+                <p className="text-2xl font-black text-slate-900">{totalMissingSubmissionsCount}</p>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-700">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                  <span>Past working days with 0 hours logged</span>
+                </div>
+              </div>
+
+              {/* Complete Submissions (>= 8h) */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-black text-emerald-700 tracking-wider flex items-center justify-between">
+                  <span>Complete Days (&ge;8h)</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                </span>
+                <p className="text-2xl font-black text-emerald-900">{totalCompletedSubmissionsCount}</p>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Full workday submissions</span>
+                </div>
+              </div>
+
+              {/* Partial Submissions (>0h & <8h) */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-black text-amber-700 tracking-wider flex items-center justify-between">
+                  <span>Partial Days (&lt;8h)</span>
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                </span>
+                <p className="text-2xl font-black text-amber-900">{totalPartialSubmissionsCount}</p>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  <span>Logged but under 8 hours</span>
+                </div>
+              </div>
+
+              {/* Approved Leaves */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-black text-purple-700 tracking-wider flex items-center justify-between">
+                  <span>Approved Leaves</span>
+                  <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                </span>
+                <p className="text-2xl font-black text-purple-900">{totalLeaveDaysCount}</p>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-700">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                  <span>Approved PTO / leave logs</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Bar & Month Navigator */}
+            <div className="p-4 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Month Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 cursor-pointer"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 text-center min-w-[140px]">
+                  <span className="font-extrabold text-sm text-slate-900">
+                    {monthNames[complianceMonth]} {complianceYear}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 cursor-pointer"
+                  title="Next Month"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetToCurrentMonth}
+                  className="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg cursor-pointer"
+                >
+                  Current Month
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search employee */}
+                <div className="relative min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search team member..."
+                    value={complianceUserSearch}
+                    onChange={(e) => setComplianceUserSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+
+                {/* Project Filter */}
+                <select
+                  value={complianceProjectFilter}
+                  onChange={(e) => setComplianceProjectFilter(e.target.value)}
+                  className="py-1.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 cursor-pointer"
+                >
+                  <option value="all">All Managed Projects ({pmProjects.length})</option>
+                  {pmProjects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.code || 'No Code'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-4 px-4 py-2 bg-slate-50 border border-slate-200 text-[11px] font-bold">
+              <span className="text-slate-500 uppercase tracking-wider text-[10px]">Legend:</span>
+              <span className="flex items-center gap-1.5 text-rose-700 font-bold">
+                <span className="w-3.5 h-3.5 rounded bg-rose-50 border border-rose-300" />
+                <span>Missing (0h Logged - Past Work Day)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-800">
+                <span className="w-3.5 h-3.5 rounded bg-emerald-100 border border-emerald-300" />
+                <span>Complete (&ge;8h)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-800">
+                <span className="w-3.5 h-3.5 rounded bg-amber-100 border border-amber-300" />
+                <span>Partial (&lt;8h)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-purple-800">
+                <span className="w-3.5 h-3.5 rounded bg-purple-100 border border-purple-300" />
+                <span>Approved Leave</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-900">
+                <span className="w-3.5 h-3.5 rounded bg-amber-200 border border-amber-400" />
+                <span>Holiday</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-500">
+                <span className="w-3.5 h-3.5 rounded bg-slate-200 border border-slate-300" />
+                <span>Weekend</span>
+              </span>
+            </div>
+
+            {/* Compliance Matrix Table */}
+            <div className="bg-white border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs font-sans">
+                  <thead>
+                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-700">
+                      <th className="sticky left-0 z-20 bg-slate-100 px-4 py-3 text-left font-bold text-slate-800 min-w-[220px] shadow-xs">
+                        Team Member
+                      </th>
+                      <th className="px-3 py-3 text-center font-bold text-slate-700 min-w-[70px]">
+                        Total Log
+                      </th>
+                      <th className="px-3 py-3 text-center font-black text-rose-700 min-w-[75px] bg-rose-50/50 border-l border-r border-rose-200">
+                        Missing
+                      </th>
+                      {monthDays.map((d) => (
+                        <th
+                          key={d.dateStr}
+                          className={`px-1.5 py-2 text-center min-w-[46px] border-l border-slate-200 ${
+                            d.isWeekend
+                              ? 'bg-slate-200/60 text-slate-400'
+                              : d.dateStr === today
+                              ? 'bg-sky-100 text-sky-800 font-black'
+                              : 'text-slate-700 font-semibold'
+                          }`}
+                        >
+                          <div className="text-[9px] uppercase leading-none">{d.dayName}</div>
+                          <div className="text-[11px] font-extrabold mt-0.5">{d.dayNum}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {complianceTeam.length === 0 ? (
+                      <tr>
+                        <td colSpan={monthDays.length + 3} className="py-12 text-center text-slate-400">
+                          No team members found for selected project and search criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      complianceTeam.map((user) => {
+                        // User-specific monthly metrics for selected project scope
+                        const userMonthSheets = complianceTimesheets.filter(
+                          (t) =>
+                            String(t.userId) === String(user.id) &&
+                            t.date.startsWith(`${complianceYear}-${String(complianceMonth + 1).padStart(2, '0')}`)
+                        );
+                        const userMonthTotalHours = userMonthSheets.reduce(
+                          (sum, t) => sum + (Number(t.billableHours) || 0) + (Number(t.nonBillableHours) || 0),
+                          0
+                        );
+
+                        // Missing days for this user
+                        let userMissingCount = 0;
+                        monthDays.forEach((d) => {
+                          const isHoliday = holidays.find((h) => h.date === d.dateStr);
+                          const isLeave = leaveRequests.find(
+                            (l) =>
+                              String(l.userId) === String(user.id) &&
+                              l.status === 'approved' &&
+                              l.startDate <= d.dateStr &&
+                              l.endDate >= d.dateStr
+                          );
+                          const dayTotal = userMonthSheets
+                            .filter((t) => t.date === d.dateStr)
+                            .reduce((s, t) => s + (Number(t.billableHours) || 0) + (Number(t.nonBillableHours) || 0), 0);
+                          if (d.dateStr < today && !d.isWeekend && !isHoliday && !isLeave && dayTotal === 0) {
+                            userMissingCount++;
+                          }
+                        });
+
+                        return (
+                          <tr key={user.id} className="hover:bg-slate-50/60 transition-colors">
+                            {/* Sticky User Info Column */}
+                            <td className="sticky left-0 z-10 bg-white px-4 py-2.5 shadow-xs border-r border-slate-200">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden ring-1 ring-slate-300">
+                                  {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    user.name.charAt(0)
+                                  )}
+                                </div>
+                                <div className="truncate">
+                                  <p className="font-bold text-slate-900 truncate leading-tight">{user.name}</p>
+                                  <p className="text-[10px] text-slate-500 truncate">
+                                    {user.title || 'Engineer'} • {user.department || 'Delivery'}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Total Logged Hours */}
+                            <td className="px-3 py-2.5 text-center font-bold text-slate-900 border-r border-slate-200">
+                              {userMonthTotalHours.toFixed(1)}h
+                            </td>
+
+                            {/* Missing Days Count Badge */}
+                            <td className="px-3 py-2.5 text-center bg-rose-50/30 border-r border-slate-200">
+                              {userMissingCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                                  <span>{userMissingCount} missing</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-emerald-700">0</span>
+                              )}
+                            </td>
+
+                            {/* Day Cells */}
+                            {monthDays.map((d) => {
+                              const isHoliday = holidays.find((h) => h.date === d.dateStr);
+                              const isLeave = leaveRequests.find(
+                                (l) =>
+                                  String(l.userId) === String(user.id) &&
+                                  l.status === 'approved' &&
+                                  l.startDate <= d.dateStr &&
+                                  l.endDate >= d.dateStr
+                              );
+                              const daySheets = userMonthSheets.filter((t) => t.date === d.dateStr);
+                              const dayTotal = daySheets.reduce(
+                                (s, t) => s + (Number(t.billableHours) || 0) + (Number(t.nonBillableHours) || 0),
+                                0
+                              );
+
+                              const isPastWorkDay = d.dateStr < today && !d.isWeekend && !isHoliday && !isLeave;
+                              const isMissing = isPastWorkDay && dayTotal === 0;
+
+                              const handleClickCell = () => {
+                                setComplianceDrilldown({
+                                  user,
+                                  dateStr: d.dateStr,
+                                  entries: daySheets,
+                                  isMissing,
+                                  holidayName: isHoliday?.name,
+                                  leaveReason: isLeave?.reason || isLeave?.type,
+                                });
+                                setCopiedReminder(false);
+                              };
+
+                              if (d.isWeekend) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    className="px-1 py-2 text-center bg-slate-100/60 text-slate-300 text-[10px] border-l border-slate-200"
+                                  >
+                                    -
+                                  </td>
+                                );
+                              }
+
+                              if (isHoliday) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    onClick={handleClickCell}
+                                    title={`Holiday: ${isHoliday.name}`}
+                                    className="px-1 py-1.5 text-center bg-amber-100 border-l border-amber-200 text-amber-900 font-bold text-[10px] cursor-pointer hover:opacity-80"
+                                  >
+                                    <span className="block truncate">HOL</span>
+                                  </td>
+                                );
+                              }
+
+                              if (isLeave) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    onClick={handleClickCell}
+                                    title={`Approved Leave: ${isLeave.type}`}
+                                    className="px-1 py-1.5 text-center bg-purple-100 border-l border-purple-200 text-purple-900 font-bold text-[10px] cursor-pointer hover:opacity-80"
+                                  >
+                                    <span className="block truncate">LV</span>
+                                  </td>
+                                );
+                              }
+
+                              if (d.dateStr > today) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    className="px-1 py-2 text-center text-slate-300 text-[10px] border-l border-slate-200"
+                                  >
+                                    •
+                                  </td>
+                                );
+                              }
+
+                              // Past working day: check if missing (Soft Rose Tint)
+                              if (isMissing) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    onClick={handleClickCell}
+                                    title={`MISSING: ${user.name} has not submitted a timesheet for ${d.dateStr}`}
+                                    className="px-1 py-1.5 text-center border-l border-rose-200/90 cursor-pointer transition-colors bg-rose-50/70 hover:bg-rose-100 text-rose-700 font-bold"
+                                  >
+                                    <span className="text-[10px] block leading-tight font-extrabold text-rose-700">
+                                      0h
+                                    </span>
+                                  </td>
+                                );
+                              }
+
+                              // Extract project info for submitted timesheets
+                              const dayProjectNames = Array.from(new Set(daySheets.map((t) => t.projectName).filter(Boolean)));
+                              const dayProjectLabels = Array.from(
+                                new Set(
+                                  daySheets.map((t) => {
+                                    const proj = pmProjects.find((p) => String(p.id) === String(t.projectId));
+                                    return proj?.code || t.projectName || proj?.name || 'Project';
+                                  })
+                                )
+                              );
+                              const projectSummaryTooltip = dayProjectNames.join(', ');
+                              const projectBadge =
+                                dayProjectLabels.length === 1
+                                  ? (dayProjectLabels[0].length > 8 ? dayProjectLabels[0].slice(0, 7) + '…' : dayProjectLabels[0])
+                                  : dayProjectLabels.length > 1
+                                  ? `${dayProjectLabels.length} Projs`
+                                  : '';
+
+                              // Submitted hours
+                              if (dayTotal >= 8) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    onClick={handleClickCell}
+                                    title={`${user.name}: ${dayTotal}h logged on ${d.dateStr}${projectSummaryTooltip ? `\nProject: ${projectSummaryTooltip}` : ''}`}
+                                    className="px-1 py-1 text-center bg-emerald-50 hover:bg-emerald-100 border-l border-emerald-200 text-emerald-900 font-bold text-[10px] cursor-pointer transition-colors"
+                                  >
+                                    <div className="flex flex-col items-center justify-center leading-tight">
+                                      <span className="font-extrabold text-[10px]">{dayTotal.toFixed(0)}h</span>
+                                      {projectBadge && (
+                                        <span
+                                          className="text-[8px] font-bold px-1 py-0.5 rounded bg-emerald-200/80 text-emerald-950 mt-0.5 truncate max-w-[42px] tracking-tight block"
+                                          title={projectSummaryTooltip}
+                                        >
+                                          {projectBadge}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              }
+
+                              if (dayTotal > 0 && dayTotal < 8) {
+                                return (
+                                  <td
+                                    key={d.dateStr}
+                                    onClick={handleClickCell}
+                                    title={`${user.name}: Partial ${dayTotal}h logged on ${d.dateStr}${projectSummaryTooltip ? `\nProject: ${projectSummaryTooltip}` : ''}`}
+                                    className="px-1 py-1 text-center bg-amber-50 hover:bg-amber-100 border-l border-amber-200 text-amber-900 font-bold text-[10px] cursor-pointer transition-colors"
+                                  >
+                                    <div className="flex flex-col items-center justify-center leading-tight">
+                                      <span className="font-extrabold text-[10px]">{dayTotal.toFixed(1)}h</span>
+                                      {projectBadge && (
+                                        <span
+                                          className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-200/80 text-amber-950 mt-0.5 truncate max-w-[42px] tracking-tight block"
+                                          title={projectSummaryTooltip}
+                                        >
+                                          {projectBadge}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              }
+
+                              // Today with 0h logged so far
+                              return (
+                                <td
+                                  key={d.dateStr}
+                                  onClick={handleClickCell}
+                                  title={`Today: Pending timesheet`}
+                                  className="px-1 py-1.5 text-center bg-sky-50 hover:bg-sky-100 border-l border-sky-200 text-sky-800 font-bold text-[10px] cursor-pointer"
+                                >
+                                  Today
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Cell Drilldown / Reminder Modal */}
+            {complianceDrilldown && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+                <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 font-sans space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      {complianceDrilldown.isMissing ? (
+                        <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
+                          <AlertCircle className="w-5 h-5 text-rose-600" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">
+                          {complianceDrilldown.isMissing ? 'Missing Timesheet Alert' : 'Timesheet Day Details'}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Date: <span className="font-bold text-slate-800">{complianceDrilldown.dateStr}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setComplianceDrilldown(null)}
+                      className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Employee Details Card */}
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        {complianceDrilldown.user.avatar ? (
+                          <img
+                            src={complianceDrilldown.user.avatar}
+                            alt={complianceDrilldown.user.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          complianceDrilldown.user.name.charAt(0)
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900 text-sm">{complianceDrilldown.user.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {complianceDrilldown.user.email} • {complianceDrilldown.user.department || 'Delivery'}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
+                        complianceDrilldown.isMissing
+                          ? 'bg-rose-100 text-rose-800 border-rose-200'
+                          : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      }`}
+                    >
+                      {complianceDrilldown.isMissing ? 'Submission Missing' : 'Logged'}
+                    </span>
+                  </div>
+
+                  {/* Body Content */}
+                  {complianceDrilldown.isMissing ? (
+                    <div className="space-y-3 p-4 bg-rose-50/70 rounded-xl border border-rose-200 text-xs">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold text-rose-950">
+                            No timesheet logged for this past working day.
+                          </p>
+                          <p className="text-rose-800 text-[11px] leading-relaxed">
+                            This date was a regular working day (not a weekend, official holiday, or approved leave), but 0 hours were logged.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Reminder Copy Box */}
+                      <div className="pt-2 border-t border-rose-200/80">
+                        <label className="font-bold text-rose-900 text-[10px] uppercase tracking-wider block mb-1">
+                          Quick Reminder Message
+                        </label>
+                        <div className="p-2.5 bg-white rounded-lg border border-rose-300 text-slate-800 font-mono text-[11px] select-all">
+                          Hi {complianceDrilldown.user.name}, please submit your timesheet for {complianceDrilldown.dateStr} as soon as possible.
+                        </div>
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const msg = `Hi ${complianceDrilldown.user.name}, please submit your timesheet for ${complianceDrilldown.dateStr} as soon as possible.`;
+                              navigator.clipboard.writeText(msg);
+                              setCopiedReminder(true);
+                              setTimeout(() => setCopiedReminder(false), 3000);
+                            }}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            {copiedReminder ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Copied to Clipboard!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy Reminder</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : complianceDrilldown.entries.length === 0 ? (
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-slate-500 text-xs">
+                      {complianceDrilldown.holidayName
+                        ? `Official Holiday: ${complianceDrilldown.holidayName}`
+                        : complianceDrilldown.leaveReason
+                        ? `Approved Leave: ${complianceDrilldown.leaveReason}`
+                        : 'No entries logged.'}
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {complianceDrilldown.entries.map((entry) => (
+                        <div key={entry.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900">{entry.projectName}</span>
+                            <span className="font-black text-slate-800">
+                              {(Number(entry.billableHours) || 0) + (Number(entry.nonBillableHours) || 0)}h Total
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                            <span className="text-emerald-700 font-bold">{entry.billableHours || 0}h Billable</span>
+                            <span>•</span>
+                            <span className="text-slate-600 font-bold">{entry.nonBillableHours || 0}h Non-Billable</span>
+                          </div>
+                          {entry.billableDescription && (
+                            <p className="text-[11px] text-slate-700 bg-white p-2 rounded border border-slate-200">
+                              {entry.billableDescription}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Close button */}
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setComplianceDrilldown(null)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Description Modal (from Review tab) */}
       {viewingDesc && (

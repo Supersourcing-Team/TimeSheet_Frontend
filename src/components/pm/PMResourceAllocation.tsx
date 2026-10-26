@@ -2,10 +2,11 @@ import { Pagination } from '../common/Pagination';
 import React, { useState, useEffect } from 'react';
 import { Project, User, ProjectTool, MasterTool } from '../../types';
 import { formatINR } from '../../utils/formatters';
-import { useGetUpcomingLeavesQuery, useGetToolsQuery } from '../../store/api/dataApi';
+import { useGetUpcomingLeavesQuery, useGetToolsQuery, useBatchAssignUsersToProjectsMutation } from '../../store/api/dataApi';
 import {
   Users,
   Wrench,
+  Check,
   Search,
   Filter,
   Plus,
@@ -60,6 +61,15 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
 
   // Modal states for allocation
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
+  const [bulkSelectedProjectIds, setBulkSelectedProjectIds] = useState<string[]>([]);
+  const [bulkSelectedUserIds, setBulkSelectedUserIds] = useState<string[]>([]);
+  const [bulkProjectSearch, setBulkProjectSearch] = useState('');
+  const [bulkEmployeeSearch, setBulkEmployeeSearch] = useState('');
+  const [bulkDepartmentFilter, setBulkDepartmentFilter] = useState('all');
+  const [bulkRole, setBulkRole] = useState('Developer');
+
+  const [batchAssignUsers, { isLoading: isBatchAssigning }] = useBatchAssignUsersToProjectsMutation();
   const [showToolModal, setShowToolModal] = useState(false);
   const [showEditToolModal, setShowEditToolModal] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<any | null>(null);
@@ -130,6 +140,37 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
         currentUser?.role === 'pm'
     );
   }, [projects, currentUser]);
+
+  // Handle bulk assign team submission
+  const handleConfirmBulkAssign = async () => {
+    if (bulkSelectedProjectIds.length === 0 || bulkSelectedUserIds.length === 0) {
+      onShowToast('Selection Required', 'Please select at least one project and at least one employee.', 'error');
+      return;
+    }
+
+    try {
+      const res = await batchAssignUsers({
+        project_ids: bulkSelectedProjectIds.map(Number),
+        user_ids: bulkSelectedUserIds.map(Number),
+        role: bulkRole || 'Developer',
+      }).unwrap();
+
+      const data = res?.data || res;
+      onShowToast(
+        'Bulk Allocation Succeeded',
+        `Assigned ${data.assigned_count || 0} resource(s) (${data.reactivated_count || 0} reactivated, ${data.skipped_count || 0} already active).`,
+        'success'
+      );
+      setShowBulkAssignModal(false);
+      setBulkSelectedProjectIds([]);
+      setBulkSelectedUserIds([]);
+      setBulkProjectSearch('');
+      setBulkEmployeeSearch('');
+    } catch (err: any) {
+      console.error('Batch assign failed:', err);
+      onShowToast('Bulk Allocation Failed', err?.data?.message || err?.message || 'Could not complete batch assignment.', 'error');
+    }
+  };
 
   // Handle assign employee submission
   const handleConfirmAssign = (e: React.FormEvent) => {
@@ -341,6 +382,13 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowBulkAssignModal(true)}
+            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+          >
+            <Users className="w-4 h-4" />
+            <span>Bulk Allocate Team</span>
+          </button>
           <button
             onClick={() => setShowAssignModal(true)}
             className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -662,6 +710,339 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
         </div>
       )}
 
+      {/* MODAL: BULK RESOURCE ALLOCATION (MULTI-PROJECT & MULTI-EMPLOYEE) */}
+      {showBulkAssignModal && (() => {
+        const filteredProjects = pmProjects.filter((p) => {
+          if (!bulkProjectSearch.trim()) return true;
+          const q = bulkProjectSearch.toLowerCase();
+          return p.name.toLowerCase().includes(q) || (p.code && p.code.toLowerCase().includes(q)) || (p.client && p.client.toLowerCase().includes(q));
+        });
+
+        const allEmployees = allUsers.filter((u) => u.role === 'employee' && (!u.status || u.status.toLowerCase() === 'active'));
+        const departmentList = Array.from(new Set(allEmployees.map((u) => u.department).filter(Boolean)));
+
+        const filteredEmployees = allEmployees.filter((u) => {
+          const matchesDept = bulkDepartmentFilter === 'all' || u.department === bulkDepartmentFilter;
+          if (!matchesDept) return false;
+          if (!bulkEmployeeSearch.trim()) return true;
+          const q = bulkEmployeeSearch.toLowerCase();
+          return (
+            u.name.toLowerCase().includes(q) ||
+            u.email.toLowerCase().includes(q) ||
+            (u.title && u.title.toLowerCase().includes(q)) ||
+            (u.department && u.department.toLowerCase().includes(q))
+          );
+        });
+
+        const totalAssignments = bulkSelectedProjectIds.length * bulkSelectedUserIds.length;
+
+        const toggleSelectAllProjects = () => {
+          if (bulkSelectedProjectIds.length === filteredProjects.length) {
+            setBulkSelectedProjectIds([]);
+          } else {
+            setBulkSelectedProjectIds(filteredProjects.map((p) => p.id));
+          }
+        };
+
+        const toggleSelectAllEmployees = () => {
+          if (bulkSelectedUserIds.length === filteredEmployees.length) {
+            setBulkSelectedUserIds([]);
+          } else {
+            setBulkSelectedUserIds(filteredEmployees.map((u) => u.id));
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-xs font-sans">
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+                <div className="space-y-0.5">
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    <span>Bulk Resource Allocation</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Assign multiple team members across one or multiple managed projects in a single operation.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkAssignModal(false)}
+                  className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body: Two Columns */}
+              <div className="p-5 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
+                {/* Column 1: Projects Selection */}
+                <div className="space-y-3 flex flex-col border border-slate-200 rounded-xl p-3 bg-slate-50/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Briefcase className="w-4 h-4 text-sky-600" />
+                        <span>1. Select Target Projects</span>
+                      </h4>
+                      <span className="text-[10px] text-slate-500">
+                        {bulkSelectedProjectIds.length} of {pmProjects.length} selected
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllProjects}
+                      className="px-2 py-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded border border-indigo-200 cursor-pointer"
+                    >
+                      {bulkSelectedProjectIds.length === filteredProjects.length && filteredProjects.length > 0
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </button>
+                  </div>
+
+                  {/* Search projects */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search project name, code..."
+                      value={bulkProjectSearch}
+                      onChange={(e) => setBulkProjectSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+
+                  {/* Project List */}
+                  <div className="flex-1 max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                    {filteredProjects.length === 0 ? (
+                      <p className="text-center py-6 text-slate-400 text-xs">No projects match search</p>
+                    ) : (
+                      filteredProjects.map((p) => {
+                        const isSelected = bulkSelectedProjectIds.includes(p.id);
+                        const assignedCount = (p.assignedUserIds || []).length;
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setBulkSelectedProjectIds(bulkSelectedProjectIds.filter((id) => id !== p.id));
+                              } else {
+                                setBulkSelectedProjectIds([...bulkSelectedProjectIds, p.id]);
+                              }
+                            }}
+                            className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-indigo-50/80 border-indigo-400 shadow-2xs'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 overflow-hidden">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}} // handled by parent onClick
+                                className="w-4 h-4 rounded text-indigo-600 focus:ring-0 cursor-pointer shrink-0"
+                              />
+                              <div className="truncate">
+                                <p className={`font-bold truncate ${isSelected ? 'text-indigo-950' : 'text-slate-900'}`}>
+                                  {p.name}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  Code: {p.code || 'N/A'} {p.client ? `• ${p.client}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0 border border-slate-200">
+                              {assignedCount} assigned
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Column 2: Team Members Selection */}
+                <div className="space-y-3 flex flex-col border border-slate-200 rounded-xl p-3 bg-slate-50/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        <span>2. Select Team Members</span>
+                      </h4>
+                      <span className="text-[10px] text-slate-500">
+                        {bulkSelectedUserIds.length} of {allEmployees.length} selected
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllEmployees}
+                      className="px-2 py-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 cursor-pointer"
+                    >
+                      {bulkSelectedUserIds.length === filteredEmployees.length && filteredEmployees.length > 0
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </button>
+                  </div>
+
+                  {/* Filters: Search & Department */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search name, email..."
+                        value={bulkEmployeeSearch}
+                        onChange={(e) => setBulkEmployeeSearch(e.target.value)}
+                        className="w-full pl-8 pr-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      />
+                    </div>
+                    <select
+                      value={bulkDepartmentFilter}
+                      onChange={(e) => setBulkDepartmentFilter(e.target.value)}
+                      className="w-full py-1.5 px-2 bg-white border border-slate-300 rounded-lg text-xs"
+                    >
+                      <option value="all">All Departments</option>
+                      {departmentList.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Employee List */}
+                  <div className="flex-1 max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                    {filteredEmployees.length === 0 ? (
+                      <p className="text-center py-6 text-slate-400 text-xs">No employees match filter</p>
+                    ) : (
+                      filteredEmployees.map((u) => {
+                        const isSelected = bulkSelectedUserIds.includes(u.id);
+                        const currentAssignmentsCount = pmProjects.filter((p) =>
+                          (p.assignedUserIds || []).map(String).includes(String(u.id))
+                        ).length;
+
+                        return (
+                          <div
+                            key={u.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setBulkSelectedUserIds(bulkSelectedUserIds.filter((id) => id !== u.id));
+                              } else {
+                                setBulkSelectedUserIds([...bulkSelectedUserIds, u.id]);
+                              }
+                            }}
+                            className={`p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-emerald-50/80 border-emerald-400 shadow-2xs'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 overflow-hidden">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}} // handled by parent onClick
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-0 cursor-pointer shrink-0"
+                              />
+                              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0 overflow-hidden">
+                                {u.avatar ? (
+                                  <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  u.name.charAt(0)
+                                )}
+                              </div>
+                              <div className="truncate">
+                                <p className={`font-bold truncate ${isSelected ? 'text-emerald-950' : 'text-slate-900'}`}>
+                                  {u.name}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  {u.title || 'Engineer'} • {u.department || 'Delivery'}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-semibold text-slate-500 shrink-0">
+                              {currentAssignmentsCount} proj
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignment Role selection */}
+              <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-700">Assignment Role:</span>
+                  <select
+                    value={bulkRole}
+                    onChange={(e) => setBulkRole(e.target.value)}
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 font-medium text-slate-800"
+                  >
+                    <option value="Developer">Developer</option>
+                    <option value="Senior Developer">Senior Developer</option>
+                    <option value="Tech Lead">Tech Lead</option>
+                    <option value="QA Engineer">QA Engineer</option>
+                    <option value="Designer">UI/UX Designer</option>
+                    <option value="DevOps Engineer">DevOps Engineer</option>
+                    <option value="Business Analyst">Business Analyst</option>
+                  </select>
+                </div>
+
+                <div className="text-right">
+                  <span className="font-bold text-indigo-950">
+                    {bulkSelectedUserIds.length} employee{bulkSelectedUserIds.length !== 1 ? 's' : ''} &times; {bulkSelectedProjectIds.length} project{bulkSelectedProjectIds.length !== 1 ? 's' : ''} =
+                  </span>{' '}
+                  <span className="font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">
+                    {totalAssignments} total assignments
+                  </span>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between">
+                <span className="text-xs text-slate-500">
+                  {totalAssignments > 0
+                    ? `Ready to execute batch allocation of ${totalAssignments} project assignments.`
+                    : 'Select at least one project and one employee to proceed.'}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkAssignModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={totalAssignments === 0 || isBatchAssigning}
+                    onClick={handleConfirmBulkAssign}
+                    className={`px-5 py-2 rounded-xl font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                      totalAssignments === 0 || isBatchAssigning
+                        ? 'bg-slate-300 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
+                  >
+                    {isBatchAssigning ? (
+                      <span>Assigning...</span>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Confirm Bulk Allocation ({totalAssignments})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* MODAL 1: ASSIGN EMPLOYEE */}
       {showAssignModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -708,7 +1089,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                 >
                   <option value="">-- Select Employee --</option>
                   {allUsers
-                    .filter((u) => u.role === 'employee')
+                    .filter((u) => u.role === 'employee' && (!u.status || u.status.toLowerCase() === 'active'))
                     .filter((u) => {
                       if (!assignProjectId) return true;
                       const proj = pmProjects.find(p => p.id === assignProjectId);

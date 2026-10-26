@@ -323,6 +323,10 @@ export const dataApi = apiSlice.injectEndpoints({
       query: (body) => ({ url: '/project-assignments', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
+    batchAssignUsersToProjects: builder.mutation<any, { project_ids: number[]; user_ids: number[]; role?: string }>({
+      query: (body) => ({ url: '/project-assignments/batch', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
     removeUserFromProject: builder.mutation<void, { projectId: string; userId: string }>({
       query: ({ projectId, userId }) => ({ url: `/project-assignments/project/${projectId}/user/${userId}`, method: 'DELETE' }),
       invalidatesTags: ['Project'],
@@ -1054,6 +1058,7 @@ export const {
   // Assignments
   useGetMyProjectAssignmentsQuery,
   useAssignUserToProjectMutation,
+  useBatchAssignUsersToProjectsMutation,
   useRemoveUserFromProjectMutation,
   // Tools
   useGetToolsQuery,
