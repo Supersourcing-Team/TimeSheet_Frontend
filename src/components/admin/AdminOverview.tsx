@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { AdminTab } from '../Sidebar';
 import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
+import { TiltCard } from '../ui/TiltCard';
+import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface AdminOverviewProps {
     users: User[];
@@ -88,9 +90,12 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     });
 
     return (
-        <div className="space-y-6 text-slate-900 font-sans">
+        <div className="space-y-6 text-slate-900 font-sans relative">
+            {/* 3D Ambient WebGL Accent Background */}
+            <AmbientMesh opacity={0.10} color={0x0284c7} />
+
             {/* Header Section */}
-            <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                         <LayoutDashboard className="w-6 h-6 text-sky-600" />
@@ -104,14 +109,14 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => onNavigateTab('user_management')}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
                     >
                         <Plus className="w-4 h-4" />
                         <span>New Entry</span>
                     </button>
                     <button
                         onClick={() => onShowToast('Export Started', 'Exporting SuperTime dashboard summary report (CSV)...', 'info')}
-                        className="px-4 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
                     >
                         <Download className="w-4 h-4 text-slate-600" />
                         <span>Export</span>
@@ -119,10 +124,10 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 </div>
             </div>
 
-            {/* Bento Grid - Overview Cards */}
+            {/* Bento Grid - Overview Cards with 3D Tilt */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Active Users */}
-                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md transition-shadow">
+                {/* Active Users with 3D Tilt */}
+                <TiltCard maxRotation={7} className="bg-white/90 backdrop-blur-md border border-slate-200/90 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                             <Users className="w-4 h-4" />
@@ -135,12 +140,13 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                         Active Users
                     </p>
                     <h3 className="text-2xl font-black text-slate-900 mt-1">{activeUsersCount || 0}</h3>
-                </div>
+                </TiltCard>
 
-                {/* Upcoming Leaves Summary (Replacing Pending Leaves) */}
-                <div
+                {/* Upcoming Leaves Summary with 3D Tilt */}
+                <TiltCard
+                    maxRotation={7}
                     onClick={() => setShowLeavesModal(true)}
-                    className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md hover:border-blue-300 transition-all text-left cursor-pointer"
+                    className="bg-white/90 backdrop-blur-md border border-slate-200/90 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all text-left cursor-pointer"
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -153,10 +159,10 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                     <h3 className="text-2xl font-black text-slate-900 mt-1">
                         {upcomingLeavesCount}
                     </h3>
-                </div>
+                </TiltCard>
 
-                {/* Next Holiday */}
-                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md transition-shadow">
+                {/* Next Holiday with 3D Tilt */}
+                <TiltCard maxRotation={7} className="bg-white/90 backdrop-blur-md border border-slate-200/90 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                         <div className="p-2 bg-slate-100 text-slate-600 rounded-xl">
                             <Calendar className="w-4 h-4" />
@@ -168,10 +174,10 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                     <h3 className="text-2xl font-black text-slate-900 mt-1">
                         {nextHoliday ? `${nextHoliday.days_remaining} Days` : 'N/A'}
                     </h3>
-                </div>
+                </TiltCard>
 
-                {/* On Leave Today */}
-                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs hover:shadow-md transition-shadow">
+                {/* On Leave Today with 3D Tilt */}
+                <TiltCard maxRotation={7} className="bg-white/90 backdrop-blur-md border border-slate-200/90 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                         <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
                             <UserX className="w-4 h-4" />
@@ -181,7 +187,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                         On Leave Today
                     </p>
                     <h3 className="text-2xl font-black text-slate-900 mt-1">{onLeaveUsersCount}</h3>
-                </div>
+                </TiltCard>
             </div>
 
             {/* Middle Section: Upcoming Leaves & Upcoming Holidays */}

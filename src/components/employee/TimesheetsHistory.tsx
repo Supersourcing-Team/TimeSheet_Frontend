@@ -22,6 +22,7 @@ import {
   Zap,
   ArrowRight,
 } from 'lucide-react';
+import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface TimesheetsHistoryProps {
   currentUser: User;
@@ -240,9 +241,12 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
+    <div className="space-y-6 text-slate-900 font-sans relative">
+      {/* 3D Ambient WebGL Accent */}
+      <AmbientMesh opacity={0.08} color={0x0284c7} />
+
       {/* Header & View Mode Switcher */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Timesheet History</h2>
           <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
@@ -252,11 +256,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
         <div className="flex items-center gap-2 shrink-0">
           {/* Calendar vs List Toggle */}
-          <div className="bg-slate-100 p-1 border border-slate-200 flex items-center gap-1">
+          <div className="bg-slate-100/90 p-1 border border-slate-200/90 rounded-xl flex items-center gap-1 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 viewMode === 'calendar'
                   ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -268,7 +272,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -282,7 +286,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Download className="w-3.5 h-3.5 text-slate-600" />
             <span>Export CSV</span>
@@ -292,7 +296,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
       {/* CALENDAR VIEW */}
       {viewMode === 'calendar' && (
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+        <div className="p-6 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-4">
             <div className="flex items-center gap-4">
               <button

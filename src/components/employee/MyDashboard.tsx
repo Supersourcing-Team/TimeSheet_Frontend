@@ -20,6 +20,8 @@ import {
 import { UpcomingLeavesWidget } from '../shared/UpcomingLeavesWidget';
 import { useGetUpcomingLeavesQuery } from '../../store/api/dataApi';
 import { EmployeeTab } from '../Sidebar';
+import { TiltCard } from '../ui/TiltCard';
+import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface MyDashboardProps {
   currentUser: User;
@@ -114,9 +116,12 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
   }, [holidays]);
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 text-slate-800 relative">
+      {/* 3D Ambient WebGL Accent Background */}
+      <AmbientMesh opacity={0.10} color={0x2563eb} />
+
       {/* Top Banner / Hero Greeting */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <span>Welcome back, {currentUser.name}</span>
@@ -130,14 +135,14 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigateTab('submit_timesheet')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Log Daily Hours</span>
           </button>
           <button
             onClick={() => onNavigateTab('weekend_work')}
-            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Moon className="w-4 h-4 text-slate-600" />
             <span>Weekend Request</span>
@@ -147,8 +152,8 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
 
       {/* Grid KPI Cards & Weekly Gauge */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Gauge Card */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-center gap-4">
+        {/* Gauge Card with 3D Tilt */}
+        <TiltCard maxRotation={7} className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex items-center gap-4">
           <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
             <svg className="w-20 h-20 transform -rotate-90">
               <circle
@@ -190,10 +195,10 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
               <span className="text-slate-500 font-normal">{(totalLoggedHoursThisWeek - billableThisWeek).toFixed(1)}h Non-billable</span>
             </div>
           </div>
-        </div>
+        </TiltCard>
 
-        {/* Card 2: Active Projects */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
+        {/* Card 2: Active Projects with 3D Tilt */}
+        <TiltCard maxRotation={7} className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Assigned Projects
@@ -212,17 +217,18 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           </div>
           <button
             onClick={() => onNavigateTab('my_projects')}
-            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
+            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
           >
             <span>View All Projects</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
-        </div>
+        </TiltCard>
 
-        {/* Card 3: My Leaves */}
-        <div
+        {/* Card 3: My Leaves with 3D Tilt */}
+        <TiltCard
+          maxRotation={7}
           onClick={() => setShowLeavesModal(true)}
-          className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition-colors">
@@ -249,15 +255,15 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
                 onNavigateTab('submit_timesheet');
               }
             }}
-            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
+            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
           >
             <span>Request Leave</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
-        </div>
+        </TiltCard>
 
-        {/* Card 4: Upcoming Holiday */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
+        {/* Card 4: Upcoming Holiday with 3D Tilt */}
+        <TiltCard maxRotation={7} className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Next Public Holiday
@@ -278,7 +284,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           <div className="mt-3 text-[11px] text-slate-500 font-semibold">
             {nextHoliday ? `${remainingDays} days remaining` : ''}
           </div>
-        </div>
+        </TiltCard>
       </div>
 
       {/* Middle Section: Active Project Highlight & This Week Summary */}

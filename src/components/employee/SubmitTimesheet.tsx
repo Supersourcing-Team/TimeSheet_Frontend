@@ -30,6 +30,7 @@ import {
   ListOrdered,
   Lock,
 } from 'lucide-react';
+import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface SubmitTimesheetProps {
   currentUser: User;
@@ -628,9 +629,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
   return (
     <>
-      <div className="w-full space-y-6 text-slate-900 font-sans pb-12">
+      <div className="w-full space-y-6 text-slate-900 font-sans pb-12 relative">
+        {/* 3D Ambient WebGL Accent */}
+        <AmbientMesh opacity={0.08} color={0x2563eb} />
+
         {/* Header Bar */}
-        <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
               {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
@@ -646,7 +650,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             <button
               type="button"
               onClick={() => setShowMarkLeaveModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all shrink-0 cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95"
             >
               <CalendarX className="w-4 h-4" />
               <span>Mark Leave</span>

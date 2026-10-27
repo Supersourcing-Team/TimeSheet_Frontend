@@ -179,20 +179,19 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-xs">
+    <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-2xs">
       {/* Left Branding */}
-      <div className="flex items-center gap-3 ">
-        <div className="flex items-center justify-center  w-10 h-10 rounded-2xl  bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
-        <span className=" text-2xl tracking-tight text-white-900 mb-1">
-              𝖊𝖇
-            </span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 shadow-md shadow-blue-500/25 text-white font-extrabold text-xl">
+          <span className="text-2xl tracking-tight text-white mb-0.5">
+            𝖊𝖇
+          </span>
         </div>
         <div>
           <div className="flex items-center gap-2">
             <span className="font-black text-lg tracking-tight text-slate-900">
               SuperTime
             </span>
-           
           </div>
           <p className="text-[11px] text-slate-500 font-semibold hidden sm:block">
             Timesheet &amp; Resource Governance
@@ -208,7 +207,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search projects, timesheets, employees, tools or client accounts..."
-          className="w-full bg-slate-50 border border-slate-300 text-xs text-slate-900 placeholder-slate-400 rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all"
+          className="w-full bg-slate-50/80 hover:bg-slate-100/70 focus:bg-white border border-slate-200/90 text-xs text-slate-900 placeholder-slate-400 rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 font-medium transition-all shadow-2xs"
         />
       </div>
 
@@ -220,19 +219,19 @@ export const Header: React.FC<HeaderProps> = React.memo(({
           <button
             type="button"
             onClick={handleOpenNotifications}
-            className="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+            className="relative p-2 rounded-xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200/90 text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-2xs"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold leading-none z-10">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold rounded-full leading-none z-10 shadow-xs animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-[360px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden">
+            <div className="absolute right-0 mt-2 w-[360px] bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">

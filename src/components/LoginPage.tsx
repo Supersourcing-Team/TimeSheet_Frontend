@@ -13,6 +13,8 @@ import {
    Sparkles,
    Zap,
 } from 'lucide-react';
+import { AmbientMesh } from './3d/AmbientMesh';
+import { TiltCard } from './ui/TiltCard';
 
 export const LoginPage: React.FC = () => {
    const dispatch = useDispatch();
@@ -90,6 +92,9 @@ export const LoginPage: React.FC = () => {
 
    return (
       <div className="min-h-screen bg-[#f8fafe] flex items-center justify-center p-4 sm:p-8 font-sans selection:bg-blue-600 selection:text-white relative overflow-hidden">
+         {/* 3D Ambient WebGL Particle Background */}
+         <AmbientMesh opacity={0.22} color={0x2563eb} />
+
          {/* Background Decorative Elements */}
          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
          <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
@@ -116,8 +121,8 @@ export const LoginPage: React.FC = () => {
                   Your all-in-one solution for timesheet management, team collaboration, and productivity tracking.
                </p>
 
-               {/* Dashboard Illustration */}
-               <div className="relative bg-white/60 backdrop-blur-md border border-white p-6 rounded-2xl shadow-xl shadow-blue-900/5 mb-12 max-w-lg">
+               {/* Interactive 3D Tilt Dashboard Illustration */}
+               <TiltCard maxRotation={6} className="bg-white/70 backdrop-blur-md border border-white p-6 rounded-2xl shadow-xl shadow-blue-900/5 mb-12 max-w-lg">
                   <div className="flex gap-2 mb-6">
                      <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                      <div className="w-3 h-3 rounded-full bg-slate-200"></div>
@@ -161,7 +166,7 @@ export const LoginPage: React.FC = () => {
                         <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></div><div className="flex-1 h-1.5 bg-slate-100 rounded-full"></div></div>
                      </div>
                   </div>
-               </div>
+               </TiltCard>
             </div>
 
             {/* Right Column - Auth Card */}
@@ -176,8 +181,8 @@ export const LoginPage: React.FC = () => {
                   </span>
                </div>
 
-               <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 sm:p-12 border border-slate-100 relative">
-                  {/* Decorative small circles behind card, simulated with absolute positioned elements */}
+               <TiltCard maxRotation={4} className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_16px_40px_rgb(0,0,0,0.06)] p-8 sm:p-12 border border-slate-100/90 relative">
+                  {/* Decorative small circles behind card */}
                   <div className="absolute top-10 right-10 w-2 h-2 bg-blue-100 rounded-full"></div>
                   <div className="absolute top-20 left-8 w-1.5 h-1.5 bg-purple-100 rounded-full"></div>
 
@@ -229,7 +234,7 @@ export const LoginPage: React.FC = () => {
                   <p className="mt-4 text-center text-xs text-slate-400">
                      Secure authentication powered by Google
                   </p>
-               </div>
+               </TiltCard>
 
                {/* Footer - Mobile Only */}
                <div className="mt-12 text-center text-xs text-slate-400 lg:hidden">

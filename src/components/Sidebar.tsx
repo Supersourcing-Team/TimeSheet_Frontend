@@ -18,6 +18,7 @@ import {
   FileText,
   Layers,
 } from 'lucide-react';
+import { Sidebar3DItem } from './ui/Sidebar3DItem';
 
 export type EmployeeTab =
   | 'my_dashboard'
@@ -267,12 +268,12 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
+    <aside className="w-64 bg-white/90 backdrop-blur-md border-r border-slate-200/90 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
       {/* Mode Indicator Banner */}
-      <div className="p-3 border-b border-slate-200 bg-white">
-        <div className="p-2.5 bg-slate-50 border border-slate-200 flex items-center justify-between">
+      <div className="p-3 border-b border-slate-200/80">
+        <div className="p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-sky-600 text-white font-bold shrink-0">
+            <div className="p-2 bg-sky-600 text-white font-bold rounded-lg shrink-0 shadow-xs">
               <Layers className="w-4 h-4" />
             </div>
             <div className="min-w-0 truncate">
@@ -286,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           </div>
 
           <span
-            className="w-2 h-2 bg-emerald-500 shrink-0 ml-2"
+            className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
             title="Active Workspace"
           />
         </div>
@@ -299,208 +300,76 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Employee Navigation
             </div>
-            {employeeNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeEmployeeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectEmployeeTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {employeeNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeEmployeeTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-amber-500 text-slate-900"
+                onClick={() => onSelectEmployeeTab(item.id)}
+              />
+            ))}
           </div>
         ) : portalMode === 'pm' ? (
           <div>
             <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Project Manager
             </div>
-            {pmNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activePmTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {pmNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activePmTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-amber-500 text-slate-900"
+                onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
+              />
+            ))}
           </div>
         ) : portalMode === 'ac_manager' ? (
           <div>
             <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Account Manager
             </div>
-            {acNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeAcTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group mb-0.5 cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-sky-500 text-white shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {acNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeAcTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-sky-500 text-white"
+                onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
+              />
+            ))}
           </div>
         ) : (
           <div>
             <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Management &amp; Admin
             </div>
-            {adminNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeAdminTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectAdminTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {adminNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeAdminTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-rose-500 text-white"
+                onClick={() => onSelectAdminTab(item.id)}
+              />
+            ))}
           </div>
         )}
       </div>

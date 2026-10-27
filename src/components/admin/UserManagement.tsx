@@ -36,6 +36,7 @@ import {
   Trash2,
   Settings,
 } from 'lucide-react';
+import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface UserManagementProps {
   currentUser?: { id: string } | null;
@@ -398,19 +399,22 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
   const labelCls = 'text-[11px] font-bold text-slate-700 tracking-wide';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* 3D Ambient WebGL Accent */}
+      <AmbientMesh opacity={0.08} color={0x0284c7} />
+
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
               <UserCog className="w-6 h-6 text-sky-600" />
               <span>User &amp; Department Management</span>
             </h1>
-            <span className="px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
+            <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-sky-50 text-sky-800 border border-sky-200 shadow-2xs">
               {total} Total Users
             </span>
-            <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
               {departments.length} Departments
             </span>
           </div>
@@ -423,7 +427,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
           <button
             type="button"
             onClick={() => setShowManageDeptModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Building2 className="w-4 h-4 text-slate-600" />
             <span>Manage Departments</span>
@@ -432,7 +436,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
           <button
             type="button"
             onClick={() => setShowRoleMatrixModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <ShieldCheck className="w-4 h-4 text-sky-600" />
             <span>Role Matrix</span>
@@ -441,7 +445,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Employee</span>
