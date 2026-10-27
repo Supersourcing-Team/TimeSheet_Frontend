@@ -120,7 +120,7 @@
 }
 
 :root {
-  --background: #f8fafc;
+  --background: #223446;
   --foreground: #0f172a;
   --card: #ffffff;
   --primary: #4f46e5;
@@ -129,7 +129,7 @@
   --primary-subtle: #eef2ff;
   --primary-subtle-border: #c7d2fe;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
+  --secondary: #073e4c;
   --secondary-foreground: #1e293b;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;

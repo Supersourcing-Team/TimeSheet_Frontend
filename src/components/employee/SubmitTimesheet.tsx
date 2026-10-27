@@ -958,7 +958,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-20 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
+                          className="w-35 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
                         />
                         <span className="text-[11px] font-extrabold text-emerald-800">hrs</span>
                       </div>
@@ -1028,7 +1028,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-20 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
+                          className="w-35 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
                         />
                         <span className="text-[11px] font-bold text-slate-600">hrs</span>
                       </div>
