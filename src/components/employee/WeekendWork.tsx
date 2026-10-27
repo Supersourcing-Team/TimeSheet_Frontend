@@ -32,7 +32,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   onShowToast,
 }) => {
   const safeProjects = projects || [];
-  const assignedProjects = safeProjects.filter((p) => p.assignedUserIds?.includes(currentUser.id));
+  const assignedProjects = safeProjects.filter((p) => p.assignedUserIds?.includes(currentUser.id) && p.isActive !== false && p.is_active !== false);
   const [projectId, setProjectId] = useState(assignedProjects[0]?.id || '');
   const [workDate, setWorkDate] = useState(new Date().toISOString().split('T')[0]);
   
