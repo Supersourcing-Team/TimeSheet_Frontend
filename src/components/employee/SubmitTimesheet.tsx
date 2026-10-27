@@ -933,22 +933,22 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 {/* SEPARATE DESCRIPTIONS FOR BILLABLE AND NON-BILLABLE HOURS */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
                   {/* Billable Work Column */}
-                  <div className="p-4 rounded-xl bg-emerald-50/35 border-2 border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all">
+                  <div className="p-4 rounded-xl bg-emerald-50/35 border-2 border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all flex flex-col justify-between">
                     {/* Billable Header & Hours Input Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-lg bg-emerald-100/60 border border-emerald-200/80">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200" />
-                        <span className="text-xs font-black text-emerald-950 uppercase tracking-wide">
+                    <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-100/60 border border-emerald-200/80 min-h-[48px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200 shrink-0" />
+                        <span className="text-xs font-black text-emerald-950 uppercase tracking-wide truncate">
                           Billable Work
                         </span>
-                        <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
+                        <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 shrink-0">
                           Client Scope
                         </span>
                       </div>
 
                       {/* Compact Hours Input Pill */}
-                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border-2 border-emerald-300 shadow-2xs">
-                        <label className="text-[11px] font-black text-emerald-900 uppercase tracking-wider">
+                      <div className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg border-2 border-emerald-300 shadow-2xs shrink-0">
+                        <label className="text-[11px] font-black text-emerald-900 uppercase tracking-wider whitespace-nowrap">
                           Billable (h):
                         </label>
                         <input
@@ -961,17 +961,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-35 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
+                          className="w-18 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
                         />
                         <span className="text-[11px] font-extrabold text-emerald-800">hrs</span>
                       </div>
                     </div>
 
                     {/* Billable Work Description Subheader & Textarea */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center justify-between min-h-[28px]">
                         <label className="text-[11px] font-bold text-emerald-950 flex items-center gap-1">
-                          <span>Deliverables & Activities</span>
+                          <span>Deliverables &amp; Activities</span>
                           <span className="text-rose-500 font-bold">*</span>
                         </label>
                         <button
@@ -1003,22 +1003,22 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   </div>
 
                   {/* Non-Billable Work Column */}
-                  <div className="p-4 rounded-xl bg-slate-100/50 border border-slate-200/90 shadow-2xs space-y-3 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-400/15 transition-all">
+                  <div className="p-4 rounded-xl bg-slate-100/50 border-2 border-slate-200/90 shadow-2xs space-y-3 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-400/15 transition-all flex flex-col justify-between">
                     {/* Non-Billable Header & Hours Input Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-lg bg-slate-200/60 border border-slate-200/80">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 ring-4 ring-slate-200" />
-                        <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                    <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-200/60 border border-slate-200/80 min-h-[48px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 ring-4 ring-slate-200 shrink-0" />
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-wide truncate">
                           Non-Billable Work
                         </span>
-                        <span className="text-[10px] text-slate-700 font-bold bg-slate-200/80 px-2 py-0.5 rounded-md border border-slate-300">
+                        <span className="text-[10px] text-slate-700 font-bold bg-slate-200/80 px-2 py-0.5 rounded-md border border-slate-300 shrink-0">
                           Internal Overhead
                         </span>
                       </div>
 
                       {/* Compact Hours Input Pill */}
-                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs">
-                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg border-2 border-slate-300 shadow-2xs shrink-0">
+                        <label className="text-[11px] font-black text-slate-900 uppercase tracking-wider whitespace-nowrap">
                           Non-Bill (h):
                         </label>
                         <input
@@ -1031,17 +1031,17 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-35 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
+                          className="w-18 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-black rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
                         />
-                        <span className="text-[11px] font-bold text-slate-600">hrs</span>
+                        <span className="text-[11px] font-extrabold text-slate-700">hrs</span>
                       </div>
                     </div>
 
                     {/* Non-Billable Work Description Subheader & Textarea */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center justify-between min-h-[28px]">
                         <label className="text-[11px] font-bold text-slate-700">
-                          Internal Tasks & Meetings Description
+                          Internal Tasks &amp; Meetings Description
                         </label>
                         <button
                           type="button"
