@@ -401,7 +401,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         return;
                       }
                       if (isExpiredTimesheet || dateStr < minAllowedDate) {
-                        onShowToast('Expired Timesheet', `The submission window for ${dateStr} has expired.`, 'info');
+                        onShowToast('Expired Timesheet', `The submission window for ${dateStr} has expired.`, 'warning');
                         setSelectedDateModal(dateStr);
                         return;
                       }
