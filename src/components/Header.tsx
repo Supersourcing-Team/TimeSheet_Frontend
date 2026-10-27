@@ -361,7 +361,6 @@ export const Header: React.FC<HeaderProps> = React.memo(({
                 />
                 <div>
                   <h4 className="text-xs font-extrabold text-slate-900">{currentUser.name}</h4>
-                  <p className="text-[11px] text-slate-500">{currentUser.email}</p>
                   <span className="inline-block mt-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase">
                     Role: {currentUser.role.replace('_', ' ')}
                   </span>
