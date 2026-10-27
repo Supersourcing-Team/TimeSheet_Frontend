@@ -91,13 +91,13 @@ export const LoginPage: React.FC = () => {
 
 
    return (
-      <div className="min-h-screen bg-[#f8fafe] flex items-center justify-center p-4 sm:p-8 font-sans selection:bg-blue-600 selection:text-white relative overflow-hidden">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-8 font-sans selection:bg-primary selection:text-white relative overflow-hidden">
          {/* 3D Ambient WebGL Particle Background */}
-         <AmbientMesh opacity={0.22} color={0x2563eb} />
+         <AmbientMesh opacity={0.06} color={0x6366f1} />
 
          {/* Background Decorative Elements */}
-         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-         <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+         <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-purple-100/40 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
 
          <div className="max-w-[1200px] w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center relative z-10">
 

@@ -94,7 +94,7 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
 
         <button
           onClick={handleSubmit}
-          className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
         >
           <Save className="w-4 h-4" />
           <span>Save Configuration</span>
@@ -242,11 +242,11 @@ export const WorkingCalendar: React.FC<WorkingCalendarProps> = ({
           {/* Target Weekly Summary Card */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold tracking-wider text-sky-700 uppercase">
+              <span className="text-[11px] font-bold tracking-wider text-primary uppercase">
                 Standard Weekly Capacity
               </span>
-              <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-sky-600" />
+              <div className="w-8 h-8 rounded-lg bg-primary-subtle border border-primary-subtle-border flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-primary" />
               </div>
             </div>
 

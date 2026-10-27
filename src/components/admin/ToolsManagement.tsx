@@ -177,7 +177,7 @@ export const ToolsManagement: React.FC<ToolsManagementProps> = ({ onShowToast })
         </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+          className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Tool</span>

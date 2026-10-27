@@ -92,7 +92,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     return (
         <div className="space-y-6 text-slate-900 font-sans relative">
             {/* 3D Ambient WebGL Accent Background */}
-            <AmbientMesh opacity={0.10} color={0x0284c7} />
+            <AmbientMesh opacity={0.05} color={0x7c3aed} />
 
             {/* Header Section */}
             <div className="p-5 bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -109,7 +109,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => onNavigateTab('user_management')}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+                        className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
                     >
                         <Plus className="w-4 h-4" />
                         <span>New Entry</span>

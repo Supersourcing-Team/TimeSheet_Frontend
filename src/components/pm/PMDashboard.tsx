@@ -235,7 +235,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
           </button>
           <button
             onClick={() => onNavigateTab('pm_timesheet_review')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <CheckSquare className="w-4 h-4" />
             <span>Review Timesheets</span>

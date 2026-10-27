@@ -243,7 +243,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   return (
     <div className="space-y-6 text-slate-900 font-sans relative">
       {/* 3D Ambient WebGL Accent */}
-      <AmbientMesh opacity={0.08} color={0x0284c7} />
+      <AmbientMesh opacity={0.05} color={0x6366f1} />
 
       {/* Header & View Mode Switcher */}
       <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -262,7 +262,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               onClick={() => setViewMode('calendar')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-sky-700 shadow-xs'
+                  ? 'bg-white text-primary shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -274,7 +274,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white text-sky-700 shadow-xs'
+                  ? 'bg-white text-primary shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -334,12 +334,12 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
                 <span>Expired Timesheet</span>
               </span>
-              <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+              <span className="flex items-center gap-1.5 text-cyan-700 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
                 <span>Leave Day</span>
               </span>
-              <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+              <span className="flex items-center gap-1.5 text-purple-700 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
                 <span>Holiday</span>
               </span>
               <span className="flex items-center gap-1.5 text-slate-400">
@@ -416,20 +416,20 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
                     isFutureDate
                       ? holidayForDay
-                        ? 'bg-orange-50 border-orange-200 hover:border-orange-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                        : 'bg-white border-slate-100 hover:border-blue-400 hover:scale-[1.02] cursor-pointer'
+                        ? 'bg-purple-50/70 border-purple-200 hover:border-purple-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        : 'bg-white border-slate-100 hover:border-primary/40 hover:scale-[1.02] cursor-pointer'
                       : isFullDayLeave
-                        ? 'bg-rose-50 border-rose-300 hover:border-rose-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        ? 'bg-cyan-50/70 border-cyan-200 hover:border-cyan-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                         : holidayForDay
-                          ? 'bg-orange-50 border-orange-300 hover:border-orange-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          ? 'bg-purple-50/70 border-purple-200 hover:border-purple-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                           : isWeekend
                             ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                             : dayTotalHours >= 8
-                              ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                              ? 'bg-emerald-50/50 border-emerald-200 hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                               : dayTotalHours > 0
-                                ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                ? 'bg-amber-50/50 border-amber-200 hover:border-amber-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                                 : leaveForDay
-                                  ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                  ? 'bg-cyan-50/60 border-cyan-200 hover:border-cyan-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                                   : isExpiredTimesheet
                                     ? 'bg-red-50/70 border-red-300 text-red-900 hover:border-red-500 hover:bg-red-100 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                                     : isMissingTimesheet
@@ -463,21 +463,21 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       </span>
                     )}
                     {leaveForDay && dayTotalHours === 0 && (
-                      <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <CalendarX className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
                     )}
                   </div>
 
                   <div className="space-y-1">
                     {/* Leave badge */}
                     {leaveForDay && (
-                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-extrabold border border-rose-200 flex items-center gap-1">
+                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 font-extrabold border border-cyan-200 flex items-center gap-1">
                         <CalendarX className="w-2.5 h-2.5 shrink-0" />
                         <span className="truncate">{formatLeaveBadgeLabel(leaveForDay)}</span>
                       </div>
                     )}
                     {/* Holiday badge */}
                     {holidayForDay && !leaveForDay && (
-                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 font-extrabold border border-orange-200 flex items-center gap-1">
+                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-extrabold border border-purple-200 flex items-center gap-1">
                         <span>🎉</span>
                         <span className="truncate">{holidayForDay.name}</span>
                       </div>
@@ -485,7 +485,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     {dayEntries.slice(0, leaveForDay ? 1 : 2).map((e) => (
                       <div
                         key={e.id}
-                        className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-100 flex items-center justify-between"
+                        className="text-[10px] truncate px-1.5 py-0.5 rounded bg-primary-subtle text-primary font-semibold border border-primary-subtle-border flex items-center justify-between"
                       >
                         <span className="truncate">{e.projectName}</span>
                         <span className="font-extrabold shrink-0 ml-1">{e.billableHours + e.nonBillableHours}h</span>

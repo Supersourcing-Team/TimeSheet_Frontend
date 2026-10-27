@@ -20,10 +20,10 @@ export const ToastContainer: React.FC<ToastProps> = React.memo(({ toasts, onDism
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className={`pointer-events-auto p-4 rounded-xl shadow-xl border flex items-start gap-3 bg-slate-900 text-white ${
               toast.type === 'success'
-                ? 'border-emerald-500/30'
+                ? 'border-success/40'
                 : toast.type === 'error'
-                ? 'border-rose-500/30'
-                : 'border-blue-500/30'
+                ? 'border-destructive/40'
+                : 'border-primary/40'
             }`}
           >
             {toast.type === 'success' && (
@@ -33,7 +33,7 @@ export const ToastContainer: React.FC<ToastProps> = React.memo(({ toasts, onDism
               <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             )}
             {toast.type === 'info' && (
-              <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+              <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             )}
             <div className="flex-1 text-sm">
               <h4 className="font-semibold text-slate-100">{toast.title}</h4>
