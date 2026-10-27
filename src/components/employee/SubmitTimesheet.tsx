@@ -634,33 +634,22 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     <>
       <div className="w-full space-y-6 text-slate-900 font-sans pb-12 relative">
         {/* Header Banner */}
-        <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
-              </h1>
-              <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
-                {editingEntry
-                  ? 'Update your daily logged work hours and project task descriptions.'
-                  : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
-              </p>
-            </div>
+          {/* <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
+                </h1>
+                <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
+                  {editingEntry
+                    ? 'Update your daily logged work hours and project task descriptions.'
+                    : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              {!editingEntry && (
-                <button
-                  type="button"
-                  onClick={() => setShowMarkLeaveModal(true)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3.5 py-2 text-xs font-bold shadow-2xs cursor-pointer transition-colors active:scale-95"
-                >
-                  <CalendarX className="h-4 w-4 text-rose-600 stroke-[2.2]" />
-                  <span>Mark Leave</span>
-                </button>
-              )}
+            
             </div>
-          </div>
-        </section>
+          </section> */}
 
         {/* Leave Banner */}
         {leaveStatus?.has_leave && (
@@ -797,7 +786,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 Tasks Breakdown ({rows.length} {rows.length === 1 ? 'Row' : 'Rows'})
               </h3>
             </div>
-            {!editingEntry && (
+            {/* {!editingEntry && (
               <button
                 type="button"
                 onClick={handleAddRow}
@@ -806,7 +795,21 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Add Project Row</span>
               </button>
-            )}
+            )} */}
+             <div className="flex flex-wrap items-center gap-3">
+              {!editingEntry && (
+                <button
+                  type="button"
+                  onClick={() => setShowMarkLeaveModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3.5 py-2 text-xs font-bold shadow-2xs cursor-pointer transition-colors active:scale-95"
+                >
+                  <CalendarX className="h-4 w-4 text-rose-600 stroke-[2.2]" />
+                  <span>Mark Leave</span>
+                </button>
+              )}
+            </div>
+
+            
           </div>
 
           {/* Task Rows List */}
@@ -1126,4 +1129,3 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     </>
   );
 };
-  
