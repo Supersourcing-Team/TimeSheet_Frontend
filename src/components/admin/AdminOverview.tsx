@@ -109,7 +109,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => onNavigateTab('user_management')}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+                        className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
                     >
                         <Plus className="w-4 h-4" />
                         <span>New Entry</span>

@@ -135,7 +135,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => onNavigateTab('submit_timesheet')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Log Daily Hours</span>
@@ -174,7 +174,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
                 strokeDasharray={200}
                 strokeDashoffset={200 - (200 * completionPercentage) / 100}
                 strokeLinecap="round"
-                className="text-blue-600 transition-all duration-1000 ease-out"
+                className="text-primary transition-all duration-1000 ease-out"
                 fill="transparent"
               />
             </svg>
@@ -189,7 +189,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
             <div className="text-xl font-extrabold text-slate-900 mt-0.5">
               {totalLoggedHoursThisWeek} <span className="text-xs text-slate-400 font-normal">/ {targetWeeklyHours}h</span>
             </div>
-            <div className="text-xs text-blue-700 mt-1 font-bold flex items-center gap-1">
+            <div className="text-xs text-primary mt-1 font-bold flex items-center gap-1">
               <span>{billableThisWeek}h Billable</span>
               <span className="text-slate-300">•</span>
               <span className="text-slate-500 font-normal">{(totalLoggedHoursThisWeek - billableThisWeek).toFixed(1)}h Non-billable</span>
@@ -203,7 +203,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Assigned Projects
             </span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-primary-subtle text-primary">
               <FolderKanban className="w-4 h-4" />
             </div>
           </div>
@@ -212,12 +212,12 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
               {(projects || []).filter((p) => p.assignedUserIds?.includes(currentUser.id)).length} Active
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Primary: <span className="text-blue-600 font-bold">{focusProject?.name}</span>
+              Primary: <span className="text-primary font-bold">{focusProject?.name}</span>
             </p>
           </div>
           <button
             onClick={() => onNavigateTab('my_projects')}
-            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
+            className="mt-3 text-xs text-primary hover:text-primary-hover font-bold flex items-center gap-1 cursor-pointer"
           >
             <span>View All Projects</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -228,13 +228,13 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
         <TiltCard
           maxRotation={7}
           onClick={() => setShowLeavesModal(true)}
-          className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-primary/40 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition-colors">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-primary transition-colors">
               My Leaves
             </span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
+            <div className="p-2 rounded-xl bg-primary-subtle text-primary group-hover:scale-110 transition-transform">
               <Palmtree className="w-4 h-4" />
             </div>
           </div>
@@ -255,7 +255,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
                 onNavigateTab('submit_timesheet');
               }
             }}
-            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
+            className="mt-3 text-xs text-primary hover:text-primary-hover font-bold flex items-center gap-1 cursor-pointer"
           >
             <span>Request Leave</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -268,13 +268,13 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Next Public Holiday
             </span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="p-2 rounded-xl bg-primary-subtle text-primary">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2">
             <div className="text-lg font-extrabold text-slate-900">{nextHoliday ? nextHoliday.name : 'No Upcoming Holidays'}</div>
-            <p className="text-xs text-blue-600 mt-0.5 font-bold">
+            <p className="text-xs text-primary mt-0.5 font-bold">
               {nextHoliday ? new Date(nextHoliday.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
             </p>
             <p className="text-[11px] text-slate-500 mt-1">
@@ -319,11 +319,11 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {userTimesheets.map((ts) => (
-                  <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
+                  <tr key={ts.id} className="hover:bg-secondary/60 transition-colors">
                     <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
                       {ts.date}
                     </td>
-                    <td className="py-3 px-3 font-bold text-blue-600 whitespace-nowrap">
+                    <td className="py-3 px-3 font-bold text-primary whitespace-nowrap">
                       {ts.projectName}
                     </td>
                     <td className="py-3 px-3 text-slate-700">
@@ -361,7 +361,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
         <div className="space-y-4">
           <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary bg-primary-subtle px-2 py-0.5 rounded border border-primary/20">
                 Primary Assignment
               </span>
               <span className="text-xs text-slate-500 font-bold">{focusProject?.code}</span>
@@ -379,7 +379,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
               </div>
               <div className="flex items-center justify-between text-slate-500 font-semibold">
                 <span>Hours Logged:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-primary">
                   {focusProject?.loggedHours || 0}h
                 </span>
               </div>
@@ -392,7 +392,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
                 </div>
                 <button
                   onClick={() => onNavigateTab('my_projects')}
-                  className="text-xs text-blue-600 hover:underline font-bold"
+                  className="text-xs text-primary hover:text-primary-hover hover:underline font-bold"
                 >
                   View Details →
                 </button>

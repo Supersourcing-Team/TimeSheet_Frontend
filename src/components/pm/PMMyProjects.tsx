@@ -708,7 +708,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer self-start md:self-auto"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer self-start md:self-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Create New Project</span>
@@ -945,7 +945,7 @@ export const PMMyProjects: React.FC<PMMyProjectsProps> = ({
                     setEditFormData(selectedProject);
                     setShowEditModal(true);
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                 >
                   <Edit3 className="w-4 h-4" />
                   <span>Edit Details</span>

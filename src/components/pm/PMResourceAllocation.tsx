@@ -386,21 +386,21 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowBulkAssignModal(true)}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+            className="px-3.5 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs flex items-center gap-1.5 rounded-xl transition-all cursor-pointer shadow-xs"
           >
             <Users className="w-4 h-4" />
             <span>Bulk Allocate Team</span>
           </button>
           <button
             onClick={() => setShowAssignModal(true)}
-            className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-card hover:bg-secondary/80 border border-border text-foreground font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <UserPlus className="w-4 h-4 text-sky-600" />
+            <UserPlus className="w-4 h-4 text-primary" />
             <span>Assign Employee</span>
           </button>
           <button
             onClick={() => setShowToolModal(true)}
-            className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-primary-subtle hover:bg-primary/20 border border-primary/30 text-primary font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Wrench className="w-4 h-4" />
             <span>Allocate Tool</span>
@@ -465,7 +465,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                 onClick={() => setToolStatusFilter('all')}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                   toolStatusFilter === 'all'
-                    ? 'bg-indigo-600 text-white shadow-xs'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -1026,7 +1026,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
                     className={`px-5 py-2 rounded-xl font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-sm ${
                       totalAssignments === 0 || isBatchAssigning
                         ? 'bg-slate-300 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
+                        : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                     }`}
                   >
                     {isBatchAssigning ? (
@@ -1284,7 +1284,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
               <button
                 type="submit"
                 disabled={activeMasterTools.length === 0}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground font-bold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
               >
                 Allocate Tool
               </button>

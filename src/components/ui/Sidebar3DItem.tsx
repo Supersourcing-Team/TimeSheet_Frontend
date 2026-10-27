@@ -83,12 +83,12 @@ export const Sidebar3DItem: React.FC<Sidebar3DItemProps> = ({
         whileTap={{ scale: 0.98, rotateX: 0, rotateY: 0 }}
         transition={{ type: 'spring', stiffness: 420, damping: 26 }}
         style={{ transformStyle: 'preserve-3d' }}
-        className={`w-full relative overflow-hidden flex items-center justify-between p-2.5 text-left rounded-xl transition-colors duration-150 group cursor-pointer select-none ${
+        className={`w-full relative overflow-hidden flex items-center justify-between p-2.5 text-left rounded-xl transition-colors duration-150 group cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
           isActive
-            ? 'active-nav-item font-bold shadow-md shadow-sky-600/25 ring-1 ring-sky-400/30'
+            ? 'active-nav-item font-bold shadow-md shadow-primary/20 ring-1 ring-primary/30'
             : isHovered
-            ? 'bg-slate-100/90 text-slate-900 shadow-md shadow-slate-300/30 border border-slate-200/80'
-            : 'text-slate-700 hover:bg-slate-100/70 border border-transparent'
+            ? 'bg-secondary/80 text-slate-900 shadow-xs border border-border'
+            : 'text-slate-700 hover:bg-secondary/50 border border-transparent'
         }`}
       >
         {/* Dynamic Specular 3D Glare on Hover */}
@@ -117,8 +117,8 @@ export const Sidebar3DItem: React.FC<Sidebar3DItemProps> = ({
               isActive
                 ? 'bg-white/20 text-white shadow-sm shadow-black/10'
                 : isHovered
-                ? 'bg-sky-100 text-sky-700 shadow-sm'
-                : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-800'
+                ? 'bg-primary-subtle text-primary shadow-xs'
+                : 'bg-secondary text-slate-500 group-hover:bg-secondary-hover group-hover:text-slate-800'
             }`}
           >
             <Icon className="w-4 h-4 shrink-0" />
