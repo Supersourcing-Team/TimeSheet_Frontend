@@ -268,26 +268,26 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     ];
 
   return (
-    <aside className="w-64 bg-white/90 backdrop-blur-md border-r border-slate-200/90 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
+    <aside className="w-64 bg-white/95 backdrop-blur-xl border-r border-slate-200/90 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)] shadow-[4px_0_24px_rgba(99,102,241,0.03)]">
       {/* Mode Indicator Banner */}
-      <div className="p-3 border-b border-slate-200/80">
-        <div className="p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
+      <div className="p-3 border-b border-slate-100">
+        <div className="p-3 bg-gradient-to-br from-indigo-50/70 via-white to-violet-50/50 border border-indigo-100/90 rounded-2xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-primary text-white font-bold rounded-lg shrink-0 shadow-xs">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold shrink-0 shadow-md shadow-indigo-500/25">
               <Layers className="w-4 h-4" />
             </div>
             <div className="min-w-0 truncate">
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
+              <div className="text-[9px] font-black text-indigo-600/80 uppercase tracking-wider truncate">
                 Active Workspace
               </div>
-              <div className="text-xs font-bold text-slate-800 capitalize leading-tight truncate">
+              <div className="text-xs font-black text-slate-900 capitalize leading-tight truncate">
                 {portalMode === 'ac_manager' ? 'Account Manager' : portalMode === 'pm' ? 'Project Manager' : portalMode}
               </div>
             </div>
           </div>
 
           <span
-            className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+            className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2 shadow-[0_0_8px_rgba(16,185,129,0.6)] ring-2 ring-emerald-200"
             title="Active Workspace"
           />
         </div>
@@ -297,7 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div className="p-3 space-y-1 flex-1 overflow-y-auto">
         {portalMode === 'employee' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wider">
               Employee Navigation
             </div>
             {employeeNavItems.map((item) => (
@@ -309,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 icon={item.icon}
                 isActive={activeEmployeeTab === item.id}
                 badge={item.badge}
-                badgeColorClass="bg-amber-500 text-slate-900"
+                badgeColorClass="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-xs shadow-orange-500/25"
                 onClick={() => onSelectEmployeeTab(item.id)}
               />
             ))}

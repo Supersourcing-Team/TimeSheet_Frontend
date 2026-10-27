@@ -637,37 +637,45 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         {/* 3D Ambient WebGL Accent */}
         <AmbientMesh opacity={0.05} color={0x6366f1} />
 
-        {/* Header Bar */}
-        <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
-            </h2>
-            <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
-              {editingEntry
-                ? 'Update your daily logged work hours and descriptions.'
-                : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
-            </p>
+        {/* Hero Banner */}
+        <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
+          {/* Soft ambient glow */}
+          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
+              </h1>
+              <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+                {editingEntry
+                  ? 'Update your daily logged work hours and project task descriptions.'
+                  : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {!editingEntry && (
+                <button
+                  type="button"
+                  onClick={() => setShowMarkLeaveModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white/80 hover:bg-white px-4 py-2.5 text-xs font-black text-rose-700 shadow-sm backdrop-blur-md border border-white/80 cursor-pointer transition-all active:scale-95"
+                >
+                  <CalendarX className="h-4 w-4 text-rose-600 stroke-[2.5]" />
+                  <span>Mark Leave</span>
+                </button>
+              )}
+            </div>
           </div>
-          {/* Mark Leave Button */}
-          {!editingEntry && (
-            <button
-              type="button"
-              onClick={() => setShowMarkLeaveModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95"
-            >
-              <CalendarX className="w-4 h-4" />
-              <span>Mark Leave</span>
-            </button>
-          )}
-        </div>
+        </section>
 
         {/* Leave Banner */}
         {leaveStatus?.has_leave && (
           <div
             className={`flex items-center gap-3 p-4 rounded-2xl border ${isOnFullDayLeave
-                ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-amber-50 border-amber-200 text-amber-800'
+                ? 'bg-red-50/80 border-red-200 text-red-800'
+                : 'bg-amber-50/80 border-amber-200 text-amber-800'
               }`}
           >
             <CalendarX className={`w-5 h-5 shrink-0 ${isOnFullDayLeave ? 'text-red-500' : 'text-amber-500'}`} />
@@ -689,7 +697,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
         {/* Weekend / Holiday Warnings */}
         {isWeekendSelected && (
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
               <p className="font-extrabold text-amber-900">Weekend Date Selected</p>
@@ -709,7 +717,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         )}
 
         {matchedHoliday && (
-          <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 flex items-start gap-3 shadow-xs">
+          <div className="p-4 rounded-2xl bg-orange-50/80 border border-orange-200 text-orange-900 flex items-start gap-3 shadow-xs">
             <CalendarX className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs">
               <p className="font-extrabold text-orange-900">Company Holiday Selected ({matchedHoliday.name})</p>
@@ -719,21 +727,21 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         )}
 
         {/* Dynamic Target Indicator Bar */}
-        <div className="p-4 rounded-xl bg-slate-50/90 border border-slate-200 shadow-2xs space-y-3">
+        <div className="rounded-[22px] border border-slate-200/90 bg-white/95 backdrop-blur-sm p-5 shadow-[0_8px_30px_rgba(30,50,90,0.045)] space-y-3.5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
               <span>
                 Daily Target:{' '}
-                <span className="text-slate-900 font-extrabold">{targetDayHours.toFixed(1)} Hours</span>
+                <span className="text-slate-950 font-black">{targetDayHours.toFixed(1)} Hours</span>
               </span>
               <span className="text-slate-300">•</span>
               <span>
                 Logged Today:{' '}
                 <span
-                  className={`font-black px-2.5 py-0.5 rounded-md border ${
+                  className={`font-black px-2.5 py-1 rounded-full border ${
                     grandTotal >= targetDayHours && targetDayHours > 0
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                      ? 'border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700'
+                      : 'border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700'
                   }`}
                 >
                   {grandTotal.toFixed(1)} Hours
@@ -742,10 +750,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+              <span className="px-3 py-1 rounded-full text-[11px] font-black border border-emerald-200/60 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700 shadow-2xs">
                 Billable: {totalBillable.toFixed(1)}h
               </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+              <span className="px-3 py-1 rounded-full text-[11px] font-black border border-sky-200/60 bg-gradient-to-r from-sky-500/15 to-blue-500/15 text-blue-700 shadow-2xs">
                 Non-Billable: {totalNonBillable.toFixed(1)}h
               </span>
             </div>
@@ -753,7 +761,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
           {/* Dynamic Filling Progress Bar */}
           <div className="space-y-1">
-            <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden flex shadow-inner">
+            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex shadow-inner">
               <div
                 style={{
                   width: `${Math.min(
@@ -761,7 +769,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     ((totalBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
                   )}%`,
                 }}
-                className="h-full bg-emerald-500 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 shadow-xs transition-all duration-500"
                 title={`Billable: ${totalBillable.toFixed(1)}h`}
               />
               <div
@@ -774,11 +782,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     ((totalNonBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
                   )}%`,
                 }}
-                className="h-full bg-slate-400 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 shadow-xs transition-all duration-500"
                 title={`Non-Billable: ${totalNonBillable.toFixed(1)}h`}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold px-0.5">
+            <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold px-0.5">
               <span>0h</span>
               <span>{((targetDayHours > 0 ? targetDayHours : 8) / 2).toFixed(1)}h (50%)</span>
               <span>{(targetDayHours > 0 ? targetDayHours : 8).toFixed(1)}h Target (100%)</span>
@@ -787,13 +795,13 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         </div>
 
         {/* Main Work Entry Form Card */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center justify-between p-3.5 bg-indigo-50/50 rounded-xl border border-indigo-100/70">
+        <div className="rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm p-6 shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-6">
+          <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-indigo-50/80 via-violet-50/40 to-white rounded-2xl border border-indigo-100/80">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
                 <FileText className="w-4 h-4" />
               </div>
-              <h3 className="font-extrabold text-sm text-slate-900 tracking-wide uppercase">
+              <h3 className="font-black text-sm text-slate-900 tracking-wide uppercase">
                 Tasks Breakdown ({rows.length} {rows.length === 1 ? 'Row' : 'Rows'})
               </h3>
             </div>
@@ -801,9 +809,9 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
               <button
                 type="button"
                 onClick={handleAddRow}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary-subtle hover:bg-primary/15 text-primary font-bold text-xs transition-colors cursor-pointer border border-primary-subtle-border shadow-2xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 hover:bg-indigo-100/70 text-indigo-700 font-black text-xs transition-colors cursor-pointer border border-indigo-200/60 shadow-2xs"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Add Project Row</span>
               </button>
             )}
@@ -1073,14 +1081,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
           </div>
 
           {/* Submit / Draft Action Buttons */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
             {!editingEntry ? (
               <button
                 type="button"
                 onClick={handleAddRow}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border hover:bg-primary/10 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 border border-indigo-200/80 hover:bg-indigo-100/70 text-xs font-black cursor-pointer transition-all shadow-2xs active:scale-95"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Add Additional Task Row</span>
               </button>
             ) : (
@@ -1090,7 +1098,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                   if (onClearEditing) onClearEditing();
                   onShowToast('Edit Cancelled', 'Returned to new submission mode', 'info');
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold cursor-pointer transition-colors"
               >
                 Cancel Edit
               </button>
@@ -1101,7 +1109,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 type="button"
                 disabled={isSubmitting || isWeekendSelected || !!matchedHoliday}
                 onClick={() => handleSubmit()}
-                className="flex items-center gap-2 px-7 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/25 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
+                className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/25 text-xs font-black transition-all hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 <span>{isSubmitting ? 'Saving...' : (editingEntry ? 'Update & Save' : 'Submit Timesheet')}</span>

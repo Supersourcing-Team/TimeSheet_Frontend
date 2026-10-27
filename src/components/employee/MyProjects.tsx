@@ -28,6 +28,37 @@ interface MyProjectsProps {
   allUsers: User[];
 }
 
+const projectAccent = [
+  {
+    icon: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-indigo-500/25',
+    bar: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-600',
+    soft: 'bg-gradient-to-br from-blue-50/70 to-indigo-50/40',
+    codeBg: 'bg-indigo-50 text-indigo-700 border border-indigo-200/60',
+    border: 'hover:border-indigo-300 hover:shadow-[0_12px_32px_rgba(99,102,241,0.15)]',
+  },
+  {
+    icon: 'bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/25',
+    bar: 'bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500',
+    soft: 'bg-gradient-to-br from-purple-50/70 to-pink-50/40',
+    codeBg: 'bg-purple-50 text-purple-700 border border-purple-200/60',
+    border: 'hover:border-purple-300 hover:shadow-[0_12px_32px_rgba(168,85,247,0.15)]',
+  },
+  {
+    icon: 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-orange-500/25',
+    bar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500',
+    soft: 'bg-gradient-to-br from-amber-50/70 to-orange-50/40',
+    codeBg: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+    border: 'hover:border-amber-300 hover:shadow-[0_12px_32px_rgba(245,158,11,0.15)]',
+  },
+  {
+    icon: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25',
+    bar: 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500',
+    soft: 'bg-gradient-to-br from-emerald-50/70 to-teal-50/40',
+    codeBg: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60',
+    border: 'hover:border-emerald-300 hover:shadow-[0_12px_32px_rgba(16,185,129,0.15)]',
+  },
+];
+
 export const MyProjects: React.FC<MyProjectsProps> = ({
   currentUser,
   projects = [],
@@ -53,20 +84,20 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
     if (s === 'achieved' || s === 'completed') {
       return {
         label: 'Achieved',
-        className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
         dot: 'bg-emerald-500',
       };
     }
     if (s === 'in_progress') {
       return {
         label: 'In Progress',
-        className: 'bg-blue-50 text-blue-700 border-blue-200',
+        className: 'bg-blue-50 text-blue-700 border-blue-200/60',
         dot: 'bg-blue-500',
       };
     }
     return {
       label: 'Planned',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      className: 'bg-amber-50 text-amber-700 border-amber-200/60',
       dot: 'bg-amber-500',
     };
   };
@@ -85,26 +116,34 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <FolderKanban className="w-6 h-6 text-sky-600" />
-            <span>My Assigned Projects</span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            View project scopes, milestones &amp; deliverables, allocated tools, and PM contacts.
-          </p>
+    <div className="space-y-6 text-slate-900 font-sans pb-12">
+      {/* Hero Banner */}
+      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
+        {/* Soft ambient glow */}
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              My Assigned Projects
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+              View your sprint projects, milestones &amp; deliverables, allocated tools, and PM contacts.
+            </p>
+          </div>
+
+          <span className="inline-flex items-center gap-2 rounded-xl bg-white/80 px-4 py-2.5 text-xs font-black text-indigo-700 shadow-sm border border-white/80 backdrop-blur-md">
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <span>{myProjects.length} Active Assignments</span>
+          </span>
         </div>
-        <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold">
-          {myProjects.length} Active Assignments
-        </span>
-      </div>
+      </section>
 
       {/* Projects Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginatedProjects.map((project) => {
+        {paginatedProjects.map((project, index) => {
+          const accent = projectAccent[index % projectAccent.length];
           const milestones = project.milestones || [];
           const achievedCount = milestones.filter(
             (m) => m.status === 'achieved' || (m as any).status === 'completed'
@@ -124,49 +163,53 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
           return (
             <div
               key={project.id}
-              className="p-5 rounded-2xl bg-white border border-slate-200 shadow-lg hover:border-slate-300 transition-all flex flex-col justify-between space-y-4 group"
+              className={`p-5 rounded-[22px] bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-[0_10px_35px_rgba(30,50,90,0.055)] transition-all duration-300 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between space-y-4 group ${accent.border}`}
             >
-              <div className="space-y-3">
+              {/* Accent colored top bar */}
+              <div className={`absolute inset-x-0 top-0 h-1.5 ${accent.bar}`} />
+
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">
+                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${accent.codeBg}`}>
                     {project.code}
                   </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                      project.status === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : project.status === 'completed'
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    }`}
-                  >
-                    {project.status}
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black capitalize border border-emerald-200/60 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700">
+                    {project.status || 'Active'}
                   </span>
                 </div>
 
-                <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
-                  {project.name}
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">Client: {project.client}</p>
-                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                  {project.description}
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${accent.icon}`}>
+                    <FolderKanban className="w-5 h-5" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-black text-slate-950 truncate group-hover:text-indigo-600 transition-colors">
+                      {project.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-bold truncate">Client: {project.client || 'Internal'}</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                  {project.description || 'Sprint deliverables and milestone objectives.'}
                 </p>
 
                 {/* Milestones Preview Bar */}
                 {milestones.length > 0 && (
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100 space-y-2">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                        <Flag className="w-3 h-3 text-indigo-600" />
+                      <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
+                        <Flag className="w-3.5 h-3.5 text-indigo-600" />
                         <span>Milestones</span>
                       </span>
-                      <span className="text-indigo-600 font-semibold text-[10px]">
+                      <span className="text-indigo-600 font-black text-[10px]">
                         {achievedCount}/{milestones.length} Completed ({overallProgress}%)
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 overflow-hidden">
+                    <div className="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-sky-600 transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 transition-all duration-500 shadow-xs"
                         style={{ width: `${Math.min(100, Math.max(0, overallProgress))}%` }}
                       />
                     </div>
@@ -175,17 +218,17 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
               </div>
 
               {/* Stats */}
-              <div className="space-y-3 pt-3 border-t border-slate-200 text-xs">
-                <div className="flex justify-between items-center text-slate-600 text-[11px] font-bold">
+              <div className="space-y-3 pt-3 border-t border-slate-100 text-xs">
+                <div className="flex justify-between items-center text-slate-500 text-[11px] font-bold">
                   <span>Logged Hours</span>
-                  <span className="text-indigo-700 font-extrabold">
+                  <span className="text-indigo-700 font-black text-xs">
                     {project.loggedHours || 0} hrs
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <span>PM: {project.pmName}</span>
+                  <div className="flex items-center gap-1.5 text-slate-600">
+                    <span>PM: {project.pmName || 'Unassigned'}</span>
                   </div>
                   {(project.documents || []).length > 0 ? (
                     <span className="flex items-center gap-1 text-slate-500 font-semibold">
@@ -193,16 +236,17 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
                       {(project.documents || []).length} Docs
                     </span>
                   ) : (
-                    <span className="text-slate-600">Ends {project.endDate}</span>
+                    <span className="text-slate-500">Ends {project.endDate || '-'}</span>
                   )}
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setSelectedProjectModal(project)}
-                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-800 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 hover:bg-indigo-100/70 text-indigo-700 text-xs font-black transition-all flex items-center justify-center gap-1.5 border border-indigo-200/60 cursor-pointer shadow-2xs active:scale-95"
                 >
                   <Target className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>View Details, Milestones & Tools</span>
+                  <span>View Details, Milestones &amp; Tools</span>
                 </button>
               </div>
             </div>

@@ -245,76 +245,84 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
       {/* 3D Ambient WebGL Accent */}
       <AmbientMesh opacity={0.05} color={0x6366f1} />
 
-      {/* Header & View Mode Switcher */}
-      <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Timesheet History</h2>
-          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-            Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
-          </p>
-        </div>
+      {/* Hero Banner & View Mode Switcher */}
+      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
+        {/* Soft ambient glow */}
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Calendar vs List Toggle */}
-          <div className="bg-slate-100/90 p-1 border border-slate-200/90 rounded-xl flex items-center gap-1 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                viewMode === 'calendar'
-                  ? 'bg-white text-primary shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              <span>Calendar View</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-white text-primary shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ListFilter className="w-3.5 h-3.5" />
-              <span>List View</span>
-            </button>
+        <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              Timesheets History &amp; Audit
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+              Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>Export CSV</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* Calendar vs List Toggle */}
+            <div className="bg-white/50 backdrop-blur-md p-1 border border-white/80 rounded-2xl flex items-center gap-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode('calendar')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                  viewMode === 'calendar'
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Calendar View</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <ListFilter className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>List View</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-1.5 px-4 py-2 border border-white/80 bg-white/70 hover:bg-white text-slate-700 font-black text-xs rounded-xl backdrop-blur-md transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-600 stroke-[2.5]" />
+              <span>Export CSV</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* CALENDAR VIEW */}
       {viewMode === 'calendar' && (
-        <div className="p-6 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-4">
-            <div className="flex items-center gap-4">
+        <div className="p-6 rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 gap-4">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                className="p-2 rounded-xl bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
               </button>
-              <h3 className="text-base font-extrabold text-slate-900 min-w-[140px] text-center">
+              <h3 className="text-base font-black text-slate-950 min-w-[140px] text-center">
                 {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
               </h3>
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                className="p-2 rounded-xl bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
             <div className="flex items-center gap-4 text-xs">
@@ -524,9 +532,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
       {/* LIST VIEW */}
       {viewMode === 'list' && (
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+        <div className="p-6 rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-4">
           {/* Filter Toolbar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <input
@@ -534,14 +542,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search descriptions..."
-                className="w-full bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-xl pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-medium transition-colors"
               />
             </div>
 
             <select
               value={selectedProjectFilter}
               onChange={(e) => setSelectedProjectFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              className="bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-bold transition-colors cursor-pointer"
             >
               <option value="all">All Projects</option>
               {assignedProjects.map((p) => (
@@ -554,21 +562,21 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              className="bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-bold transition-colors cursor-pointer"
             >
               <option value="submitted">Submitted</option>
             </select>
 
-            <div className="text-right flex items-center justify-end text-xs text-slate-500 font-bold">
-              Total Found: {filteredTimesheets.length} entries
+            <div className="text-right flex items-center justify-end text-xs text-slate-500 font-extrabold">
+              Total Found: <span className="ml-1 text-slate-950 font-black">{filteredTimesheets.length} entries</span>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl border border-slate-100">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] bg-slate-50">
+                <tr className="border-b border-slate-100 text-slate-500 uppercase tracking-wider text-[9px] font-black bg-gradient-to-r from-slate-100/90 via-indigo-50/40 to-slate-100/90">
                   <th className="py-3 px-3">Date</th>
                   <th className="py-3 px-3">Project</th>
                   <th className="py-3 px-3">Billable Work</th>
@@ -578,32 +586,32 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100">
                 {/* Leave request rows */}
                 {myLeaves
                   .filter((lr) => lr.status === 'approved' || lr.status === 'pending')
                   .map((lr) => (
-                    <tr key={`leave-${lr.id}`} className="bg-rose-50/60 hover:bg-rose-50 transition-colors">
-                      <td className="py-3.5 px-3 font-bold text-rose-800 whitespace-nowrap">
+                    <tr key={`leave-${lr.id}`} className="bg-rose-50/50 hover:bg-rose-50/80 transition-colors">
+                      <td className="py-3.5 px-3 font-extrabold text-rose-900 whitespace-nowrap">
                         {lr.startDate === lr.endDate ? lr.startDate : `${lr.startDate} – ${lr.endDate}`}
                       </td>
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-1.5">
                           <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                          <span className="font-bold text-rose-700">{lr.type}</span>
+                          <span className="font-black text-rose-700">{lr.type}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-3 text-rose-600 max-w-xs font-medium">
+                      <td className="py-3.5 px-3 text-rose-700 max-w-xs font-semibold">
                         {formatLeaveBadgeLabel(lr)}
                       </td>
                       <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
                         {lr.reason || '—'}
                       </td>
-                      <td className="py-3.5 px-3 text-right font-extrabold text-rose-700 whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-right font-black text-rose-800 whitespace-nowrap">
                         {lr.leaveDurationType === 'full_day' ? '8h (full)' : lr.leaveDurationType === 'half_day' ? '4h (half)' : 'Partial'}
                       </td>
                       <td className="py-3.5 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-rose-100 text-rose-700 border border-rose-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border border-rose-200/80 bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700">
                           {lr.status}
                         </span>
                       </td>
@@ -611,12 +619,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     </tr>
                   ))}
                 {paginatedTimesheets.map((ts) => (
-                  <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>
+                  <tr key={ts.id} className="hover:bg-indigo-50/30 transition-colors">
+                    <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">{ts.date}</td>
                     <td className="py-3.5 px-3">
-                      <div className="font-bold text-blue-600">{ts.projectName}</div>
+                      <span className="w-fit rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-50 to-violet-50 px-2.5 py-1 text-[9px] font-extrabold text-indigo-700 inline-block">
+                        {ts.projectName}
+                      </span>
                       {ts.milestoneName && (
-                        <div className="text-[10px] text-indigo-700 font-semibold mt-0.5">
+                        <div className="text-[10px] text-slate-500 font-semibold mt-1">
                           🎯 {ts.milestoneName}
                         </div>
                       )}
@@ -627,12 +637,12 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
                       {ts.nonBillableDescription || 'N/A'}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                      {ts.billableHours + ts.nonBillableHours}h <span className="text-emerald-600 font-semibold">({ts.billableHours}h billable)</span>
+                    <td className="py-3.5 px-3 text-right font-black text-slate-900 whitespace-nowrap">
+                      {ts.billableHours + ts.nonBillableHours}h <span className="ml-1 rounded-md border border-emerald-200/50 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">({ts.billableHours}h billable)</span>
                     </td>
                     <td className="py-3.5 px-3 text-center">
                       <span
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-emerald-100 text-emerald-800"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700"
                       >
                         {ts.status}
                       </span>
@@ -642,7 +652,7 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         <button
                           type="button"
                           onClick={() => handleStartEdit(ts)}
-                          className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors cursor-pointer"
                           title="Edit timesheet entry"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
