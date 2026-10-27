@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-2xs">
+    <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 lg:px-6 flex items-center justify-between gap-4 shadow-2xs">
       {/* Left Branding */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 shadow-md shadow-blue-500/25 text-white font-extrabold text-xl">
