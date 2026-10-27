@@ -13,7 +13,6 @@ import {
   Trash2,
   Edit2,
   Briefcase,
-  UserPlus,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -60,7 +59,6 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
   const [toolStatusFilter, setToolStatusFilter] = useState<'all' | 'active' | 'deallocated'>('active');
 
   // Modal states for allocation
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const [bulkSelectedProjectIds, setBulkSelectedProjectIds] = useState<string[]>([]);
   const [bulkSelectedUserIds, setBulkSelectedUserIds] = useState<string[]>([]);
@@ -119,9 +117,6 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
     setEditingAllocation(null);
   };
 
-  // Form states for Employee Assignment
-  const [assignProjectId, setAssignProjectId] = useState<string>('');
-  const [assignUserId, setAssignUserId] = useState<string>('');
 
   // Form states for Tool Allocation (Select from Master Tools configured by Admin)
   const [toolProjectId, setToolProjectId] = useState<string>('');
@@ -174,27 +169,7 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
     }
   };
 
-  // Handle assign employee submission
-  const handleConfirmAssign = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!assignProjectId || !assignUserId) return;
 
-    const targetProject = pmProjects.find((p) => p.id === assignProjectId);
-    const targetUser = allUsers.find((u) => u.id === assignUserId);
-
-    if (targetProject && targetUser) {
-      if ((targetProject.assignedUserIds || []).map(String).includes(String(assignUserId))) {
-        onShowToast('Already Assigned', `${targetUser.name} is already assigned to ${targetProject.name}.`, 'info');
-        return;
-      }
-
-      onAssignUserToProject(assignProjectId, assignUserId);
-      onShowToast('Employee Assigned', `Assigned ${targetUser.name} to ${targetProject.name}`, 'success');
-      setShowAssignModal(false);
-      setAssignProjectId('');
-      setAssignUserId('');
-    }
-  };
 
   // Handle remove employee submission
   const handleRemoveUser = (projectId: string, userId: string, userName: string, projectName: string) => {
@@ -390,13 +365,6 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
           >
             <Users className="w-4 h-4" />
             <span>Bulk Allocate Team</span>
-          </button>
-          <button
-            onClick={() => setShowAssignModal(true)}
-            className="px-3.5 py-2 bg-card hover:bg-secondary/80 border border-border text-foreground font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4 text-primary" />
-            <span>Assign Employee</span>
           </button>
           <button
             onClick={() => setShowToolModal(true)}
@@ -1044,86 +1012,6 @@ export const PMResourceAllocation: React.FC<PMResourceAllocationProps> = React.m
           </div>
         );
       })()}
-
-      {/* MODAL 1: ASSIGN EMPLOYEE */}
-      {showAssignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <form
-            onSubmit={handleConfirmAssign}
-            className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 text-xs font-sans"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-base font-black text-slate-900">Assign Employee to Project</h3>
-              <button
-                type="button"
-                onClick={() => setShowAssignModal(false)}
-                className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Target Project *</label>
-                <select
-                  required
-                  value={assignProjectId}
-                  onChange={(e) => setAssignProjectId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
-                >
-                  <option value="">-- Select Project --</option>
-                  {pmProjects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Select Employee *</label>
-                <select
-                  required
-                  value={assignUserId}
-                  onChange={(e) => setAssignUserId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium cursor-pointer"
-                >
-                  <option value="">-- Select Employee --</option>
-                  {allUsers
-                    .filter((u) => u.role === 'employee' && (!u.status || u.status.toLowerCase() === 'active'))
-                    .filter((u) => {
-                      if (!assignProjectId) return true;
-                      const proj = pmProjects.find(p => p.id === assignProjectId);
-                      return !(proj?.assignedUserIds || []).map(String).includes(String(u.id));
-                    })
-                    .map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({u.title} • {u.department})
-                      </option>
-                    ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAssignModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition-colors shadow-sm"
-              >
-                Assign Employee
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* MODAL 2: ALLOCATE TOOL (FROM ADMIN-CONFIGURED MASTER TOOLS) */}
       {showToolModal && (
