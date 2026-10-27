@@ -103,23 +103,19 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
-        {/* Soft ambient glow */}
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+      {/* Header Banner */}
+      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Weekend Work &amp; Overtime Requests
             </h1>
-            <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
               Submit your weekend work with task summaries. Once your PM approves, it automatically populates your timesheet logs.
             </p>
           </div>
 
-          <span className="inline-flex items-center gap-2 rounded-xl bg-white/80 px-4 py-2.5 text-xs font-black text-indigo-700 shadow-sm border border-white/80 backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
             <Zap className="w-4 h-4 text-indigo-600" />
             <span>Auto-Timesheet on PM Approval</span>
           </span>
@@ -129,7 +125,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
       {/* Grid Form & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Form 2/3 */}
-        <div className="lg:col-span-2 p-6 rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-5 text-xs">
+        <div className="lg:col-span-2 p-6 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-5 text-xs">
           <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-indigo-50/80 via-violet-50/40 to-white rounded-2xl border border-indigo-100/80">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">

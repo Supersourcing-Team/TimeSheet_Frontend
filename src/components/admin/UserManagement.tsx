@@ -36,7 +36,6 @@ import {
   Trash2,
   Settings,
 } from 'lucide-react';
-import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface UserManagementProps {
   currentUser?: { id: string } | null;
@@ -400,9 +399,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser, onS
 
   return (
     <div className="space-y-6 relative">
-      {/* 3D Ambient WebGL Accent */}
-      <AmbientMesh opacity={0.05} color={0x7c3aed} />
-
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
       <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

@@ -22,7 +22,6 @@ import {
   Zap,
   ArrowRight,
 } from 'lucide-react';
-import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface TimesheetsHistoryProps {
   currentUser: User;
@@ -242,50 +241,43 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans relative">
-      {/* 3D Ambient WebGL Accent */}
-      <AmbientMesh opacity={0.05} color={0x6366f1} />
-
-      {/* Hero Banner & View Mode Switcher */}
-      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
-        {/* Soft ambient glow */}
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+      {/* Header Banner & View Mode Switcher */}
+      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               Timesheets History &amp; Audit
             </h1>
-            <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
               Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             {/* Calendar vs List Toggle */}
-            <div className="bg-white/50 backdrop-blur-md p-1 border border-white/80 rounded-2xl flex items-center gap-1 shadow-sm">
+            <div className="bg-slate-100 p-1 border border-slate-200 rounded-lg flex items-center gap-1 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setViewMode('calendar')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   viewMode === 'calendar'
-                    ? 'bg-white text-indigo-700 shadow-sm'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <CalendarIcon className="w-3.5 h-3.5 stroke-[2.5]" />
+                <CalendarIcon className="w-3.5 h-3.5 stroke-[2.2]" />
                 <span>Calendar View</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   viewMode === 'list'
-                    ? 'bg-white text-indigo-700 shadow-sm'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <ListFilter className="w-3.5 h-3.5 stroke-[2.5]" />
+                <ListFilter className="w-3.5 h-3.5 stroke-[2.2]" />
                 <span>List View</span>
               </button>
             </div>
@@ -293,9 +285,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 px-4 py-2 border border-white/80 bg-white/70 hover:bg-white text-slate-700 font-black text-xs rounded-xl backdrop-blur-md transition-all cursor-pointer shadow-sm active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-95"
             >
-              <Download className="w-3.5 h-3.5 text-slate-600 stroke-[2.5]" />
+              <Download className="w-3.5 h-3.5 text-slate-600 stroke-[2.2]" />
               <span>Export CSV</span>
             </button>
           </div>
