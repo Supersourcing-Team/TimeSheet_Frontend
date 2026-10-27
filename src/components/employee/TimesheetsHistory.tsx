@@ -326,9 +326,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span>Partial (&lt;8h)</span>
               </span>
+              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                <span>Missing (Fillable)</span>
+              </span>
               <span className="flex items-center gap-1.5 text-red-600 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                <span>Missing Timesheet</span>
+                <span>Expired Timesheet</span>
               </span>
               <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
@@ -371,7 +375,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
               const todayStr = new Date().toISOString().split('T')[0];
               const isFutureDate = dateStr > todayStr;
-              const isMissingTimesheet = !isFutureDate && dateStr < todayStr && !isWeekend && !holidayForDay && !isFullDayLeave && dayTotalHours === 0;
+              const isWorkDay = !isWeekend && !holidayForDay && !isFullDayLeave;
+              const isZeroHours = dayTotalHours === 0;
+
+              // Valid window missing timesheet: past date within allowed cutoff window (still submittable)
+              const isMissingTimesheet = !isFutureDate && dateStr < todayStr && dateStr >= minAllowedDate && isWorkDay && isZeroHours;
+
+              // Expired timesheet: past date before allowed cutoff window (submission window expired)
+              const isExpiredTimesheet = !isFutureDate && dateStr < minAllowedDate && isWorkDay && isZeroHours;
 
               return (
                 <button
@@ -389,8 +400,8 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         setSelectedDateModal(dateStr);
                         return;
                       }
-                      if (isMissingTimesheet && dateStr < minAllowedDate) {
-                        // Past lock cutoff
+                      if (isExpiredTimesheet || dateStr < minAllowedDate) {
+                        onShowToast('Expired Timesheet', `The submission window for ${dateStr} has expired.`, 'warning');
                         setSelectedDateModal(dateStr);
                         return;
                       }
@@ -419,13 +430,15 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                                 ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                                 : leaveForDay
                                   ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                                  : isMissingTimesheet
+                                  : isExpiredTimesheet
                                     ? 'bg-red-50/70 border-red-300 text-red-900 hover:border-red-500 hover:bg-red-100 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                                    : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                    : isMissingTimesheet
+                                      ? 'bg-slate-50/80 border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100/90 hover:scale-[1.02] hover:shadow-xs cursor-pointer'
+                                      : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className={`text-xs font-extrabold ${isMissingTimesheet ? 'text-red-950 font-black' : 'text-slate-900'}`}>
+                    <span className={`text-xs font-extrabold ${isExpiredTimesheet ? 'text-red-950 font-black' : isMissingTimesheet ? 'text-slate-700 font-bold' : 'text-slate-900'}`}>
                       {dateStr.split('-')[2]}
                     </span>
                     {dayTotalHours > 0 && (
@@ -439,8 +452,13 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         {dayTotalHours}h
                       </span>
                     )}
-                    {isMissingTimesheet && (
+                    {isExpiredTimesheet && (
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                        Expired
+                      </span>
+                    )}
+                    {isMissingTimesheet && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300">
                         Missing
                       </span>
                     )}
@@ -479,10 +497,15 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       </div>
                     )}
                     {dayEntries.length === 0 && !leaveForDay && !holidayForDay && !isWeekend && !isFutureDate && (
-                      isMissingTimesheet ? (
+                      isExpiredTimesheet ? (
                         <span className="text-[10px] text-red-600 font-bold flex items-center gap-1">
                           <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
-                          <span>Not Submitted</span>
+                          <span>Expired</span>
+                        </span>
+                      ) : isMissingTimesheet ? (
+                        <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>To Fill</span>
                         </span>
                       ) : (
                         <span className="text-[10px] text-slate-400 italic">Click to log</span>
@@ -652,7 +675,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  Timesheet Logs • {selectedDateModal}
+                  {modalEntries.length === 0 && selectedDateModal && selectedDateModal < minAllowedDate
+                    ? `Expired Timesheet • ${selectedDateModal}`
+                    : `Timesheet Logs • ${selectedDateModal}`}
                 </h3>
                 <p className="text-xs text-slate-500">
                   Total Logged:{' '}
@@ -729,11 +754,18 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                       <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold">
                         <AlertCircle className="w-6 h-6 text-red-600" />
                       </div>
-                      <div className="space-y-1">
-                        <p className="font-extrabold text-sm text-red-950">Submission Window Closed ({selectedDateModal})</p>
+                      <div className="space-y-1.5">
+                        <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                          Expired Timesheet
+                        </span>
+                        <p className="font-extrabold text-sm text-red-950">
+                          Expired Timesheet ({selectedDateModal})
+                        </p>
                         <p className="text-red-800 text-xs max-w-sm mx-auto leading-relaxed">
-                          Timesheet submission for this date is locked. Submissions are only permitted within {lockHours} hours of the date.
-                          Please contact your Project Manager or Admin to request an unlock.
+                          Timesheet submission for this date has expired. Submissions are only permitted within the {lockHours}-hour submission window ({minAllowedDate} to present).
+                        </p>
+                        <p className="text-[11px] text-red-700/80 italic">
+                          Please contact your Project Manager or Admin to request an unlock or retroactive approval.
                         </p>
                       </div>
                     </div>
