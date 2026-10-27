@@ -318,47 +318,39 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
 
   return (
     <div className="w-full space-y-6 text-slate-800 pb-12">
-        {/* Hero Banner */}
-     <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-8">
-  {/* Soft ambient glow */}
-  <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
-  <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
+      {/* Header Banner */}
+      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
+              Welcome back, {currentUser.name}!
+            </h1>
+            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
+              Here&apos;s an overview of your work, projects, and timesheet compliance today.
+            </p>
+          </div>
 
-  <div className="relative z-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-    <div>
-      
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigateTab('submit_timesheet')}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-xs transition-colors cursor-pointer active:scale-95"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <span>Submit Timesheet</span>
+            </button>
 
-      <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-        Welcome back, {currentUser.name}!
-      </h1>
-
-      <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
-        Here&apos;s what&apos;s happening with your work and timesheets today.
-        Keep going, you&apos;re right on track!
-      </p>
-    </div>
-
-    <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={() => onNavigateTab('submit_timesheet')}
-        className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-indigo-700 shadow-lg shadow-indigo-500/10 cursor-pointer"
-      >
-        <Plus className="h-4 w-4 text-indigo-600 stroke-[3]" />
-        Submit Timesheet
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onNavigateTab('weekend_work')}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/70 bg-white/40 px-5 py-2.5 text-xs font-black text-slate-700 shadow-sm backdrop-blur-md cursor-pointer"
-      >
-        <Moon className="h-4 w-4 text-violet-600" />
-        Weekend Request
-      </button>
-    </div>
-  </div>
-</section>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('weekend_work')}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer active:scale-95"
+            >
+              <Moon className="h-4 w-4 text-slate-600" />
+              <span>Weekend Request</span>
+            </button>
+          </div>
+        </div>
+      </section>
 
         {/* 5-Card KPI row */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">

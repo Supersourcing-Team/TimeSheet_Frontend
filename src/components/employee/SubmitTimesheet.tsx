@@ -30,7 +30,6 @@ import {
   ListOrdered,
   Lock,
 } from 'lucide-react';
-import { AmbientMesh } from '../3d/AmbientMesh';
 
 interface SubmitTimesheetProps {
   currentUser: User;
@@ -634,21 +633,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
   return (
     <>
       <div className="w-full space-y-6 text-slate-900 font-sans pb-12 relative">
-        {/* 3D Ambient WebGL Accent */}
-        <AmbientMesh opacity={0.05} color={0x6366f1} />
-
-        {/* Hero Banner */}
-        <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
-          {/* Soft ambient glow */}
-          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
-
-          <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+        {/* Header Banner */}
+        <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 {editingEntry ? 'Edit Timesheet Entry' : 'Submit Daily Timesheet'}
               </h1>
-              <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+              <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
                 {editingEntry
                   ? 'Update your daily logged work hours and project task descriptions.'
                   : 'Record your daily project activity hours with separate client billable deliverables and internal non-billable overhead.'}
@@ -660,9 +652,9 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowMarkLeaveModal(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white/80 hover:bg-white px-4 py-2.5 text-xs font-black text-rose-700 shadow-sm backdrop-blur-md border border-white/80 cursor-pointer transition-all active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3.5 py-2 text-xs font-bold shadow-2xs cursor-pointer transition-colors active:scale-95"
                 >
-                  <CalendarX className="h-4 w-4 text-rose-600 stroke-[2.5]" />
+                  <CalendarX className="h-4 w-4 text-rose-600 stroke-[2.2]" />
                   <span>Mark Leave</span>
                 </button>
               )}

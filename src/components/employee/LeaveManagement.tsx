@@ -2,7 +2,6 @@ import { Pagination } from '../common/Pagination';
 import React from 'react';
 import { User, LeaveBalance, LeaveRequest, LeaveTypeConfig } from '../../types';
 import { Trash2 } from 'lucide-react';
-import { AmbientMesh } from '../3d/AmbientMesh';
 import { Badge } from '../ui/badge';
 
 interface LeaveManagementProps {
@@ -41,33 +40,26 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12 relative">
-      {/* 3D Ambient WebGL Accent */}
-      <AmbientMesh opacity={0.05} color={0x6366f1} />
-
-      {/* Top Bar Hero */}
-      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-7">
-        {/* Soft ambient glow */}
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-pink-300/20 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+      {/* Top Bar Header */}
+      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
               My Leaves &amp; Absences
             </h1>
-            <p className="mt-1.5 max-w-2xl text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
+            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
               Review your approved, pending, and upcoming leave requests and withdrawal history.
             </p>
           </div>
 
-          <span className="inline-flex items-center gap-2 rounded-xl bg-white/80 px-4 py-2.5 text-xs font-black text-indigo-700 shadow-sm border border-white/80 backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
             <span>Total Requests: {userRequests.length}</span>
           </span>
         </div>
       </section>
 
       {/* Leave Request History Table */}
-      <div className="p-6 rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-4">
+      <div className="p-6 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <h3 className="text-base font-black text-slate-950">My Leave History</h3>
           <span className="text-xs text-slate-500 font-extrabold">
