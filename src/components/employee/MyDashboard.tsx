@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar,
+  CalendarCheck,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -301,15 +302,22 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
     </button>
   );
 
+  const safeLeaveBalance = useMemo(() => ({
+    annualLeaveTotal: leaveBalance?.annualLeaveTotal ?? 18,
+    annualLeaveUsed: leaveBalance?.annualLeaveUsed ?? 4,
+    sickLeaveTotal: leaveBalance?.sickLeaveTotal ?? 12,
+    sickLeaveUsed: leaveBalance?.sickLeaveUsed ?? 2,
+    compOffTotal: leaveBalance?.compOffTotal ?? 2,
+    compOffUsed: leaveBalance?.compOffUsed ?? 0,
+  }), [leaveBalance]);
+
+  const annualRemaining = Math.max(0, safeLeaveBalance.annualLeaveTotal - safeLeaveBalance.annualLeaveUsed);
+  const sickRemaining = Math.max(0, safeLeaveBalance.sickLeaveTotal - safeLeaveBalance.sickLeaveUsed);
+  const compOffRemaining = Math.max(0, safeLeaveBalance.compOffTotal - safeLeaveBalance.compOffUsed);
+  const totalRemainingLeaves = annualRemaining + sickRemaining + compOffRemaining;
+
   return (
-    <div className="relative min-h-full overflow-hidden bg-gradient-to-br from-slate-50 via-indigo-50/25 to-slate-100/70 px-4 py-6 text-slate-800 sm:px-6 lg:px-8">
-      {/* Ambient gradient glow backdrop */}
-      <div className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-indigo-500/15 to-violet-500/15 blur-[120px]" />
-      <div className="pointer-events-none absolute -right-40 top-1/3 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-500/15 to-pink-500/15 blur-[130px]" />
-      <div className="pointer-events-none absolute bottom-10 left-1/4 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-cyan-400/10 to-teal-400/10 blur-[110px]" />
-
-      <div className="relative z-10 mx-auto max-w-[1600px] space-y-6">
-
+    <div className="w-full space-y-6 text-slate-800 pb-12">
         {/* Hero Banner */}
      <section className="relative overflow-hidden rounded-[26px] border border-white/70 bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] via-[#ddd6fe] to-[#fbcfe8] p-6 text-slate-900 shadow-[0_16px_45px_rgba(99,102,241,0.14)] sm:p-8">
   {/* Soft ambient glow */}
@@ -318,10 +326,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
 
   <div className="relative z-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
     <div>
-      <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm backdrop-blur-md">
-        <Sparkles className="h-3.5 w-3.5 text-violet-600" />
-        <span>Good day &bull; Employee Portal</span>
-      </div>
+      
 
       <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
         Welcome back, {currentUser.name}!
@@ -380,31 +385,6 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
             </div>
             <p className="mt-1 text-[11px] text-slate-500">
               Projects assigned to you
-            </p>
-          </div>
-
-          {/* Team Members */}
-          <div className="group rounded-[22px] border border-violet-200/70 bg-gradient-to-br from-white via-violet-50/50 to-purple-50/70 p-4.5 shadow-[0_8px_25px_rgba(139,92,246,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-300 hover:shadow-[0_14px_35px_rgba(139,92,246,0.18)]">
-            <div className="flex items-start justify-between">
-              <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-2.5 text-white shadow-md shadow-violet-500/25">
-                <UsersRound className="h-5 w-5" />
-              </div>
-              <span className="rounded-full border border-violet-200/60 bg-gradient-to-r from-violet-500/15 to-purple-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-700">
-                Collaborators
-              </span>
-            </div>
-            <p className="mt-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Team Members
-            </p>
-            <div className="mt-0.5 text-2xl font-black text-slate-950">
-              {assignedProjects.reduce(
-                (total, project) =>
-                  total + (project.assignedUserIds?.length || 0),
-                0,
-              )}
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Across your projects
             </p>
           </div>
 
@@ -478,13 +458,47 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
               Upcoming / active
             </p>
           </div>
+
+          {/* Upcoming Holiday (Position: Last) */}
+          <div className="group rounded-[22px] border border-purple-200/70 bg-gradient-to-br from-white via-purple-50/50 to-indigo-50/70 p-4.5 shadow-[0_8px_25px_rgba(147,51,234,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-[0_14px_35px_rgba(147,51,234,0.18)]">
+            <div className="flex items-start justify-between">
+              <div className="rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 p-2.5 text-white shadow-md shadow-purple-500/25">
+                <Palmtree className="h-5 w-5" />
+              </div>
+              <span className="rounded-full border border-purple-200/60 bg-gradient-to-r from-purple-500/15 to-indigo-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-700">
+                {nextHoliday
+                  ? remainingDays === 0
+                    ? 'Today'
+                    : `${remainingDays}d left`
+                  : 'Holiday'}
+              </span>
+            </div>
+            <p className="mt-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Upcoming Holiday
+            </p>
+            <div
+              className="mt-0.5 truncate text-lg font-black text-slate-950"
+              title={nextHoliday?.name || 'No Upcoming Holidays'}
+            >
+              {nextHoliday ? nextHoliday.name : 'No Upcoming'}
+            </div>
+            <p className="mt-1 truncate text-[11px] font-semibold text-purple-600">
+              {nextHoliday
+                ? new Date(nextHoliday.date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : 'All caught up'}
+            </p>
+          </div>
         </section>
 
         {/* Main workspace */}
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2.05fr)_minmax(330px,0.95fr)]">
+        <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
 
           {/* Projects */}
-          <div className="rounded-[24px] border border-slate-200/90 bg-white/95 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
+          <div className="xl:col-span-2 rounded-[24px] border border-slate-200/90 bg-white/95 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -641,7 +655,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           </div>
 
           {/* Weekly progress */}
-          <div className="rounded-[24px] border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/50 to-indigo-50/35 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
+          <div className="xl:col-span-1 rounded-[24px] border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/50 to-indigo-50/35 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -893,10 +907,10 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
         </section>
 
         {/* Bottom content */}
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.8fr)]">
+        <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
 
           {/* Recent timesheets */}
-          <div className="rounded-[24px] border border-slate-200/90 bg-white/95 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
+          <div className="xl:col-span-2 rounded-[24px] border border-slate-200/90 bg-white/95 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm sm:p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -1002,115 +1016,159 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
             </div>
           </div>
 
-          {/* Holiday + leave */}
-          <div className="space-y-5">
+          {/* Leave Balances + Primary assignment */}
+          <div className="xl:col-span-1 space-y-5">
             <div className="rounded-[24px] border border-slate-200/90 bg-white/95 p-5 shadow-[0_10px_35px_rgba(30,50,90,0.055)] backdrop-blur-sm">
               <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2 text-white shadow-md shadow-orange-500/25">
-                      <Palmtree className="h-4 w-4" />
-                    </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2 text-white shadow-md shadow-indigo-500/25">
+                    <CalendarCheck className="h-4 w-4" />
+                  </div>
+                  <div>
                     <h2 className="text-base font-black text-slate-950">
-                      Upcoming Holidays &amp; Leaves
+                      My Leave Balances
                     </h2>
+                    <p className="text-[10px] text-slate-500">
+                      Remaining annual, sick &amp; comp-off days
+                    </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setShowLeavesModal(true)}
-                  className="text-xs font-extrabold text-indigo-600 hover:text-indigo-700 cursor-pointer transition-colors"
+                  onClick={() => {
+                    if (onOpenMarkLeave) {
+                      onOpenMarkLeave();
+                    } else {
+                      onNavigateTab('submit_timesheet');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200/60 px-2.5 py-1 text-[10px] font-black text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
                 >
-                  View All
+                  <Plus className="h-3 w-3 stroke-[3]" />
+                  Apply
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/10 p-4 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-orange-500/25">
-                    <Palmtree className="h-5 w-5" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                      Next Holiday
+              {/* Total Balance Hero Banner */}
+              <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-violet-50/40 to-white p-4 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                      Total Available Balance
                     </p>
-                    <p className="truncate text-xs font-black text-slate-900">
-                      {nextHoliday?.name ||
-                        'No Upcoming Holidays'}
-                    </p>
-                    <p className="mt-0.5 text-[9px] font-semibold text-slate-500">
-                      {nextHoliday
-                        ? new Date(
-                            nextHoliday.date,
-                          ).toLocaleDateString(
-                            'en-US',
-                            {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                            },
-                          )
-                        : '-'}
-                    </p>
-                  </div>
-
-                  {nextHoliday && (
-                    <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 px-3 py-1.5 text-center text-white shadow-sm shadow-orange-500/25">
-                      <p className="text-lg font-black leading-tight">
-                        {remainingDays}
-                      </p>
-                      <p className="text-[8px] font-bold uppercase tracking-wider text-amber-100">
-                        Days left
-                      </p>
+                    <div className="mt-0.5 flex items-baseline gap-1.5">
+                      <span className="text-2xl font-black text-slate-950">
+                        {totalRemainingLeaves}
+                      </span>
+                      <span className="text-xs font-bold text-slate-500">
+                        days remaining
+                      </span>
                     </div>
-                  )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLeavesModal(true)}
+                    className="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                  >
+                    View All &rarr;
+                  </button>
+                </div>
+
+                {/* Balance pills */}
+                <div className="mt-3.5 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/60 p-2 text-center">
+                    <p className="text-[8px] font-extrabold uppercase tracking-wider text-emerald-700">
+                      Annual
+                    </p>
+                    <p className="text-sm font-black text-emerald-950">
+                      {annualRemaining}
+                      <span className="text-[9px] font-normal text-emerald-700">
+                        /{safeLeaveBalance.annualLeaveTotal}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-sky-200/60 bg-sky-50/60 p-2 text-center">
+                    <p className="text-[8px] font-extrabold uppercase tracking-wider text-sky-700">
+                      Sick
+                    </p>
+                    <p className="text-sm font-black text-sky-950">
+                      {sickRemaining}
+                      <span className="text-[9px] font-normal text-sky-700">
+                        /{safeLeaveBalance.sickLeaveTotal}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-purple-200/60 bg-purple-50/60 p-2 text-center">
+                    <p className="text-[8px] font-extrabold uppercase tracking-wider text-purple-700">
+                      Comp-Off
+                    </p>
+                    <p className="text-sm font-black text-purple-950">
+                      {compOffRemaining}
+                      <span className="text-[9px] font-normal text-purple-700">
+                        d
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-3.5 space-y-2">
-                {upcomingLeaves.slice(0, 2).map((leave: any, index: number) => (
-                  <div
-                    key={leave.id || index}
-                    className="flex items-center gap-3 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/70 p-3 transition-colors hover:border-indigo-100"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-[9px] font-black text-white shadow-sm">
-                      {getInitials(
-                        leave.userName ||
-                          leave.name ||
-                          'User',
-                      )}
+              {/* Upcoming Leaves List */}
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Upcoming Team Absences
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    {upcomingLeaves.length} scheduled
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {upcomingLeaves.slice(0, 3).map((leave: any, index: number) => (
+                    <div
+                      key={leave.id || index}
+                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-gradient-to-r from-white to-slate-50/70 p-2.5 transition-colors hover:border-indigo-100"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-[9px] font-black text-white shadow-2xs">
+                        {getInitials(
+                          leave.userName ||
+                            leave.name ||
+                            'User',
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[10px] font-black text-slate-900">
+                          {leave.userName ||
+                            leave.name ||
+                            'Team Member'}
+                        </p>
+                        <p className="truncate text-[9px] text-slate-500">
+                          {leave.type ||
+                            leave.leaveType ||
+                            'Leave'}{' '}
+                          •{' '}
+                          {leave.startDate ||
+                            leave.date ||
+                            ''}
+                        </p>
+                      </div>
+
+                      <span className="rounded-full border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 px-2 py-0.5 text-[8px] font-black text-emerald-700">
+                        {leave.status || 'Approved'}
+                      </span>
                     </div>
+                  ))}
 
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[10px] font-black text-slate-900">
-                        {leave.userName ||
-                          leave.name ||
-                          'Team Member'}
-                      </p>
-                      <p className="truncate text-[9px] text-slate-500">
-                        {leave.type ||
-                          leave.leaveType ||
-                          'Leave'}{' '}
-                        •{' '}
-                        {leave.startDate ||
-                          leave.date ||
-                          ''}
-                      </p>
-                    </div>
-
-                    <span className="rounded-full border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 px-2.5 py-1 text-[8px] font-black text-emerald-700">
-                      {leave.status || 'Approved'}
-                    </span>
-                  </div>
-                ))}
-
-                {upcomingLeaves.length === 0 && (
-                  <p className="py-3 text-center text-[10px] text-slate-400">
-                    No upcoming leaves.
-                  </p>
-                )}
+                  {upcomingLeaves.length === 0 && (
+                    <p className="py-2.5 text-center text-[10px] text-slate-400">
+                      No upcoming absences scheduled.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1220,7 +1278,6 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
           </div>
         )}
       </div>
-    </div>
   );
 });
 
