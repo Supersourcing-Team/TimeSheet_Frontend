@@ -102,12 +102,12 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
       }
     }
   }, [initialOpenMarkLeave, onCloseMarkLeaveModal]);
-  
+
   const [createTimesheets, { isLoading: isSubmitting }] = useCreateTimesheetsMutation();
   const assignedProjects = useMemo(
-    () => (projects || []).filter((p) => 
-      p.assignedUserIds?.includes(currentUser.id) && 
-      p.isActive !== false && 
+    () => (projects || []).filter((p) =>
+      p.assignedUserIds?.includes(currentUser.id) &&
+      p.isActive !== false &&
       p.is_active !== false
     ),
     [projects, currentUser.id]
@@ -635,7 +635,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
     <>
       <div className="w-full space-y-6 text-slate-900 font-sans pb-12 relative">
         {/* 3D Ambient WebGL Accent */}
-        <AmbientMesh opacity={0.08} color={0x2563eb} />
+        <AmbientMesh opacity={0.05} color={0x6366f1} />
 
         {/* Header Bar */}
         <div className="p-5 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -665,11 +665,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         {/* Leave Banner */}
         {leaveStatus?.has_leave && (
           <div
-            className={`flex items-center gap-3 p-4 rounded-2xl border ${
-              isOnFullDayLeave
+            className={`flex items-center gap-3 p-4 rounded-2xl border ${isOnFullDayLeave
                 ? 'bg-red-50 border-red-200 text-red-800'
                 : 'bg-amber-50 border-amber-200 text-amber-800'
-            }`}
+              }`}
           >
             <CalendarX className={`w-5 h-5 shrink-0 ${isOnFullDayLeave ? 'text-red-500' : 'text-amber-500'}`} />
             <div className="text-xs font-semibold">
@@ -720,7 +719,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         )}
 
         {/* Dynamic Target Indicator Bar */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
+        <div className="p-4 rounded-xl bg-slate-50/90 border border-slate-200 shadow-2xs space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
               <span>
@@ -731,10 +730,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
               <span>
                 Logged Today:{' '}
                 <span
-                  className={`font-black px-2 py-0.5 rounded-md ${
+                  className={`font-black px-2.5 py-0.5 rounded-md border ${
                     grandTotal >= targetDayHours && targetDayHours > 0
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-amber-50 text-amber-700'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}
                 >
                   {grandTotal.toFixed(1)} Hours
@@ -743,10 +742,10 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
                 Billable: {totalBillable.toFixed(1)}h
               </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
                 Non-Billable: {totalNonBillable.toFixed(1)}h
               </span>
             </div>
@@ -754,7 +753,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
           {/* Dynamic Filling Progress Bar */}
           <div className="space-y-1">
-            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex shadow-inner">
+            <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden flex shadow-inner">
               <div
                 style={{
                   width: `${Math.min(
@@ -775,11 +774,11 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     ((totalNonBillable) / (targetDayHours > 0 ? targetDayHours : 8)) * 100
                   )}%`,
                 }}
-                className="h-full bg-sky-600 transition-all duration-300"
+                className="h-full bg-slate-400 transition-all duration-300"
                 title={`Non-Billable: ${totalNonBillable.toFixed(1)}h`}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold px-0.5">
+            <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold px-0.5">
               <span>0h</span>
               <span>{((targetDayHours > 0 ? targetDayHours : 8) / 2).toFixed(1)}h (50%)</span>
               <span>{(targetDayHours > 0 ? targetDayHours : 8).toFixed(1)}h Target (100%)</span>
@@ -788,11 +787,13 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
         </div>
 
         {/* Main Work Entry Form Card */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <h3 className="font-black text-sm text-slate-900 tracking-wide uppercase">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
+          <div className="flex items-center justify-between p-3.5 bg-indigo-50/50 rounded-xl border border-indigo-100/70">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-wide uppercase">
                 Tasks Breakdown ({rows.length} {rows.length === 1 ? 'Row' : 'Rows'})
               </h3>
             </div>
@@ -800,7 +801,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
               <button
                 type="button"
                 onClick={handleAddRow}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs transition-colors cursor-pointer border border-blue-200"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary-subtle hover:bg-primary/15 text-primary font-bold text-xs transition-colors cursor-pointer border border-primary-subtle-border shadow-2xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Project Row</span>
@@ -813,14 +814,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
             {rows.map((row, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 transition-all hover:border-slate-300"
+                className="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-4 transition-all hover:border-slate-300"
               >
                 {/* Project, Milestone, Date Selection Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
                   {/* Project Selection */}
                   <div className="md:col-span-5 lg:col-span-4 space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5 h-4">
-                      <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 h-4">
+                      <Briefcase className="w-3.5 h-3.5 text-primary" />
                       <span>Project</span>
                     </label>
                     <select
@@ -828,7 +829,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       onChange={(e) => handleRowChange(idx, 'projectId', e.target.value)}
                       disabled={!!editingEntry}
                       required
-                      className="w-full h-10 bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs"
+                      className="w-full h-10 bg-slate-100/80 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs transition-colors"
                     >
                       <option value="">Select a Project...</option>
                       {assignedProjects.map((p) => (
@@ -850,14 +851,14 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       const hasActive = activeMilestones.length > 0;
                       return (
                         <>
-                          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between h-4">
+                          <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between h-4">
                             <span className="flex items-center gap-1.5">
-                              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                              <Layers className="w-3.5 h-3.5 text-primary" />
                               <span>Milestone</span>
                               {hasActive && <span className="text-rose-500 font-bold">*</span>}
                             </span>
                             {hasActive && (
-                              <span className="text-[9px] text-indigo-700 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                              <span className="text-[9px] text-primary font-semibold bg-primary-subtle px-1.5 py-0.5 rounded border border-primary-subtle-border">
                                 {activeMilestones.length} Available
                               </span>
                             )}
@@ -867,16 +868,16 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                             onChange={(e) => handleRowChange(idx, 'milestoneId', e.target.value)}
                             disabled={!!editingEntry || !row.projectId}
                             required={hasActive}
-                            className="w-full h-10 bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer truncate shadow-2xs"
+                            className="w-full h-10 bg-slate-100/80 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-medium rounded-xl px-3 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none disabled:opacity-60 cursor-pointer truncate shadow-2xs transition-colors"
                           >
                             <option value="">
                               {!row.projectId
                                 ? 'Select a Project first'
                                 : hasActive
-                                ? '-- Select Milestone --'
-                                : allMilestones.length > 0
-                                ? 'All Milestones Achieved'
-                                : 'No Milestones Configured'}
+                                  ? '-- Select Milestone --'
+                                  : allMilestones.length > 0
+                                    ? 'All Milestones Achieved'
+                                    : 'No Milestones Configured'}
                             </option>
                             {activeMilestones.map((m) => (
                               <option key={m.id} value={m.id}>
@@ -891,7 +892,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
 
                   {/* Date Input */}
                   <div className="md:col-span-2 lg:col-span-3 space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between h-4">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between h-4">
                       <span className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-slate-500" />
                         <span>Date</span>
@@ -907,7 +908,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                       max={today}
                       onChange={(e) => handleRowChange(idx, 'date', e.target.value)}
                       disabled={!!editingEntry}
-                      className="w-full h-10 bg-white border border-slate-300 text-slate-800 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs"
+                      className="w-full h-10 bg-slate-100/80 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-bold rounded-xl px-3 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none disabled:opacity-60 cursor-pointer shadow-2xs transition-colors"
                     />
                   </div>
 
@@ -929,22 +930,22 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 {/* SEPARATE DESCRIPTIONS FOR BILLABLE AND NON-BILLABLE HOURS */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
                   {/* Billable Work Column */}
-                  <div className="p-4 rounded-2xl bg-white border border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all">
+                  <div className="p-4 rounded-xl bg-emerald-50/35 border-2 border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all">
                     {/* Billable Header & Hours Input Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-emerald-100">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-lg bg-emerald-100/60 border border-emerald-200/80">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200" />
                         <span className="text-xs font-black text-emerald-950 uppercase tracking-wide">
                           Billable Work
                         </span>
-                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
                           Client Scope
                         </span>
                       </div>
 
                       {/* Compact Hours Input Pill */}
-                      <div className="flex items-center gap-2 bg-emerald-50/80 px-1.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
-                        <label className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border-2 border-emerald-300 shadow-2xs">
+                        <label className="text-[11px] font-black text-emerald-900 uppercase tracking-wider">
                           Billable (h):
                         </label>
                         <input
@@ -957,30 +958,29 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'billableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-45 h-7 text-center bg-white border border-emerald-300 text-emerald-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs"
+                          className="w-20 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
                         />
-                        <span className="text-[11px] font-bold text-emerald-700">hrs</span>
+                        <span className="text-[11px] font-extrabold text-emerald-800">hrs</span>
                       </div>
                     </div>
 
                     {/* Billable Work Description Subheader & Textarea */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                        <label className="text-[11px] font-bold text-emerald-950 flex items-center gap-1">
                           <span>Deliverables & Activities</span>
                           <span className="text-rose-500 font-bold">*</span>
                         </label>
                         <button
                           type="button"
                           onClick={() => toggleNumberFormat(idx, 'billableDescription')}
-                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
-                            isNumberedList(row.billableDescription)
-                              ? 'bg-sky-50 border-sky-300 text-sky-700'
-                              : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
-                          }`}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${isNumberedList(row.billableDescription)
+                              ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                              : 'bg-white hover:bg-emerald-50 border-emerald-200 text-emerald-800'
+                            }`}
                           title="Toggle between numbered list and default bullets"
                         >
-                          <ListOrdered className="w-3.5 h-3.5 text-slate-500" />
+                          <ListOrdered className="w-3.5 h-3.5 text-emerald-700" />
                           <span>1. Numbers</span>
                         </button>
                       </div>
@@ -994,27 +994,27 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                         onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'billableDescription')}
                         onPaste={(e) => handleDescriptionPaste(e, idx, 'billableDescription')}
                         placeholder="• Built and deployed user auth API&#10;• Configured milestone endpoints&#10;• Unit tests in pytest"
-                        className="w-full bg-slate-50/60 border border-emerald-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs"
+                        className="w-full bg-white/95 border border-emerald-200/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs transition-colors"
                       />
                     </div>
                   </div>
 
                   {/* Non-Billable Work Column */}
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
+                  <div className="p-4 rounded-xl bg-slate-100/50 border border-slate-200/90 shadow-2xs space-y-3 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-400/15 transition-all">
                     {/* Non-Billable Header & Hours Input Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-lg bg-slate-200/60 border border-slate-200/80">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 ring-4 ring-slate-100" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 ring-4 ring-slate-200" />
                         <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
                           Non-Billable Work
                         </span>
-                        <span className="text-[10px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span className="text-[10px] text-slate-700 font-bold bg-slate-200/80 px-2 py-0.5 rounded-md border border-slate-300">
                           Internal Overhead
                         </span>
                       </div>
 
                       {/* Compact Hours Input Pill */}
-                      <div className="flex items-center gap-2 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs">
                         <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                           Non-Bill (h):
                         </label>
@@ -1028,7 +1028,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                           onChange={(e) =>
                             handleRowChange(idx, 'nonBillableHours', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                           }
-                          className="w-45 h-7 text-center bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
+                          className="w-20 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
                         />
                         <span className="text-[11px] font-bold text-slate-600">hrs</span>
                       </div>
@@ -1037,17 +1037,16 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                     {/* Non-Billable Work Description Subheader & Textarea */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-600">
+                        <label className="text-[11px] font-bold text-slate-700">
                           Internal Tasks & Meetings Description
                         </label>
                         <button
                           type="button"
                           onClick={() => toggleNumberFormat(idx, 'nonBillableDescription')}
-                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${
-                            isNumberedList(row.nonBillableDescription)
-                              ? 'bg-sky-50 border-sky-300 text-sky-700'
-                              : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
-                          }`}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-md border transition-colors cursor-pointer flex items-center gap-1 shadow-2xs ${isNumberedList(row.nonBillableDescription)
+                              ? 'bg-slate-200 border-slate-300 text-slate-800'
+                              : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700'
+                            }`}
                           title="Toggle between numbered list and default bullets"
                         >
                           <ListOrdered className="w-3.5 h-3.5 text-slate-500" />
@@ -1064,7 +1063,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                         onKeyDown={(e) => handleSummaryKeyDown(e, idx, 'nonBillableDescription')}
                         onPaste={(e) => handleDescriptionPaste(e, idx, 'nonBillableDescription')}
                         placeholder="• Daily team sync and PM review&#10;• Environment setup and dependency resolution"
-                        className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs"
+                        className="w-full bg-white/95 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-400 focus:border-slate-400 focus:outline-none resize-y leading-relaxed font-mono shadow-2xs transition-colors"
                       />
                     </div>
                   </div>
@@ -1079,7 +1078,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
               <button
                 type="button"
                 onClick={handleAddRow}
-                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border hover:bg-primary/10 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Additional Task Row</span>
@@ -1102,7 +1101,7 @@ export const SubmitTimesheet: React.FC<SubmitTimesheetProps> = ({
                 type="button"
                 disabled={isSubmitting || isWeekendSelected || !!matchedHoliday}
                 onClick={() => handleSubmit()}
-                className="flex items-center gap-2 px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
+                className="flex items-center gap-2 px-7 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/25 text-xs font-extrabold transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 <span>{isSubmitting ? 'Saving...' : (editingEntry ? 'Update & Save' : 'Submit Timesheet')}</span>

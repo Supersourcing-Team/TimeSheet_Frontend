@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
     skip: !isLoggedIn,
     pollingInterval: 60_000, // auto-refresh every 60 seconds
   });
-  
+
   const [clearNotifications] = useClearNotificationsMutation();
 
   const rawNotifications = notifData?.notifications ?? [];
@@ -287,9 +287,8 @@ export const Header: React.FC<HeaderProps> = React.memo(({
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${
-                        !n.is_read ? 'bg-blue-50/30' : ''
-                      }`}
+                      className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${!n.is_read ? 'bg-blue-50/30' : ''
+                        }`}
                     >
                       {/* Icon */}
                       <div className={`mt-0.5 p-1.5 rounded-lg border ${notificationBg(n.type, n.is_read)}`}>

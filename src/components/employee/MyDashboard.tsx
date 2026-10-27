@@ -118,7 +118,7 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
   return (
     <div className="space-y-6 text-slate-800 relative">
       {/* 3D Ambient WebGL Accent Background */}
-      <AmbientMesh opacity={0.10} color={0x2563eb} />
+      <AmbientMesh opacity={0.05} color={0x6366f1} />
 
       {/* Top Banner / Hero Greeting */}
       <div className="p-5 bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">

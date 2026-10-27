@@ -92,7 +92,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     return (
         <div className="space-y-6 text-slate-900 font-sans relative">
             {/* 3D Ambient WebGL Accent Background */}
-            <AmbientMesh opacity={0.10} color={0x0284c7} />
+            <AmbientMesh opacity={0.05} color={0x7c3aed} />
 
             {/* Header Section */}
             <div className="p-5 bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">

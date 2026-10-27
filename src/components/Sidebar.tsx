@@ -184,43 +184,43 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     desc: string;
     badge?: string | number;
   }> = [
-    {
-      id: 'ac_dashboard',
-      label: 'Portfolio Dashboard',
-      icon: LayoutDashboard,
-      desc: 'High-Level KPIs & Trends',
-    },
-    {
-      id: 'project_financials',
-      label: 'Project Financials',
-      icon: DollarSign,
-      desc: 'Milestones & Budgets',
-    },
-    {
-      id: 'employee_utilization',
-      label: 'Resource Utilization',
-      icon: Users,
-      desc: 'Capacity & Labor Cost',
-    },
-    {
-      id: 'budget_vs_actual',
-      label: 'Budget vs Actual',
-      icon: TrendingUp,
-      desc: 'Variance & Burn Rates',
-    },
-    {
-      id: 'tool_utilization',
-      label: 'Tool Utilization',
-      icon: Wrench,
-      desc: 'SaaS & Cloud Spend',
-    },
-    {
-      id: 'ac_reports',
-      label: 'Financial Reports',
-      icon: FileText,
-      desc: 'P&L, Billing Exports',
-    },
-  ];
+      {
+        id: 'ac_dashboard',
+        label: 'Portfolio Dashboard',
+        icon: LayoutDashboard,
+        desc: 'High-Level KPIs & Trends',
+      },
+      {
+        id: 'project_financials',
+        label: 'Project Financials',
+        icon: DollarSign,
+        desc: 'Milestones & Budgets',
+      },
+      {
+        id: 'employee_utilization',
+        label: 'Resource Utilization',
+        icon: Users,
+        desc: 'Capacity & Labor Cost',
+      },
+      {
+        id: 'budget_vs_actual',
+        label: 'Budget vs Actual',
+        icon: TrendingUp,
+        desc: 'Variance & Burn Rates',
+      },
+      {
+        id: 'tool_utilization',
+        label: 'Tool Utilization',
+        icon: Wrench,
+        desc: 'SaaS & Cloud Spend',
+      },
+      {
+        id: 'ac_reports',
+        label: 'Financial Reports',
+        icon: FileText,
+        desc: 'P&L, Billing Exports',
+      },
+    ];
 
   const adminNavItems: Array<{
     id: AdminTab;
@@ -273,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div className="p-3 border-b border-slate-200/80">
         <div className="p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-sky-600 text-white font-bold rounded-lg shrink-0 shadow-xs">
+            <div className="p-2 bg-primary text-white font-bold rounded-lg shrink-0 shadow-xs">
               <Layers className="w-4 h-4" />
             </div>
             <div className="min-w-0 truncate">

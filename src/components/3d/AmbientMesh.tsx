@@ -9,8 +9,8 @@ export interface AmbientMeshProps {
 }
 
 export const AmbientMesh: React.FC<AmbientMeshProps> = ({
-  color = 0x3b82f6,
-  opacity = 0.16,
+  color = 0x6366f1,
+  opacity = 0.05,
   className = "",
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);

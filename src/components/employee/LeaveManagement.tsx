@@ -42,7 +42,7 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
   return (
     <div className="space-y-6 relative">
       {/* 3D Ambient WebGL Accent */}
-      <AmbientMesh opacity={0.09} color={0x2563eb} />
+      <AmbientMesh opacity={0.05} color={0x0891b2} />
 
       {/* Top Bar Hero */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
