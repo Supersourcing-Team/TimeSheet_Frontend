@@ -39,20 +39,24 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
   const [partialStart, setPartialStart] = useState('09:00');
   const [partialEnd, setPartialEnd] = useState('11:00');
 
+  // Local ISO date for today (YYYY-MM-DD); strictly restrict leaves to today onwards
+  const today = new Date().toLocaleDateString('en-CA');
+  const initialDate = selectedDate && selectedDate >= today ? selectedDate : today;
+
   // Full Day dates
-  const [startDate, setStartDate] = useState(selectedDate);
-  const [endDate, setEndDate] = useState(selectedDate);
+  const [startDate, setStartDate] = useState(initialDate);
+  const [endDate, setEndDate] = useState(initialDate);
 
   // Custom date
-  const [singleDate, setSingleDate] = useState(selectedDate);
+  const [singleDate, setSingleDate] = useState(initialDate);
 
   const [leaveTypeId, setLeaveTypeId] = useState('');
   const [reason, setReason] = useState('Marked from timesheet');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Current calendar year bounds
+  // Bounds: minDate is strictly today to prevent marking leaves for previous dates
   const currentYear = new Date().getFullYear();
-  const minDate = `${currentYear}-01-01`;
+  const minDate = today;
   const maxDate = `${currentYear}-12-31`;
 
   // Fetch Admin-configured Leave Types
@@ -149,6 +153,10 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         setValidationError('Please select both Start Date and End Date.');
         return null;
       }
+      if (startDate < today) {
+        setValidationError('Leaves cannot be marked for previous dates. Please select today or a future date.');
+        return null;
+      }
       if (startDate > endDate) {
         setValidationError('End Date cannot be earlier than Start Date.');
         return null;
@@ -193,6 +201,11 @@ export const MarkLeaveModal: React.FC<MarkLeaveModalProps> = ({
         setValidationError(`Maximum partial leave duration is 2 hours. You selected ${dur.toFixed(1)}h.`);
         return null;
       }
+    }
+
+    if (singleDate < today) {
+      setValidationError('Leaves cannot be marked for previous dates. Please select today or a future date.');
+      return null;
     }
 
     const selYear = new Date(singleDate).getFullYear();

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActivePortalMode, User, Notification as AppNotification, NotificationType } from '../types';
 import {
-  Search,
   Bell,
   ChevronDown,
   LogOut,
@@ -101,7 +100,6 @@ export const Header: React.FC<HeaderProps> = React.memo(({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   // Local read-state overlay — IDs that the user has "seen" this session
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
@@ -199,17 +197,6 @@ export const Header: React.FC<HeaderProps> = React.memo(({
         </div>
       </div>
 
-      {/* Center Search */}
-      <div className="hidden md:flex items-center flex-1 max-w-md mx-4 relative">
-        <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search projects, timesheets, employees, tools or client accounts..."
-          className="w-full bg-slate-50/80 hover:bg-slate-100/70 focus:bg-white border border-slate-200/90 text-xs text-slate-900 placeholder-slate-400 rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 font-medium transition-all shadow-2xs"
-        />
-      </div>
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
