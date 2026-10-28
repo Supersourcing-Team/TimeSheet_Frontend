@@ -40,23 +40,21 @@ export const LeaveManagement: React.FC<LeaveManagementProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12 relative">
-      {/* Top Bar Header */}
-      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              My Leaves &amp; Absences
-            </h1>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
-              Review your approved, pending, and upcoming leave requests and withdrawal history.
-            </p>
-          </div>
-
-          <span className="inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
-            <span>Total Requests: {userRequests.length}</span>
-          </span>
+      {/* Page Header (No Hero Banner) */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            My Leaves &amp; Absences
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Review your approved, pending, and upcoming leave requests and withdrawal history.
+          </p>
         </div>
-      </section>
+
+        <span className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+          <span>Total Requests: {userRequests.length}</span>
+        </span>
+      </div>
 
       {/* Leave Request History Table */}
       <div className="p-6 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-4">

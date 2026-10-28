@@ -117,24 +117,22 @@ export const MyProjects: React.FC<MyProjectsProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              My Assigned Projects
-            </h1>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
-              View your sprint projects, milestones &amp; deliverables, allocated tools, and PM contacts.
-            </p>
-          </div>
-
-          <span className="inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <span>{myProjects.length} Active Assignments</span>
-          </span>
+      {/* Page Header (No Hero Banner) */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            My Assigned Projects
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            View your sprint projects, milestones &amp; deliverables, allocated tools, and PM contacts.
+          </p>
         </div>
-      </section>
+
+        <span className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+          <Sparkles className="w-4 h-4 text-indigo-600" />
+          <span>{myProjects.length} Active Assignments</span>
+        </span>
+      </div>
 
       {/* Projects Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

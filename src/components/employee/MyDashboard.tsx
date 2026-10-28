@@ -318,39 +318,37 @@ export const MyDashboard: React.FC<MyDashboardProps> = React.memo(({
 
   return (
     <div className="w-full space-y-6 text-slate-800 pb-12">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
-              Welcome back, {currentUser.name}!
-            </h1>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
-              Here&apos;s an overview of your work, projects, and timesheet compliance today.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => onNavigateTab('submit_timesheet')}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-xs transition-colors cursor-pointer active:scale-95"
-            >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
-              <span>Submit Timesheet</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigateTab('weekend_work')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer active:scale-95"
-            >
-              <Moon className="h-4 w-4 text-slate-600" />
-              <span>Weekend Request</span>
-            </button>
-          </div>
+      {/* Page Header (No Hero Banner) */}
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Welcome back, {currentUser.name}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            You have logged {totalLoggedHoursThisWeek || 0} hours out of your {targetWeeklyHours || 40}h weekly goal. All timesheet entries are synchronized.
+          </p>
         </div>
-      </section>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onNavigateTab('weekend_work')}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer active:scale-95"
+          >
+            <Moon className="h-4 w-4 text-slate-600" />
+            <span>Weekend Request</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNavigateTab('submit_timesheet')}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-xs transition-colors cursor-pointer active:scale-95"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <span>Log Daily Hours</span>
+          </button>
+        </div>
+      </div>
       {/* 5-Card KPI row */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {/* Active Projects */}

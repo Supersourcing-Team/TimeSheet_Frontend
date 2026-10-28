@@ -103,24 +103,22 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
 
   return (
     <div className="space-y-6 text-slate-900 font-sans pb-12">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 text-slate-900 shadow-xs sm:p-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Weekend Work &amp; Overtime Requests
-            </h1>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-slate-500 sm:text-sm">
-              Submit your weekend work with task summaries. Once your PM approves, it automatically populates your timesheet logs.
-            </p>
-          </div>
-
-          <span className="inline-flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
-            <Zap className="w-4 h-4 text-indigo-600" />
-            <span>Auto-Timesheet on PM Approval</span>
-          </span>
+      {/* Page Header (No Hero Banner) */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Weekend Work &amp; Overtime Requests
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Submit your weekend work with task summaries. Once your PM approves, it automatically populates your timesheet logs.
+          </p>
         </div>
-      </section>
+
+        <span className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+          <Zap className="w-4 h-4 text-indigo-600" />
+          <span>Auto-Timesheet on PM Approval</span>
+        </span>
+      </div>
 
       {/* Grid Form & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
