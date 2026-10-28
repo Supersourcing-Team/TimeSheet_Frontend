@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActivePortalMode, User, Notification as AppNotification, NotificationType } from '../types';
 import {
-  Search,
   Bell,
   ChevronDown,
   LogOut,
@@ -13,6 +12,7 @@ import {
   Briefcase,
   AlertCircle,
   RefreshCw,
+  PanelLeft,
 } from 'lucide-react';
 import { formatINR } from '../utils/formatters';
 import { useGetNotificationsQuery, useClearNotificationsMutation } from '../store/api/dataApi';
@@ -25,6 +25,8 @@ interface HeaderProps {
   onTogglePortalMode: (mode: ActivePortalMode) => void;
   pendingApprovalsCount: number;
   onLogout: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,10 +100,11 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   onTogglePortalMode,
   pendingApprovalsCount,
   onLogout,
+  isSidebarCollapsed,
+  onToggleSidebar,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   // Local read-state overlay — IDs that the user has "seen" this session
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
@@ -119,7 +122,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
     skip: !isLoggedIn,
     pollingInterval: 60_000, // auto-refresh every 60 seconds
   });
-  
+
   const [clearNotifications] = useClearNotificationsMutation();
 
   const rawNotifications = notifData?.notifications ?? [];
@@ -179,38 +182,55 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 text-slate-800 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 shadow-xs">
-      {/* Left Branding */}
-      <div className="flex items-center gap-3 ">
-        <div className="flex items-center justify-center  w-10 h-10 rounded-2xl  bg-blue-600 shadow-md shadow-blue-600/20 text-white font-extrabold text-xl">
-        <span className=" text-2xl tracking-tight text-white-900 mb-1">
+    <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 lg:px-6 flex items-center justify-between gap-4 shadow-2xs">
+      {/* Left Branding & Sidebar Slider Toggle */}
+      <div className="flex items-center gap-3">
+        {/* Brand Logo & Title */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 shadow-md shadow-blue-500/25 text-white font-extrabold text-xl">
+            <span className="text-2xl tracking-tight text-white mb-0.5">
               𝖊𝖇
             </span>
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-black text-lg tracking-tight text-slate-900">
-              SuperTime
-            </span>
-           
           </div>
-          <p className="text-[11px] text-slate-500 font-semibold hidden sm:block">
-            Timesheet &amp; Resource Governance
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-lg tracking-tight text-slate-900">
+                SuperTime
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-semibold hidden sm:block">
+              {portalMode === 'employee'
+                ? 'Employee workspace'
+                : portalMode === 'pm'
+                ? 'Project Manager workspace'
+                : portalMode === 'ac_manager'
+                ? 'Account Manager workspace'
+                : 'Admin workspace'}
+            </p>
+          </div>
         </div>
+
+        {/* Separating Line */}
+        <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
+
+        {/* Sidebar Toggler Button - upside after the logo */}
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer ${
+              isSidebarCollapsed
+                ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
+            }`}
+            title={isSidebarCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
+            aria-label="Toggle sidebar"
+          >
+            <PanelLeft className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* Center Search */}
-      <div className="hidden md:flex items-center flex-1 max-w-md mx-4 relative">
-        <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search projects, timesheets, employees, tools or client accounts..."
-          className="w-full bg-slate-50 border border-slate-300 text-xs text-slate-900 placeholder-slate-400 rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all"
-        />
-      </div>
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
@@ -220,19 +240,19 @@ export const Header: React.FC<HeaderProps> = React.memo(({
           <button
             type="button"
             onClick={handleOpenNotifications}
-            className="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+            className="relative p-2 rounded-xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200/90 text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-2xs"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold leading-none z-10">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold rounded-full leading-none z-10 shadow-xs animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-[360px] bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden">
+            <div className="absolute right-0 mt-2 w-[360px] bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
@@ -288,9 +308,8 @@ export const Header: React.FC<HeaderProps> = React.memo(({
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${
-                        !n.is_read ? 'bg-blue-50/30' : ''
-                      }`}
+                      className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${!n.is_read ? 'bg-blue-50/30' : ''
+                        }`}
                     >
                       {/* Icon */}
                       <div className={`mt-0.5 p-1.5 rounded-lg border ${notificationBg(n.type, n.is_read)}`}>
@@ -376,7 +395,6 @@ export const Header: React.FC<HeaderProps> = React.memo(({
                 />
                 <div>
                   <h4 className="text-xs font-extrabold text-slate-900">{currentUser.name}</h4>
-                  <p className="text-[11px] text-slate-500">{currentUser.email}</p>
                   <span className="inline-block mt-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 uppercase">
                     Role: {currentUser.role.replace('_', ' ')}
                   </span>

@@ -1,7 +1,7 @@
 import { Pagination } from '../common/Pagination';
 import React, { useState, useEffect } from 'react';
 import { User, TimesheetEntry, Project, LeaveRequest, HolidayItem } from '../../types';
-import { useGetMyLeaveRequestsQuery } from '../../store/api/dataApi';
+import { useGetMyLeaveRequestsQuery, useGetWorkingCalendarQuery } from '../../store/api/dataApi';
 import {
   Calendar as CalendarIcon,
   ListFilter,
@@ -95,6 +95,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   const userTimesheets = (timesheets || []).filter((t) => t.userId === currentUser.id);
+
+  // Dynamic lock window from Admin Working Calendar configuration
+  const { data: workingCalendarConfig } = useGetWorkingCalendarQuery();
+  const lockHours = workingCalendarConfig?.timesheetLockHours ?? 24;
+  const maxPastDays = Math.max(1, Math.ceil(lockHours / 24));
+  const minDateObj = new Date();
+  minDateObj.setDate(minDateObj.getDate() - maxPastDays);
+  const minAllowedDate = minDateObj.toISOString().split('T')[0];
 
   // Fetch leave requests for leave status visualization
   const { data: leaveData } = useGetMyLeaveRequestsQuery(undefined as any);
@@ -232,41 +240,43 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
   };
 
   return (
-    <div className="space-y-6 text-slate-900 font-sans">
-      {/* Header & View Mode Switcher */}
-      <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Timesheet History</h2>
-          <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+    <div className="h-full flex-1 min-h-0 flex flex-col space-y-3 sm:space-y-3.5 text-slate-900 font-sans relative overflow-hidden">
+      {/* Page Header (No Hero Banner) */}
+      <div className="shrink-0 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 leading-tight">
+            Timesheets History &amp; Audit
+          </h1>
+          <p className="text-xs text-slate-500">
             Click on any date or entry to view, edit, update, or log your daily task hours and track approval statuses.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {/* Calendar vs List Toggle */}
-          <div className="bg-slate-100 p-1 border border-slate-200 flex items-center gap-1">
+          <div className="bg-white p-0.5 border border-slate-200 rounded-lg flex items-center gap-0.5 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                 viewMode === 'calendar'
-                  ? 'bg-white text-sky-700 shadow-xs'
+                  ? 'bg-slate-100 text-indigo-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <CalendarIcon className="w-3.5 h-3.5" />
+              <CalendarIcon className="w-3.5 h-3.5 stroke-[2.2]" />
               <span>Calendar View</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white text-sky-700 shadow-xs'
+                  ? 'bg-slate-100 text-indigo-700 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ListFilter className="w-3.5 h-3.5" />
+              <ListFilter className="w-3.5 h-3.5 stroke-[2.2]" />
               <span>List View</span>
             </button>
           </div>
@@ -274,9 +284,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-95"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <Download className="w-3.5 h-3.5 text-slate-600 stroke-[2.2]" />
             <span>Export CSV</span>
           </button>
         </div>
@@ -284,65 +294,76 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
       {/* CALENDAR VIEW */}
       {viewMode === 'calendar' && (
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-4">
-            <div className="flex items-center gap-4">
+        <div className="flex-1 min-h-0 p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-xs flex flex-col space-y-2">
+          <div className="shrink-0 flex flex-col md:flex-row md:items-center justify-between pb-2 border-b border-slate-100 gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                className="p-1 rounded-lg bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
               </button>
-              <h3 className="text-base font-extrabold text-slate-900 min-w-[140px] text-center">
+              <h3 className="text-sm sm:text-base font-black text-slate-950 min-w-[130px] text-center">
                 {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
               </h3>
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                className="p-1 rounded-lg bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px]">
+              <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>8.0h+ Complete</span>
               </span>
-              <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
                 <span>Partial (&lt;8h)</span>
               </span>
-              <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
-                <span>Leave Day</span>
+              <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span>Missing (Fillable)</span>
               </span>
-              <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+              <span className="flex items-center gap-1 text-red-600 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span>Expired</span>
+              </span>
+              <span className="flex items-center gap-1 text-cyan-700 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                <span>Leave</span>
+              </span>
+              <span className="flex items-center gap-1 text-purple-700 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-purple-500" />
                 <span>Holiday</span>
               </span>
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+              <span className="flex items-center gap-1 text-slate-400">
+                <span className="w-2 h-2 rounded-full bg-slate-300" />
                 <span>Off / Weekend</span>
               </span>
             </div>
           </div>
 
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          {/* Calendar Days of Week Header */}
+          <div className="shrink-0 grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold text-slate-400 uppercase py-0.5">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div
-                key={day}
-                className="text-center text-[10px] font-bold text-slate-400 uppercase py-2"
-              >
-                {day}
-              </div>
+              <div key={day}>{day}</div>
             ))}
+          </div>
 
+          {/* Calendar Grid */}
+          <div
+            className="flex-1 min-h-0 grid grid-cols-7 gap-1.5"
+            style={{
+              gridTemplateRows: `repeat(${Math.ceil(calendarDays.length / 7)}, minmax(0, 1fr))`,
+            }}
+          >
             {calendarDays.map((dateStr, idx) => {
               if (!dateStr) {
-                return <div key={`empty-${idx}`} className="h-24 bg-slate-50/50 rounded-xl" />;
+                return <div key={`empty-${idx}`} className="h-full min-h-0 bg-slate-50/50 rounded-xl" />;
               }
 
               const dayEntries = userTimesheets.filter((t) => t.date === dateStr);
@@ -355,6 +376,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
               const todayStr = new Date().toISOString().split('T')[0];
               const isFutureDate = dateStr > todayStr;
+              const isWorkDay = !isWeekend && !holidayForDay && !isFullDayLeave;
+              const isZeroHours = dayTotalHours === 0;
+
+              // Valid window missing timesheet: past date within allowed cutoff window (still submittable)
+              const isMissingTimesheet = !isFutureDate && dateStr < todayStr && dateStr >= minAllowedDate && isWorkDay && isZeroHours;
+
+              // Expired timesheet: past date before allowed cutoff window (submission window expired)
+              const isExpiredTimesheet = !isFutureDate && dateStr < minAllowedDate && isWorkDay && isZeroHours;
 
               return (
                 <button
@@ -372,6 +401,11 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         setSelectedDateModal(dateStr);
                         return;
                       }
+                      if (isExpiredTimesheet || dateStr < minAllowedDate) {
+                        onShowToast('Expired Timesheet', `The submission window for ${dateStr} has expired.`, 'error');
+                        setSelectedDateModal(dateStr);
+                        return;
+                      }
                       if (onNavigateToSubmit) {
                         onNavigateToSubmit(dateStr);
                         return;
@@ -380,33 +414,37 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     setSelectedDateModal(dateStr);
                   }}
                   disabled={false}
-                  className={`h-24 p-2 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                  className={`h-full min-h-0 p-1.5 sm:p-2 rounded-xl border text-left flex flex-col justify-between transition-all overflow-hidden ${
                     isFutureDate
                       ? holidayForDay
-                        ? 'bg-orange-50 border-orange-200 hover:border-orange-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                        : 'bg-white border-slate-100 hover:border-blue-400 hover:scale-[1.02] cursor-pointer'
+                        ? 'bg-purple-50/70 border-purple-200 hover:border-purple-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
+                        : 'bg-white border-slate-100 hover:border-primary/40 hover:scale-[1.01] cursor-pointer'
                       : isFullDayLeave
-                        ? 'bg-rose-50 border-rose-300 hover:border-rose-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                        ? 'bg-cyan-50/70 border-cyan-200 hover:border-cyan-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                         : holidayForDay
-                          ? 'bg-orange-50 border-orange-300 hover:border-orange-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                          ? 'bg-purple-50/70 border-purple-200 hover:border-purple-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                           : isWeekend
-                            ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                            ? 'bg-slate-50 border-slate-200/60 opacity-60 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                             : dayTotalHours >= 8
-                              ? 'bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                              ? 'bg-emerald-50/50 border-emerald-200 hover:border-emerald-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                               : dayTotalHours > 0
-                                ? 'bg-amber-50/40 border-amber-300 hover:border-amber-500 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                ? 'bg-amber-50/50 border-amber-200 hover:border-amber-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                                 : leaveForDay
-                                  ? 'bg-rose-50/60 border-rose-200 hover:border-rose-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
-                                  : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.02] hover:shadow-md cursor-pointer'
+                                  ? 'bg-cyan-50/60 border-cyan-200 hover:border-cyan-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
+                                  : isExpiredTimesheet
+                                    ? 'bg-red-50/70 border-red-300 text-red-900 hover:border-red-500 hover:bg-red-100 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
+                                    : isMissingTimesheet
+                                      ? 'bg-slate-50/80 border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-100/90 hover:scale-[1.01] hover:shadow-xs cursor-pointer'
+                                      : 'bg-white border-slate-200 hover:border-blue-400 hover:scale-[1.01] hover:shadow-sm cursor-pointer'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-extrabold text-slate-900">
+                  <div className="flex items-center justify-between w-full shrink-0">
+                    <span className={`text-[11px] font-extrabold ${isExpiredTimesheet ? 'text-red-950 font-black' : isMissingTimesheet ? 'text-slate-700 font-bold' : 'text-slate-900'}`}>
                       {dateStr.split('-')[2]}
                     </span>
                     {dayTotalHours > 0 && (
                       <span
-                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                        className={`text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full ${
                           dayTotalHours >= 8
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
@@ -415,22 +453,32 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                         {dayTotalHours}h
                       </span>
                     )}
+                    {isExpiredTimesheet && (
+                      <span className="text-[8.5px] font-black px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 border border-red-200">
+                        Expired
+                      </span>
+                    )}
+                    {isMissingTimesheet && (
+                      <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 border border-slate-300">
+                        Missing
+                      </span>
+                    )}
                     {leaveForDay && dayTotalHours === 0 && (
-                      <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <CalendarX className="w-3 h-3 text-cyan-600 shrink-0" />
                     )}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="min-h-0 overflow-hidden space-y-0.5 mt-0.5">
                     {/* Leave badge */}
                     {leaveForDay && (
-                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-extrabold border border-rose-200 flex items-center gap-1">
-                        <CalendarX className="w-2.5 h-2.5 shrink-0" />
+                      <div className="text-[8.5px] truncate px-1 py-0.2 rounded bg-cyan-100 text-cyan-800 font-extrabold border border-cyan-200 flex items-center gap-1">
+                        <CalendarX className="w-2 h-2 shrink-0" />
                         <span className="truncate">{formatLeaveBadgeLabel(leaveForDay)}</span>
                       </div>
                     )}
                     {/* Holiday badge */}
                     {holidayForDay && !leaveForDay && (
-                      <div className="text-[9px] truncate px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 font-extrabold border border-orange-200 flex items-center gap-1">
+                      <div className="text-[8.5px] truncate px-1 py-0.2 rounded bg-purple-100 text-purple-800 font-extrabold border border-purple-200 flex items-center gap-1">
                         <span>🎉</span>
                         <span className="truncate">{holidayForDay.name}</span>
                       </div>
@@ -438,22 +486,34 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     {dayEntries.slice(0, leaveForDay ? 1 : 2).map((e) => (
                       <div
                         key={e.id}
-                        className="text-[10px] truncate px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-100 flex items-center justify-between"
+                        className="text-[9px] truncate px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/60 flex items-center justify-between"
                       >
                         <span className="truncate">{e.projectName}</span>
                         <span className="font-extrabold shrink-0 ml-1">{e.billableHours + e.nonBillableHours}h</span>
                       </div>
                     ))}
                     {dayEntries.length > (leaveForDay ? 1 : 2) && (
-                      <div className="text-[9px] text-slate-500 font-bold px-1">
+                      <div className="text-[8.5px] text-slate-500 font-bold px-0.5">
                         +{dayEntries.length - (leaveForDay ? 1 : 2)} more
                       </div>
                     )}
                     {dayEntries.length === 0 && !leaveForDay && !holidayForDay && !isWeekend && !isFutureDate && (
-                      <span className="text-[10px] text-slate-400 italic">Click to log</span>
+                      isExpiredTimesheet ? (
+                        <span className="text-[9px] text-red-600 font-bold flex items-center gap-0.5">
+                          <AlertCircle className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                          <span>Expired</span>
+                        </span>
+                      ) : isMissingTimesheet ? (
+                        <span className="text-[9px] text-slate-500 font-semibold flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                          <span>To Fill</span>
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-slate-400 italic">Click to log</span>
+                      )
                     )}
                     {dayEntries.length === 0 && holidayForDay && !leaveForDay && !isFutureDate && (
-                      <span className="text-[10px] text-orange-400 italic">Holiday</span>
+                      <span className="text-[9px] text-orange-400 italic">Holiday</span>
                     )}
                   </div>
                 </button>
@@ -465,24 +525,24 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
 
       {/* LIST VIEW */}
       {viewMode === 'list' && (
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex-1 min-h-0 p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-xs flex flex-col space-y-2.5">
           {/* Filter Toolbar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="shrink-0 grid grid-cols-1 md:grid-cols-4 gap-2.5 items-center">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search descriptions..."
-                className="w-full bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-lg pl-9 pr-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-medium transition-colors"
               />
             </div>
 
             <select
               value={selectedProjectFilter}
               onChange={(e) => setSelectedProjectFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              className="bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-bold transition-colors cursor-pointer"
             >
               <option value="all">All Projects</option>
               {assignedProjects.map((p) => (
@@ -495,88 +555,97 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-xs text-slate-900 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+              className="bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 text-xs text-slate-900 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none font-bold transition-colors cursor-pointer"
             >
               <option value="submitted">Submitted</option>
             </select>
 
-            <div className="text-right flex items-center justify-end text-xs text-slate-500 font-bold">
-              Total Found: {filteredTimesheets.length} entries
+            <div className="text-right flex items-center justify-end text-xs text-slate-500 font-extrabold">
+              Total Found: <span className="ml-1 text-slate-950 font-black">{filteredTimesheets.length} entries</span>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto rounded-xl border border-slate-100">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] bg-slate-50">
-                  <th className="py-3 px-3">Date</th>
-                  <th className="py-3 px-3">Project</th>
-                  <th className="py-3 px-3">Billable Work</th>
-                  <th className="py-3 px-3">Non-Billable Work</th>
-                  <th className="py-3 px-3 text-right">Hours (Billable)</th>
-                  <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-3 text-right">Actions</th>
+              <thead className="sticky top-0 z-10 bg-slate-100/95 backdrop-blur-xs">
+                <tr className="border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[9.5px] font-black">
+                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3">Project</th>
+                  <th className="py-2.5 px-3">Billable Work</th>
+                  <th className="py-2.5 px-3">Non-Billable Work</th>
+                  <th className="py-2.5 px-3 text-right">Hours (Billable)</th>
+                  <th className="py-2.5 px-3 text-center">Status</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100">
                 {/* Leave request rows */}
                 {myLeaves
                   .filter((lr) => lr.status === 'approved' || lr.status === 'pending')
                   .map((lr) => (
-                    <tr key={`leave-${lr.id}`} className="bg-rose-50/60 hover:bg-rose-50 transition-colors">
-                      <td className="py-3.5 px-3 font-bold text-rose-800 whitespace-nowrap">
+                    <tr key={`leave-${lr.id}`} className="bg-rose-50/50 hover:bg-rose-50/80 transition-colors">
+                      <td className="py-3 px-3 font-extrabold text-rose-900 whitespace-nowrap">
                         {lr.startDate === lr.endDate ? lr.startDate : `${lr.startDate} – ${lr.endDate}`}
                       </td>
-                      <td className="py-3.5 px-3">
+                      <td className="py-3 px-3">
                         <div className="flex items-center gap-1.5">
                           <CalendarX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                          <span className="font-bold text-rose-700">{lr.type}</span>
+                          <span className="font-black text-rose-700">{lr.type}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-3 text-rose-600 max-w-xs font-medium">
+                      <td className="py-3 px-3 text-rose-700 max-w-xs font-semibold">
                         {formatLeaveBadgeLabel(lr)}
                       </td>
-                      <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
+                      <td className="py-3 px-3 text-slate-500 max-w-xs italic text-[11px]">
                         {lr.reason || '—'}
                       </td>
-                      <td className="py-3.5 px-3 text-right font-extrabold text-rose-700 whitespace-nowrap">
+                      <td className="py-3 px-3 text-right font-black text-rose-800 whitespace-nowrap">
                         {lr.leaveDurationType === 'full_day' ? '8h (full)' : lr.leaveDurationType === 'half_day' ? '4h (half)' : 'Partial'}
                       </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-rose-100 text-rose-700 border border-rose-200">
+                      <td className="py-3 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border border-rose-200/80 bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700">
                           {lr.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 text-right text-slate-400 text-[10px] italic">—</td>
+                      <td className="py-3 px-3 text-right text-slate-400 text-[10px] italic">—</td>
                     </tr>
                   ))}
                 {paginatedTimesheets.map((ts) => (
-                  <tr key={ts.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="py-3.5 px-3 font-bold text-slate-900 whitespace-nowrap">{ts.date}</td>
-                    <td className="py-3.5 px-3 font-bold text-blue-600">{ts.projectName}</td>
-                    <td className="py-3.5 px-3 text-slate-800 max-w-xs font-medium">
+                  <tr key={ts.id} className="hover:bg-indigo-50/30 transition-colors">
+                    <td className="py-3 px-3 font-extrabold text-slate-900 whitespace-nowrap">{ts.date}</td>
+                    <td className="py-3 px-3">
+                      <span className="w-fit rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-50 to-violet-50 px-2.5 py-0.5 text-[9px] font-extrabold text-indigo-700 inline-block">
+                        {ts.projectName}
+                      </span>
+                      {ts.milestoneName && (
+                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                          🎯 {ts.milestoneName}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-slate-800 max-w-xs font-medium">
                       {ts.billableDescription || ts.description}
                     </td>
-                    <td className="py-3.5 px-3 text-slate-500 max-w-xs italic text-[11px]">
+                    <td className="py-3 px-3 text-slate-500 max-w-xs italic text-[11px]">
                       {ts.nonBillableDescription || 'N/A'}
                     </td>
-                    <td className="py-3.5 px-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
-                      {ts.billableHours + ts.nonBillableHours}h <span className="text-emerald-600 font-semibold">({ts.billableHours}h billable)</span>
+                    <td className="py-3 px-3 text-right font-black text-slate-900 whitespace-nowrap">
+                      {ts.billableHours + ts.nonBillableHours}h <span className="ml-1 rounded-md border border-emerald-200/50 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">({ts.billableHours}h billable)</span>
                     </td>
-                    <td className="py-3.5 px-3 text-center">
+                    <td className="py-3 px-3 text-center">
                       <span
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold capitalize bg-emerald-100 text-emerald-800"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700"
                       >
                         {ts.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-right">
+                    <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleStartEdit(ts)}
-                          className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors cursor-pointer"
                           title="Edit timesheet entry"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -599,6 +668,18 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <div className="shrink-0 pt-2 border-t border-slate-100">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredTimesheets.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          </div>
         </div>
       )}
 
@@ -609,7 +690,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  Timesheet Logs • {selectedDateModal}
+                  {modalEntries.length === 0 && selectedDateModal && selectedDateModal < minAllowedDate
+                    ? `Expired Timesheet • ${selectedDateModal}`
+                    : `Timesheet Logs • ${selectedDateModal}`}
                 </h3>
                 <p className="text-xs text-slate-500">
                   Total Logged:{' '}
@@ -679,6 +762,31 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   );
                 }
 
+                const isPastLock = selectedDateModal && selectedDateModal < minAllowedDate;
+                if (isPastLock) {
+                  return (
+                    <div className="text-center py-6 text-slate-600 text-xs space-y-3 bg-red-50/80 rounded-2xl border border-red-200 p-5 shadow-xs">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold">
+                        <AlertCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                          Expired Timesheet
+                        </span>
+                        <p className="font-extrabold text-sm text-red-950">
+                          Expired Timesheet ({selectedDateModal})
+                        </p>
+                        <p className="text-red-800 text-xs max-w-sm mx-auto leading-relaxed">
+                          Timesheet submission for this date has expired. Submissions are only permitted within the {lockHours}-hour submission window ({minAllowedDate} to present).
+                        </p>
+                        <p className="text-[11px] text-red-700/80 italic">
+                          Please contact your Project Manager or Admin to request an unlock or retroactive approval.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="text-center py-8 text-slate-500 text-xs space-y-3">
                     <p>No hours logged for this date.</p>
@@ -709,7 +817,14 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                     className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-blue-600">{entry.projectName}</span>
+                      <div>
+                        <span className="font-bold text-blue-600">{entry.projectName}</span>
+                        {entry.milestoneName && (
+                          <div className="text-[10px] font-semibold text-indigo-700">
+                            🎯 Milestone: {entry.milestoneName}
+                          </div>
+                        )}
+                      </div>
                       <span className="font-extrabold text-slate-900">
                         {entry.billableHours + entry.nonBillableHours}h ({entry.billableHours}h billable)
                       </span>
@@ -830,9 +945,9 @@ export const TimesheetsHistory: React.FC<TimesheetsHistoryProps> = ({
                   required
                 >
                   <option value="">-- Choose Project --</option>
-                  {assignedProjects.map((p) => (
+                  {assignedProjects.filter((p) => p.isActive !== false && p.is_active !== false).map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.client})
+                      {p.name} ({p.code || `PRJ-${p.id}`})
                     </option>
                   ))}
                 </select>

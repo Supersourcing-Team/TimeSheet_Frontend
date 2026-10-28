@@ -174,12 +174,12 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs hover:border-slate-300 transition-all cursor-pointer">
-              <Calendar className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-xl text-xs font-bold text-foreground shadow-2xs hover:border-slate-300 transition-all cursor-pointer">
+              <Calendar className="w-4 h-4 text-primary" />
               <select
                 value={selectedQuarter}
                 onChange={(e) => setSelectedQuarter(e.target.value)}
-                className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-xs font-bold focus:outline-hidden cursor-pointer pr-1 text-foreground"
               >
                 <option value="Q3 FY 2024">Q3 FY 2024</option>
                 <option value="Q2 FY 2024">Q2 FY 2024</option>
@@ -191,7 +191,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           <button
             type="button"
             onClick={() => onShowToast('Exporting Report', 'Generating P&L Portfolio Summary PDF...', 'success')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl font-bold text-xs shadow-md shadow-primary/20 transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>Export Report</span>
@@ -200,18 +200,18 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-primary-subtle text-primary">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-700 uppercase">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-subtle text-primary uppercase">
               Revenue
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-slate-500">Total Revenue (Earned)</p>
-            <p className="text-xl font-black text-slate-900 tracking-tight mt-0.5">{formatCr(totalEarnedValue)}</p>
+            <p className="text-[11px] font-semibold text-muted-foreground">Total Revenue (Earned)</p>
+            <p className="text-xl font-black text-foreground tracking-tight mt-0.5">{formatCr(totalEarnedValue)}</p>
           </div>
         </div>
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
@@ -257,8 +257,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 type="button"
                 onClick={() => setChartInterval('monthly')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${chartInterval === 'monthly'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-card text-primary shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 Monthly
@@ -267,8 +267,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 type="button"
                 onClick={() => setChartInterval('quarterly')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${chartInterval === 'quarterly'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-card text-primary shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 Quarterly
@@ -277,8 +277,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 type="button"
                 onClick={() => setChartInterval('yearly')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${chartInterval === 'yearly'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-card text-primary shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
               >
                 Yearly
@@ -288,12 +288,12 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
           <div className="pt-4 pb-2 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} dy={10} />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+                  tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
                   tickFormatter={(value) => {
                     if (value >= 10000000) return `₹${(value / 10000000).toFixed(1)}Cr`;
                     if (value >= 100000) return `₹${(value / 100000).toFixed(0)}L`;
@@ -306,9 +306,9 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                   formatter={(value: number) => formatINR(value)}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 700, paddingTop: '10px' }} />
-                <Line type="monotone" dataKey="Revenue" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Revenue" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 <Line type="monotone" dataKey="Cost" stroke="#64748b" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="Profit" stroke="#d97706" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Profit" stroke="#059669" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -344,10 +344,10 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
                     <span className="text-slate-600">Budget Utilization (Earned)</span>
-                    <span className="text-blue-600">{p.budgetUtil.toFixed(1)}%</span>
+                    <span className="text-primary">{p.budgetUtil.toFixed(1)}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600" style={{ width: `${Math.min(100, p.budgetUtil)}%` }} />
+                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, p.budgetUtil)}%` }} />
                   </div>
                 </div>
               </div>
@@ -402,34 +402,34 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                 const health = p.health || 'GREEN';
 
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                  <tr key={p.id} className="hover:bg-secondary/60 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-foreground">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black">
+                        <div className="w-8 h-8 rounded-lg bg-primary-subtle text-primary flex items-center justify-center font-black">
                           {p.name.charAt(0)}
                         </div>
                         <div>
                           <div>{p.name}</div>
-                          <div className="text-[10px] text-slate-400 font-normal">Code: {p.code}</div>
+                          <div className="text-[10px] text-muted-foreground font-normal">Code: {p.code}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-700 font-semibold">{p.client}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{formatCr(p.budget)}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{formatCr(cost)}</td>
-                    <td className="py-3.5 px-4 text-emerald-700 font-bold">{formatCr(earned_value)}</td>
-                    <td className="py-3.5 px-4 text-slate-700 font-bold">
-                      <span className={`px-2 py-0.5 rounded-lg text-[10px] ${cpi >= 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                    <td className="py-3.5 px-4 text-foreground font-semibold">{p.client}</td>
+                    <td className="py-3.5 px-4 font-bold text-foreground">{formatCr(p.budget)}</td>
+                    <td className="py-3.5 px-4 text-muted-foreground">{formatCr(cost)}</td>
+                    <td className="py-3.5 px-4 text-success font-bold">{formatCr(earned_value)}</td>
+                    <td className="py-3.5 px-4 text-foreground font-bold">
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] ${cpi >= 1 ? 'bg-success-subtle text-success' : 'bg-destructive-subtle text-destructive'}`}>
                         {cpi.toFixed(2)}x
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase ${health === 'GREEN'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          ? 'bg-success-subtle text-success border-success-subtle-border'
                           : health === 'AMBER'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                            ? 'bg-warning-subtle text-warning border-warning-subtle-border'
+                            : 'bg-destructive-subtle text-destructive border-destructive-subtle-border'
                           }`}
                       >
                         {health}
@@ -442,7 +442,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
                           setEditingProject(p);
                           setEditBudget(p.budget);
                         }}
-                        className="px-3 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 rounded-lg text-xs font-bold transition-all"
+                        className="px-3 py-1 bg-secondary hover:bg-primary-subtle hover:text-primary text-foreground rounded-lg text-xs font-bold transition-all cursor-pointer"
                       >
                         Edit Budget
                       </button>

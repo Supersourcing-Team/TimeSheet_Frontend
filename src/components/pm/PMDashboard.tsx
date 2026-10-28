@@ -6,8 +6,6 @@ import {
   Users,
   CheckSquare,
   Moon,
-  TrendingUp,
-  AlertCircle,
   ChevronRight,
   ArrowUpRight,
   Calendar,
@@ -50,6 +48,10 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
     totalBillableHours,
     todayLoggedHours,
     thisWeekBillableHours,
+    thisWeekNonBillableHours,
+    thisWeekTotalHours,
+    thisWeekBillableRatio,
+    teamMembersWithMissing,
     avgUtilization,
     recentTimesheets,
   } = React.useMemo(() => {
@@ -66,23 +68,23 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
         currentUser?.role === 'pm'
     );
 
-    const pProjectIds = pProjects.map((p) => p.id);
+    const pProjectIds = pProjects.map((p) => String(p.id));
 
     // All team members assigned to PM's projects
-    const assignedTeamUserIds = Array.from(new Set(pProjects.flatMap((p) => p.assignedUserIds || [])));
+    const assignedTeamUserIds = Array.from(new Set(pProjects.flatMap((p) => (p.assignedUserIds || []).map(String))));
     const teamCount = assignedTeamUserIds.filter(id => {
-      const user = safeAllUsers.find(u => u.id === id);
+      const user = safeAllUsers.find(u => String(u.id) === String(id));
       return user?.role === 'employee';
     }).length;
 
     // Pending Weekend Work Requests for PM's projects
     const pendingRequests = safeWeekendRequests.filter(
-      (w) => w.status === 'pending' && (pProjectIds.length === 0 || pProjectIds.includes(w.projectId))
+      (w) => w.status === 'pending' && (pProjectIds.length === 0 || pProjectIds.includes(String(w.projectId)))
     );
 
-    // Timesheets for PM's projects
+    // Timesheets for PM's projects (string-safe project matching)
     const pTimesheets = safeTimesheets.filter(
-      (t) => pProjectIds.length === 0 || pProjectIds.includes(t.projectId)
+      (t) => pProjectIds.length === 0 || pProjectIds.includes(String(t.projectId))
     );
 
     // Calculations for stats
@@ -90,12 +92,95 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
     const totBillable = pProjects.reduce((sum, p) => sum + p.billableHours, 0);
 
     // Today's date YYYY-MM-DD
-    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
     const todaySheets = pTimesheets.filter((t) => t.date === todayStr);
     const todayLogged = todaySheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
 
-    // This Week's billable hours
-    const weekBillable = pTimesheets.reduce((sum, t) => sum + (t.billableHours || 0), 0);
+    // Current Week (Monday to Sunday) date range
+    const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const mondayStr = monday.toISOString().split('T')[0];
+    const sundayStr = sunday.toISOString().split('T')[0];
+
+    // Rolling 7-day date range (last 7 days)
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 6);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+    // 1. Current calendar week (Monday to Sunday)
+    const thisCalendarWeekSheets = pTimesheets.filter((t) => t.date >= mondayStr && t.date <= sundayStr);
+    const calBillable = thisCalendarWeekSheets.reduce((sum, t) => sum + (Number(t.billableHours) || 0), 0);
+    const calNonBillable = thisCalendarWeekSheets.reduce((sum, t) => sum + (Number(t.nonBillableHours) || 0), 0);
+
+    // 2. Rolling 7 days
+    const rollingWeekSheets = pTimesheets.filter((t) => t.date >= sevenDaysAgoStr && t.date <= todayStr);
+    const rollingBillable = rollingWeekSheets.reduce((sum, t) => sum + (Number(t.billableHours) || 0), 0);
+    const rollingNonBillable = rollingWeekSheets.reduce((sum, t) => sum + (Number(t.nonBillableHours) || 0), 0);
+
+    // 3. All logged timesheets for PM's projects (matches Review log)
+    const allBillable = pTimesheets.reduce((sum, t) => sum + (Number(t.billableHours) || 0), 0);
+    const allNonBillable = pTimesheets.reduce((sum, t) => sum + (Number(t.nonBillableHours) || 0), 0);
+
+    let weekBillable = calBillable;
+    let weekNonBillable = calNonBillable;
+
+    // If current calendar week has no logs yet (e.g. Monday morning), show rolling 7 days or total logged
+    if (weekBillable === 0 && weekNonBillable === 0) {
+      if (rollingBillable > 0 || rollingNonBillable > 0) {
+        weekBillable = rollingBillable;
+        weekNonBillable = rollingNonBillable;
+      } else if (allBillable > 0 || allNonBillable > 0) {
+        weekBillable = allBillable;
+        weekNonBillable = allNonBillable;
+      }
+    }
+
+    const weekTotalHours = weekBillable + weekNonBillable;
+    const weekBillableRatio = weekTotalHours > 0 ? Math.round((weekBillable / weekTotalHours) * 100) : 0;
+
+    // Past working days in current week (Monday up to yesterday)
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const pastWorkingDaysThisWeek: string[] = [];
+    const tempDate = new Date(monday);
+    while (tempDate <= yesterday && tempDate <= now) {
+      const dDay = tempDate.getDay();
+      if (dDay !== 0 && dDay !== 6) {
+        pastWorkingDaysThisWeek.push(tempDate.toISOString().split('T')[0]);
+      }
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+
+    // Identify assigned team members with missing submissions for past working days this week
+    const teamMembersWithMissing: { id: string; name: string; missingCount: number }[] = [];
+    if (pastWorkingDaysThisWeek.length > 0) {
+      const assignedUserObjs = safeAllUsers.filter((u) => u.role === 'employee' && assignedTeamUserIds.includes(u.id));
+      for (const user of assignedUserObjs) {
+        const userSheets = pTimesheets.filter((t) => String(t.userId) === String(user.id));
+        let userMissing = 0;
+        for (const dStr of pastWorkingDaysThisWeek) {
+          const dayTotal = userSheets
+            .filter((t) => t.date === dStr)
+            .reduce((s, t) => s + (Number(t.billableHours) || 0) + (Number(t.nonBillableHours) || 0), 0);
+          if (dayTotal === 0) {
+            userMissing++;
+          }
+        }
+        if (userMissing > 0) {
+          teamMembersWithMissing.push({
+            id: user.id,
+            name: user.name,
+            missingCount: userMissing,
+          });
+        }
+      }
+    }
 
     // Average Team Utilization
     const totalLoggedForUtil = pTimesheets.reduce((sum, t) => sum + ((t.billableHours || 0) + (t.nonBillableHours || 0)), 0);
@@ -117,6 +202,10 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
       totalBillableHours: totBillable,
       todayLoggedHours: todayLogged,
       thisWeekBillableHours: weekBillable,
+      thisWeekNonBillableHours: weekNonBillable,
+      thisWeekTotalHours: weekTotalHours,
+      thisWeekBillableRatio: weekBillableRatio,
+      teamMembersWithMissing,
       avgUtilization: utilization,
       recentTimesheets: recent,
     };
@@ -146,7 +235,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
           </button>
           <button
             onClick={() => onNavigateTab('pm_timesheet_review')}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <CheckSquare className="w-4 h-4" />
             <span>Review Timesheets</span>
@@ -154,11 +243,12 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
         </div>
       </div>
 
+      {/* 5-Card KPI Grid with Combined Week Billable / Non-Billable Card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Active Projects */}
         <div
           onClick={() => onNavigateTab('pm_my_projects')}
-          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all cursor-pointer group"
+          className="p-4 bg-white border border-slate-200 space-y-1.5 hover:border-sky-400 transition-all cursor-pointer group shadow-2xs"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -173,7 +263,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
         {/* Total Team Members */}
         <div
           onClick={() => onNavigateTab('pm_resource_allocation')}
-          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all cursor-pointer group"
+          className="p-4 bg-white border border-slate-200 space-y-1.5 hover:border-sky-400 transition-all cursor-pointer group shadow-2xs"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -185,14 +275,41 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
           <p className="text-[11px] text-slate-500 truncate">Assigned resources</p>
         </div>
 
+        {/* Combined Weekly Billable / Non-Billable Hours Card */}
+        <div
+          onClick={() => onNavigateTab('pm_timesheet_review')}
+          className="p-4 bg-white border border-slate-200 space-y-1.5 hover:border-emerald-400 transition-all cursor-pointer group shadow-2xs"
+        >
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+              Week Billable / Non-Billable
+            </span>
+            <Clock className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-emerald-800" title="Billable Hours">
+              {thisWeekBillableHours.toFixed(1)}h
+            </span>
+            <span className="text-slate-400 font-bold text-base">/</span>
+            <span className="text-xl font-bold text-sky-800" title="Non-Billable Hours">
+              {thisWeekNonBillableHours.toFixed(1)}h
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5 font-medium">
+            <span className="text-emerald-700 font-bold">Client ({thisWeekBillableHours.toFixed(1)}h)</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-sky-700 font-bold">Internal ({thisWeekNonBillableHours.toFixed(1)}h)</span>
+          </p>
+        </div>
+
         {/* Pending Weekend Requests */}
         <div
           onClick={() => onNavigateTab('pm_weekend_work')}
-          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-amber-400 transition-all cursor-pointer group"
+          className="p-4 bg-white border border-slate-200 space-y-1.5 hover:border-amber-400 transition-all cursor-pointer group shadow-2xs"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
-              Weekend Overtime
+              Weekend OT
             </span>
             <Moon className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
           </div>
@@ -200,25 +317,10 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
           <p className="text-[11px] text-amber-700 font-semibold truncate">Pending approvals</p>
         </div>
 
-        {/* This Week's Billable Hours */}
-        <div
-          onClick={() => onNavigateTab('pm_timesheet_review')}
-          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-emerald-400 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              Week Billable
-            </span>
-            <Clock className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-900">{thisWeekBillableHours}h</div>
-          <p className="text-[11px] text-emerald-700 truncate">Billable logged</p>
-        </div>
-
         {/* Team Leaves */}
         <div
           onClick={() => setShowLeavesModal(true)}
-          className="p-5 bg-white border border-slate-200 space-y-2 hover:border-sky-400 transition-all group cursor-pointer"
+          className="p-4 bg-white border border-slate-200 space-y-1.5 hover:border-sky-400 transition-all group cursor-pointer shadow-2xs"
         >
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -227,7 +329,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
             <Calendar className="w-4 h-4 text-sky-600 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-2xl font-bold text-slate-900">{upcomingLeaves?.length || 0}</div>
-          <p className="text-[11px] text-slate-500 truncate">Upcoming or ongoing leaves</p>
+          <p className="text-[11px] text-slate-500 truncate">Upcoming / active</p>
         </div>
       </div>
 
@@ -287,7 +389,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = React.memo(({
 
                     <div>
                       <h3 className="font-extrabold text-slate-900 text-sm">{proj.name}</h3>
-                      <p className="text-slate-500 text-[11px] font-medium">{proj.client}</p>
+                      {proj.code && <p className="text-sky-700 text-[11px] font-bold font-mono">{proj.code}</p>}
                     </div>
 
                     {/* Hours */}

@@ -32,7 +32,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   onShowToast,
 }) => {
   const safeProjects = projects || [];
-  const assignedProjects = safeProjects.filter((p) => p.assignedUserIds?.includes(currentUser.id));
+  const assignedProjects = safeProjects.filter((p) => p.assignedUserIds?.includes(currentUser.id) && p.isActive !== false && p.is_active !== false);
   const [projectId, setProjectId] = useState(assignedProjects[0]?.id || '');
   const [workDate, setWorkDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -102,53 +102,53 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="p-5 bg-white border border-slate-200 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
-              <Moon className="w-6 h-6 text-sky-600" />
-              <span>Weekend Work &amp; Overtime Timesheet</span>
-            </h2>
-            <p className="text-xs text-slate-500">
-              Submit your weekend work with task summaries. When your Project Manager approves, it automatically logs your timesheet!
-            </p>
-          </div>
-
-          <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold w-max flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-sky-600" />
-            <span>Auto-Timesheet on PM Approval</span>
-          </span>
-        </div>
-
-        <div className="p-3 bg-slate-50 border border-slate-200 flex items-start gap-3 text-xs text-slate-700">
-          <p className="leading-relaxed">
-            <strong className="text-slate-900 font-bold">Streamlined Flow:</strong> Fill in your weekend hours and task breakdown below. Once approved by your PM, you will <strong className="font-bold text-slate-900">not need to submit a separate timesheet</strong>—it will automatically populate in your timesheet history and logs.
+    <div className="space-y-6 text-slate-900 font-sans pb-12">
+      {/* Page Header (No Hero Banner) */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Weekend Work &amp; Overtime Requests
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Submit your weekend work with task summaries. Once your PM approves, it automatically populates your timesheet logs.
           </p>
         </div>
+
+        <span className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+          <Zap className="w-4 h-4 text-indigo-600" />
+          <span>Auto-Timesheet on PM Approval</span>
+        </span>
       </div>
 
       {/* Grid Form & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Form 2/3 */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-slate-200 shadow-md space-y-4 text-xs">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-200 flex items-center justify-between">
-            <span>Submit Weekend Work & Timesheet Details</span>
-            <span className="text-xs font-black text-blue-600">Total: {totalHours.toFixed(1)} hrs</span>
-          </h3>
+        <div className="lg:col-span-2 p-6 rounded-xl border border-slate-200/90 bg-white shadow-xs space-y-5 text-xs">
+          <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-indigo-50/80 via-violet-50/40 to-white rounded-2xl border border-indigo-100/80">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
+                <Moon className="w-4 h-4" />
+              </div>
+              <h3 className="font-black text-sm text-slate-900 tracking-wide uppercase">
+                Submit Weekend Work &amp; Timesheet Details
+              </h3>
+            </div>
+            <span className="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-3 py-1 rounded-full">
+              Total: {totalHours.toFixed(1)} hrs
+            </span>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Project Dropdown */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                   Assigned Project <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  className="w-full h-10 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3 text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors shadow-2xs"
                   required
                 >
                   {assignedProjects.length === 0 ? (
@@ -164,7 +164,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
               </div>
 
               {/* Work Date */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                   Weekend Date (Sat / Sun / Holiday) <span className="text-rose-500">*</span>
                 </label>
@@ -172,21 +172,21 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                   type="date"
                   value={workDate}
                   onChange={(e) => setWorkDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  className="w-full h-10 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3 text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none cursor-pointer transition-colors shadow-2xs"
                   required
                 />
               </div>
             </div>
 
             {/* Billable Section */}
-            <div className="p-4 rounded-xl bg-blue-50/40 border border-blue-100 space-y-3">
+            <div className="p-4 rounded-2xl bg-emerald-50/35 border-2 border-emerald-200/90 shadow-2xs space-y-3 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition-all">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold text-blue-900 text-xs flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-blue-600" />
+                <span className="font-black text-emerald-950 text-xs flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Billable Client Work</span>
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] font-bold text-slate-600">Hours:</label>
+                <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border-2 border-emerald-300 shadow-2xs">
+                  <label className="text-[11px] font-black text-emerald-900 uppercase tracking-wider">Hours:</label>
                   <input
                     type="number"
                     step="0.5"
@@ -195,8 +195,9 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                     value={billableHours === 0 ? '' : billableHours}
                     onChange={(e) => setBillableHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-20 bg-white border border-blue-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-16 h-7 text-center bg-emerald-50/80 hover:bg-white focus:bg-white border border-emerald-300 text-emerald-950 font-black rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs transition-colors"
                   />
+                  <span className="text-[11px] font-extrabold text-emerald-800">hrs</span>
                 </div>
               </div>
 
@@ -205,19 +206,19 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 value={billableSummary}
                 onChange={(e) => setBillableSummary(e.target.value)}
                 placeholder="Describe client deliverable tasks completed (features built, bugs fixed, deploy work)..."
-                className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                className="w-full bg-white/95 border border-emerald-200/90 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-xs transition-colors"
               />
             </div>
 
             {/* Non-Billable Section */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="p-4 rounded-2xl bg-slate-100/50 border border-slate-200/90 shadow-2xs space-y-3 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-400/15 transition-all">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold text-slate-700 text-xs flex items-center gap-1.5">
+                <span className="font-black text-slate-800 text-xs flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-slate-500" />
                   <span>Non-Billable Internal Work (Optional)</span>
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] font-bold text-slate-600">Hours:</label>
+                <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Hours:</label>
                   <input
                     type="number"
                     step="0.5"
@@ -226,8 +227,9 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                     value={nonBillableHours === 0 ? '' : nonBillableHours}
                     onChange={(e) => setNonBillableHours(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-20 bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-slate-500 focus:outline-none"
+                    className="w-16 h-7 text-center bg-slate-100 hover:bg-white focus:bg-white border border-slate-300 text-slate-900 font-extrabold rounded-md text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-2xs transition-colors"
                   />
+                  <span className="text-[11px] font-bold text-slate-600">hrs</span>
                 </div>
               </div>
 
@@ -236,12 +238,12 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 value={nonBillableSummary}
                 onChange={(e) => setNonBillableSummary(e.target.value)}
                 placeholder="Internal sync, documentation, tech research, or setup..."
-                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-slate-500 focus:outline-none text-xs"
+                className="w-full bg-white/95 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-slate-400 focus:border-slate-400 focus:outline-none text-xs transition-colors"
               />
             </div>
 
-            {/* General Reason / Objective (Optional override) */}
-            <div className="space-y-1">
+            {/* General Reason / Objective */}
+            <div className="space-y-1.5">
               <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
                 Overall Justification / Reason <span className="text-rose-500">*</span>
               </label>
@@ -250,7 +252,7 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
                 placeholder="e.g. Critical release deployment and performance tuning for milestone delivery"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-colors shadow-2xs"
                 required
               />
             </div>
@@ -259,9 +261,9 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
               <button
                 type="submit"
                 disabled={assignedProjects.length === 0}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-105 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer disabled:opacity-50"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Submit Weekend Work Request</span>
               </button>
             </div>
@@ -270,41 +272,69 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
 
         {/* Right Stats 1/3 */}
         <div className="space-y-4">
-          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-md space-y-3">
-            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-              Weekend Work Stats
-            </h4>
-
-            <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1">
-              <p className="text-[10px] font-bold text-slate-600">Approved Weekend Hours</p>
-              <p className="text-2xl font-black text-blue-600">{approvedHours.toFixed(1)} hrs</p>
-              <p className="text-[10px] text-slate-500">Automatically reflected in your timesheet</p>
+          {/* Approved Hours KPI */}
+          <div className="rounded-[22px] border border-amber-200/70 bg-gradient-to-br from-white via-amber-50/50 to-orange-50/70 p-5 shadow-[0_8px_25px_rgba(245,158,11,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-300 hover:shadow-[0_14px_35px_rgba(245,158,11,0.18)]">
+            <div className="flex items-start justify-between">
+              <div className="rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-2.5 text-white shadow-md shadow-amber-500/25">
+                <Clock className="h-5 w-5" />
+              </div>
+              <span className="rounded-full border border-amber-200/60 bg-gradient-to-r from-amber-500/15 to-orange-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-700">
+                Approved
+              </span>
             </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-              <p className="text-[10px] font-bold text-slate-600">Pending PM Approval</p>
-              <p className="text-2xl font-black text-slate-900">
-                {userRequests.filter((r) => r.status === 'pending').length} Requests
-              </p>
+            <p className="mt-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Approved Weekend Hours
+            </p>
+            <div className="mt-0.5 text-2xl font-black text-slate-950">
+              {approvedHours.toFixed(1)} hrs
             </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Automatically reflected in your timesheet
+            </p>
+          </div>
+
+          {/* Pending Requests KPI */}
+          <div className="rounded-[22px] border border-indigo-200/70 bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/70 p-5 shadow-[0_8px_25px_rgba(99,102,241,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-[0_14px_35px_rgba(99,102,241,0.18)]">
+            <div className="flex items-start justify-between">
+              <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 text-white shadow-md shadow-indigo-500/25">
+                <Moon className="h-5 w-5" />
+              </div>
+              <span className="rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-500/15 to-violet-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-700">
+                Pending
+              </span>
+            </div>
+            <p className="mt-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Pending PM Approval
+            </p>
+            <div className="mt-0.5 text-2xl font-black text-slate-950">
+              {userRequests.filter((r) => r.status === 'pending').length} Requests
+            </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Waiting for manager sign-off
+            </p>
           </div>
         </div>
       </div>
 
       {/* History Table */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-md space-y-4 text-xs">
-        <h3 className="text-base font-extrabold text-slate-900">Weekend Work History</h3>
+      <div className="p-6 rounded-[24px] border border-slate-200/90 bg-white/95 backdrop-blur-sm shadow-[0_10px_35px_rgba(30,50,90,0.055)] space-y-4 text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h3 className="text-base font-black text-slate-950">Weekend Work History</h3>
+          <span className="text-xs text-slate-500 font-extrabold">
+            Total Requests: {userRequests.length}
+          </span>
+        </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-slate-100">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Project</th>
-                <th className="py-2.5 px-3">Billable Work</th>
-                <th className="py-2.5 px-3 text-center">Billable / Non-Billable</th>
-                <th className="py-2.5 px-3 text-right">Total Hours</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
+              <tr className="border-b border-slate-100 text-slate-500 uppercase tracking-wider text-[9px] font-black bg-gradient-to-r from-slate-100/90 via-indigo-50/40 to-slate-100/90">
+                <th className="py-3 px-3">Date</th>
+                <th className="py-3 px-3">Project</th>
+                <th className="py-3 px-3">Billable Work</th>
+                <th className="py-3 px-3 text-center">Billable / Non-Billable</th>
+                <th className="py-3 px-3 text-right">Total Hours</th>
+                <th className="py-3 px-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -316,14 +346,16 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                 </tr>
               ) : (
                 userRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
+                  <tr key={req.id} className="hover:bg-indigo-50/30 transition-colors">
+                    <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">
                       {req.workDate}
                     </td>
-                    <td className="py-3 px-3 font-semibold text-blue-600 whitespace-nowrap">
-                      {req.projectName}
+                    <td className="py-3.5 px-3">
+                      <span className="w-fit rounded-full border border-indigo-200/60 bg-gradient-to-r from-indigo-50 to-violet-50 px-2.5 py-1 text-[9px] font-extrabold text-indigo-700 inline-block">
+                        {req.projectName}
+                      </span>
                     </td>
-                    <td className="py-3 px-3 text-slate-700 max-w-xs">
+                    <td className="py-3.5 px-3 text-slate-700 max-w-xs">
                       <p className="font-semibold text-slate-800 truncate" title={req.deliverableObjective}>
                         {req.deliverableObjective}
                       </p>
@@ -333,22 +365,22 @@ export const WeekendWork: React.FC<WeekendWorkProps> = ({
                         </p>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap font-medium text-slate-600">
-                      <span className="text-blue-700 font-bold">{req.billableHours || 0}h</span>
-                      <span className="text-slate-400"> / </span>
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap font-medium text-slate-600">
+                      <span className="text-emerald-700 font-black">{req.billableHours || 0}h</span>
+                      <span className="text-slate-300"> / </span>
                       <span className="text-slate-600">{req.nonBillableHours || 0}h</span>
                     </td>
-                    <td className="py-3 px-3 text-right font-black text-slate-900">
+                    <td className="py-3.5 px-3 text-right font-black text-slate-900">
                       {(req.plannedHours || (req.billableHours || 0) + (req.nonBillableHours || 0)).toFixed(1)}h
                     </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
                           req.status === 'approved'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'border-emerald-200/60 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700'
                             : req.status === 'pending'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            ? 'border-amber-200/60 bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-700'
+                            : 'border-rose-200/60 bg-gradient-to-r from-rose-500/15 to-pink-500/15 text-rose-700'
                         }`}
                       >
                         {req.status}

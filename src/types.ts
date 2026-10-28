@@ -81,6 +81,7 @@ export interface WorkingCalendarConfig {
     sunday: boolean;
   };
   timeZone: string;
+  timesheetLockHours?: number;
 }
 
 export interface SystemSettingsConfig {
@@ -205,6 +206,8 @@ export interface TimesheetEntry {
   status: 'submitted' | 'approved' | 'rejected' | 'pending';
   submittedAt?: string;
   rejectionReason?: string;
+  milestoneId?: number;
+  milestoneName?: string;
 }
 
 export interface LeaveBalance {

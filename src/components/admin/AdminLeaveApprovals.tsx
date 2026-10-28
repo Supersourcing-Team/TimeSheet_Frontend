@@ -222,12 +222,12 @@ export const AdminLeaveApprovals: React.FC<AdminLeaveApprovalsProps> = ({
       {/* Header Section */}
       <div className="p-5 bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200 mb-1">
-            <Palmtree className="w-3.5 h-3.5 text-sky-600" />
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-cyan-50 text-cyan-800 border border-cyan-200 mb-1">
+            <Palmtree className="w-3.5 h-3.5 text-cyan-600" />
             <span>Employee Time Off &amp; Leave Governance</span>
           </div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Palmtree className="w-6 h-6 text-sky-600" />
+            <Palmtree className="w-6 h-6 text-cyan-600" />
             <span>Employee Leave Approvals</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">

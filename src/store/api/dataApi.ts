@@ -31,6 +31,7 @@ export interface ProjectAssignment {
 // ---------------------------------------------------------------------------
 export interface TimesheetCreatePayload {
   project_assignment_id: number;
+  milestone_id?: number;
   timesheet_date: string;
   billable_hours: number;
   billable_work_summary?: string;
@@ -94,6 +95,8 @@ function mapBackendTimesheetToFrontend(t: any): TimesheetEntry {
     category: t.category ?? 'Development',
     status: (t.status ?? 'submitted') as TimesheetEntry['status'],
     submittedAt: t.created_at ?? '',
+    milestoneId: t.milestone_id ?? undefined,
+    milestoneName: t.milestone_name ?? undefined,
   };
 }
 
@@ -199,7 +202,7 @@ export const dataApi = apiSlice.injectEndpoints({
           id: String(p.id),
           name: p.project_name,
           code: `PRJ-${p.id}`,
-          client: p.client_name || 'Unknown',
+          client: p.client_name || '',
           pmName: p.project_manager_name || 'Unknown',
           pmAvatar: '',
           status: p.status || 'Milestone Planning',
@@ -253,7 +256,7 @@ export const dataApi = apiSlice.injectEndpoints({
       providesTags: ['Project'],
     }),
     createProject: builder.mutation<any, {
-      client_id: number; project_manager_id: number; project_name: string;
+      client_id?: number; project_manager_id: number; project_name: string;
       description?: string; budget?: number; start_date?: string; end_date?: string;
     }>({
       query: (body) => ({ url: '/projects', method: 'POST', body }),
@@ -318,6 +321,10 @@ export const dataApi = apiSlice.injectEndpoints({
     }),
     assignUserToProject: builder.mutation<any, { project_id: number; user_id: number }>({
       query: (body) => ({ url: '/project-assignments', method: 'POST', body }),
+      invalidatesTags: ['Project'],
+    }),
+    batchAssignUsersToProjects: builder.mutation<any, { project_ids: number[]; user_ids: number[]; role?: string }>({
+      query: (body) => ({ url: '/project-assignments/batch', method: 'POST', body }),
       invalidatesTags: ['Project'],
     }),
     removeUserFromProject: builder.mutation<void, { projectId: string; userId: string }>({
@@ -425,6 +432,7 @@ export const dataApi = apiSlice.injectEndpoints({
         billable_work_summary?: string;
         non_billable_work_summary?: string;
         timesheet_date?: string;
+        milestone_id?: number | null;
       }
     >({
       query: ({ id, ...body }) => ({
@@ -867,6 +875,7 @@ export const dataApi = apiSlice.injectEndpoints({
           partialDayMaxHours: data.partial_day_max_hours,
           workingDays: data.working_days,
           timeZone: data.time_zone,
+          timesheetLockHours: data.timesheet_lock_hours ?? 24,
         };
       },
       providesTags: ['WorkingCalendar' as any],
@@ -882,6 +891,7 @@ export const dataApi = apiSlice.injectEndpoints({
           partial_day_max_hours: body.partialDayMaxHours,
           working_days: body.workingDays,
           time_zone: body.timeZone,
+          timesheet_lock_hours: body.timesheetLockHours ?? 24,
         },
       }),
       invalidatesTags: ['WorkingCalendar' as any],
@@ -1048,6 +1058,7 @@ export const {
   // Assignments
   useGetMyProjectAssignmentsQuery,
   useAssignUserToProjectMutation,
+  useBatchAssignUsersToProjectsMutation,
   useRemoveUserFromProjectMutation,
   // Tools
   useGetToolsQuery,

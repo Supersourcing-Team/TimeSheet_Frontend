@@ -457,6 +457,7 @@ export default function App() {
         non_billable_hours: e.nonBillableHours,
         billable_work_summary: e.billableDescription || e.description,
         non_billable_work_summary: e.nonBillableDescription,
+        milestone_id: e.milestoneId,
       }));
       await createTimesheets(payload as any).unwrap();
       showToast('Success', 'Timesheets submitted', 'success');
@@ -483,6 +484,7 @@ export default function App() {
         billable_work_summary: updatedEntry.billableDescription || updatedEntry.description,
         non_billable_work_summary: updatedEntry.nonBillableDescription,
         timesheet_date: updatedEntry.date,
+        milestone_id: updatedEntry.milestoneId,
       }).unwrap();
       showToast('Success', 'Timesheet entry updated', 'success');
     } catch (e: any) {
@@ -606,7 +608,7 @@ export default function App() {
     if (!currentUser) return;
     try {
       const res = await createProjectMutation({
-        client_id: Number(newProj.client), // using client field to pass client_id
+        client_id: newProj.client ? Number(newProj.client) : undefined,
         project_manager_id: Number(currentUser.id),
         project_name: newProj.name,
         description: newProj.description,
@@ -804,6 +806,24 @@ export default function App() {
     if (portalMode === 'employee') setActiveEmployeeTab('submit_timesheet');
   }, [portalMode]);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('supertime_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleSidebar = React.useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('supertime_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
   // -----------------------------------------------------------------
   const pendingTimesheetsCount = React.useMemo(() => {
     return (timesheets || []).filter((t: any) => t.status === 'pending').length;
@@ -842,16 +862,18 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="h-screen bg-[#edf2f7] text-slate-800 flex flex-col font-sans selection:bg-primary selection:text-white overflow-hidden">
       <Header
         currentUser={currentUser}
         portalMode={portalMode}
         onTogglePortalMode={handleTogglePortalMode}
         pendingApprovalsCount={pendingApprovalsTotal}
         onLogout={handleLogout}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={handleToggleSidebar}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar
           portalMode={portalMode}
           activeEmployeeTab={activeEmployeeTab}
@@ -866,9 +888,15 @@ export default function App() {
           pendingLeavesCount={pendingLeavesCount}
           pendingWeekendCount={pendingWeekendCount}
           onQuickAddTimesheet={handleQuickAddTimesheet}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
         />
 
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full min-w-0">
+        <main className={`flex-1 p-3 sm:p-4 lg:px-6 lg:py-3 w-full min-w-0 bg-[#edf2f7] flex flex-col ${
+          portalMode === 'employee' && activeEmployeeTab === 'timesheets_history'
+            ? 'overflow-hidden'
+            : 'overflow-y-auto'
+        }`}>
           {portalMode === 'employee' && (
             <>
               {activeEmployeeTab === 'my_dashboard' && (

@@ -16,8 +16,10 @@ import {
   CalendarDays,
   Wrench,
   FileText,
-  Layers,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
+import { Sidebar3DItem } from './ui/Sidebar3DItem';
 
 export type EmployeeTab =
   | 'my_dashboard'
@@ -67,6 +69,8 @@ interface SidebarProps {
   pendingLeavesCount: number;
   pendingWeekendCount: number;
   onQuickAddTimesheet?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = React.memo(({
@@ -82,7 +86,43 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   pendingTimesheetsCount,
   pendingLeavesCount,
   pendingWeekendCount,
+  isCollapsed: isCollapsedProp,
+  onToggleCollapse,
 }) => {
+  const [internalCollapsed, setInternalCollapsed] = React.useState<boolean>(() => {
+    try {
+      return localStorage.getItem('supertime_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const isCollapsed = isCollapsedProp !== undefined ? isCollapsedProp : internalCollapsed;
+
+  const toggleSidebar = React.useCallback(() => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      setInternalCollapsed((prev) => {
+        const next = !prev;
+        try {
+          localStorage.setItem('supertime_sidebar_collapsed', String(next));
+        } catch {}
+        return next;
+      });
+    }
+  }, [onToggleCollapse]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleSidebar]);
   const employeeNavItems: Array<{
     id: EmployeeTab;
     label: string;
@@ -183,43 +223,43 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     desc: string;
     badge?: string | number;
   }> = [
-    {
-      id: 'ac_dashboard',
-      label: 'Portfolio Dashboard',
-      icon: LayoutDashboard,
-      desc: 'High-Level KPIs & Trends',
-    },
-    {
-      id: 'project_financials',
-      label: 'Project Financials',
-      icon: DollarSign,
-      desc: 'Milestones & Budgets',
-    },
-    {
-      id: 'employee_utilization',
-      label: 'Resource Utilization',
-      icon: Users,
-      desc: 'Capacity & Labor Cost',
-    },
-    {
-      id: 'budget_vs_actual',
-      label: 'Budget vs Actual',
-      icon: TrendingUp,
-      desc: 'Variance & Burn Rates',
-    },
-    {
-      id: 'tool_utilization',
-      label: 'Tool Utilization',
-      icon: Wrench,
-      desc: 'SaaS & Cloud Spend',
-    },
-    {
-      id: 'ac_reports',
-      label: 'Financial Reports',
-      icon: FileText,
-      desc: 'P&L, Billing Exports',
-    },
-  ];
+      {
+        id: 'ac_dashboard',
+        label: 'Portfolio Dashboard',
+        icon: LayoutDashboard,
+        desc: 'High-Level KPIs & Trends',
+      },
+      {
+        id: 'project_financials',
+        label: 'Project Financials',
+        icon: DollarSign,
+        desc: 'Milestones & Budgets',
+      },
+      {
+        id: 'employee_utilization',
+        label: 'Resource Utilization',
+        icon: Users,
+        desc: 'Capacity & Labor Cost',
+      },
+      {
+        id: 'budget_vs_actual',
+        label: 'Budget vs Actual',
+        icon: TrendingUp,
+        desc: 'Variance & Burn Rates',
+      },
+      {
+        id: 'tool_utilization',
+        label: 'Tool Utilization',
+        icon: Wrench,
+        desc: 'SaaS & Cloud Spend',
+      },
+      {
+        id: 'ac_reports',
+        label: 'Financial Reports',
+        icon: FileText,
+        desc: 'P&L, Billing Exports',
+      },
+    ];
 
   const adminNavItems: Array<{
     id: AdminTab;
@@ -267,246 +307,148 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
-      {/* Mode Indicator Banner */}
-      <div className="p-3 border-b border-slate-200 bg-white">
-        <div className="p-2.5 bg-slate-50 border border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 bg-sky-600 text-white font-bold shrink-0">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 truncate">
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
-                Active Workspace
-              </div>
-              <div className="text-xs font-bold text-slate-800 capitalize leading-tight truncate">
-                {portalMode === 'ac_manager' ? 'Account Manager' : portalMode === 'pm' ? 'Project Manager' : portalMode}
-              </div>
-            </div>
-          </div>
-
-          <span
-            className="w-2 h-2 bg-emerald-500 shrink-0 ml-2"
-            title="Active Workspace"
-          />
-        </div>
-      </div>
-
+    <aside
+      className={`sticky top-16 h-[calc(100vh-4rem)] ${
+        isCollapsed ? 'w-20' : 'w-64'
+      } transition-[width] duration-300 ease-in-out bg-white/95 backdrop-blur-xl border-r border-slate-200/90 text-slate-700 flex flex-col shrink-0 self-start shadow-[4px_0_24px_rgba(99,102,241,0.03)] z-20 select-none relative group/sidebar`}
+    >
       {/* Navigation Links */}
-      <div className="p-3 space-y-1 flex-1 overflow-y-auto">
+      <div className={`space-y-1 flex-1 ${isCollapsed ? 'px-2 py-3 overflow-visible' : 'p-3 overflow-y-auto overflow-x-hidden'}`}>
         {portalMode === 'employee' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Employee Navigation
-            </div>
-            {employeeNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeEmployeeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectEmployeeTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {isCollapsed ? (
+              <div className="h-5 my-1 flex items-center justify-center" title="Employee Navigation">
+                <div className="w-6 h-0.5 rounded-full bg-slate-200" />
+              </div>
+            ) : (
+              <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wider truncate">
+                Employee Navigation
+              </div>
+            )}
+            {employeeNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeEmployeeTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-xs shadow-orange-500/25"
+                onClick={() => onSelectEmployeeTab(item.id)}
+                isCollapsed={isCollapsed}
+              />
+            ))}
           </div>
         ) : portalMode === 'pm' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Project Manager
-            </div>
-            {pmNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activePmTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {isCollapsed ? (
+              <div className="h-5 my-1 flex items-center justify-center" title="Project Manager">
+                <div className="w-6 h-0.5 rounded-full bg-slate-200" />
+              </div>
+            ) : (
+              <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                Project Manager
+              </div>
+            )}
+            {pmNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activePmTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-amber-500 text-slate-900"
+                onClick={() => onSelectPmTab && onSelectPmTab(item.id)}
+                isCollapsed={isCollapsed}
+              />
+            ))}
           </div>
         ) : portalMode === 'ac_manager' ? (
           <div>
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Account Manager
-            </div>
-            {acNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeAcTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group mb-0.5 cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-sky-500 text-white shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {isCollapsed ? (
+              <div className="h-5 my-1 flex items-center justify-center" title="Account Manager">
+                <div className="w-6 h-0.5 rounded-full bg-slate-200" />
+              </div>
+            ) : (
+              <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                Account Manager
+              </div>
+            )}
+            {acNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeAcTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-sky-500 text-white"
+                onClick={() => onSelectAcTab && onSelectAcTab(item.id)}
+                isCollapsed={isCollapsed}
+              />
+            ))}
           </div>
         ) : (
           <div>
-            <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Management &amp; Admin
-            </div>
-            {adminNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeAdminTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={isActive ? 'true' : 'false'}
-                  onClick={() => onSelectAdminTab(item.id)}
-                  className={`w-full flex items-center justify-between p-2.5 text-left transition-all group cursor-pointer ${
-                    isActive
-                      ? 'active-nav-item font-bold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-bold leading-tight truncate">
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isActive ? 'text-white/90 font-medium' : 'text-slate-400 font-normal'
-                        }`}
-                      >
-                        {item.desc}
-                      </div>
-                    </div>
-                  </div>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-rose-500 text-white shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {isCollapsed ? (
+              <div className="h-5 my-1 flex items-center justify-center" title="Management & Admin">
+                <div className="w-6 h-0.5 rounded-full bg-slate-200" />
+              </div>
+            ) : (
+              <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                Management &amp; Admin
+              </div>
+            )}
+            {adminNavItems.map((item) => (
+              <Sidebar3DItem
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                desc={item.desc}
+                icon={item.icon}
+                isActive={activeAdminTab === item.id}
+                badge={item.badge}
+                badgeColorClass="bg-rose-500 text-white"
+                onClick={() => onSelectAdminTab(item.id)}
+                isCollapsed={isCollapsed}
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Sidebar Footer */}
-      <div className="p-3 border-t border-slate-200 bg-white space-y-2"></div>
+      {/* Sidebar Footer with Collapse/Expand Action */}
+      <div className="p-3 border-t border-slate-200/90 bg-white/80 backdrop-blur-xs flex items-center justify-between">
+        {!isCollapsed ? (
+          <div className="flex items-center justify-between w-full text-[11px] text-slate-400 font-semibold px-1">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">SuperTime</span>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/80 transition-colors cursor-pointer text-xs font-semibold"
+              title="Collapse sidebar (Ctrl+B)"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+              <span>Collapse</span>
+            </button>
+          </div>
+        ) : (
+          <div className="w-full flex justify-center">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/80 transition-colors cursor-pointer"
+              title="Expand sidebar (Ctrl+B)"
+            >
+              <PanelLeftOpen className="w-4.5 h-4.5" />
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 });
