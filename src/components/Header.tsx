@@ -182,70 +182,68 @@ export const Header: React.FC<HeaderProps> = React.memo(({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 lg:px-6 flex items-center justify-between gap-4 shadow-2xs">
-      {/* Left Branding & Sidebar Slider Toggle */}
-      <div className="flex items-center gap-3">
-        {/* Brand Logo & Title */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 shadow-md shadow-blue-500/25 text-white font-extrabold text-xl">
-            <span className="text-2xl tracking-tight text-white mb-0.5">
-              𝖊𝖇
-            </span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-lg tracking-tight text-slate-900">
-                SuperTime
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-semibold hidden sm:block">
-              {portalMode === 'employee'
-                ? 'Employee workspace'
-                : portalMode === 'pm'
-                ? 'Project Manager workspace'
-                : portalMode === 'ac_manager'
-                ? 'Account Manager workspace'
-                : 'Admin workspace'}
-            </p>
-          </div>
-        </div>
+      <header className="sticky top-0 z-30 h-[52px] bg-white/90 backdrop-blur-md border-b border-slate-200/90 text-slate-800 px-4 sm:px-6 flex items-center justify-between gap-4 shadow-2xs">
+        {/* Left Branding & Sidebar Slider Toggle */}
+          <div className="flex items-center gap-3 sm:gap-3.5">
+            {/* Brand Logo & Title */}
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="flex items-center justify-center w-8.5 h-8.5 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-600 shadow-xs text-white font-extrabold text-lg shrink-0">
+                      <span className="tracking-tight text-white mb-0.5">
+                        𝖊𝖇
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                          <span className="font-black text-[15px] sm:text-base tracking-tight text-slate-900 leading-none">
+                            SuperTime
+                          </span>
+                      </div>
+                        <p className="text-[10px] sm:text-[10.5px] text-slate-500 font-medium leading-none mt-1 hidden sm:block">
+                          {portalMode === 'employee'
+                            ? 'Employee workspace'
+                            : portalMode === 'pm'
+                              ? 'Project Manager workspace'
+                              : portalMode === 'ac_manager'
+                                ? 'Account Manager workspace'
+                                : 'Admin workspace'}
+                        </p>
+                    </div>
+                  </div>
 
-        {/* Separating Line */}
-        <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
+                  {/* Separating Line */}
+                  <div className="h-5 w-px bg-slate-200 mx-3 sm:mx-4.5 hidden sm:block" />
 
-        {/* Sidebar Toggler Button - upside after the logo */}
-        {onToggleSidebar && (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer ${
-              isSidebarCollapsed
-                ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60'
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
-            }`}
+                  {/* Sidebar Toggler Button - upside after the logo */}
+                  {onToggleSidebar && (
+                    <button
+                      type="button"
+                      onClick={onToggleSidebar}
+                            ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
+                          }`}
             title={isSidebarCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
             aria-label="Toggle sidebar"
           >
-            <PanelLeft className="w-5 h-5" />
+            <PanelLeft className="w-4.5 h-4.5" />
           </button>
         )}
       </div>
 
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 sm:gap-3.5">
 
         {/* Notifications Dropdown */}
         <div className="relative" ref={notifRef}>
           <button
             type="button"
             onClick={handleOpenNotifications}
-            className="relative p-2 rounded-xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200/90 text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-2xs"
+            className="relative w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center rounded-xl bg-slate-50/90 hover:bg-slate-100 border border-slate-200/90 text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-2xs cursor-pointer"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-sky-600 text-white text-[9px] font-bold rounded-full leading-none z-10 shadow-xs animate-pulse">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 flex items-center justify-center bg-indigo-600 text-white text-[9px] font-black rounded-full leading-none z-10 shadow-xs animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -274,88 +272,88 @@ export const Header: React.FC<HeaderProps> = React.memo(({
                     className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${notifFetching ? 'animate-spin' : ''}`} />
-                  </button>
-                  {/* Mark all read */}
-                  {unreadCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleMarkAllRead}
-                      title="Mark all as read"
-                      className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                    >
-                      <CheckCheck className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="overflow-y-auto max-h-[380px] divide-y divide-slate-100">
-                {notifLoading ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <p className="text-xs font-medium">Loading notifications…</p>
-                  </div>
-                ) : notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
-                    <Bell className="w-8 h-8 opacity-30" />
-                    <p className="text-xs font-semibold">You're all caught up!</p>
-                    <p className="text-[11px] text-slate-400 text-center px-6">
-                      No notifications to show. We'll alert you when something needs your attention.
-                    </p>
-                  </div>
-                ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${!n.is_read ? 'bg-blue-50/30' : ''
-                        }`}
-                    >
-                      {/* Icon */}
-                      <div className={`mt-0.5 p-1.5 rounded-lg border ${notificationBg(n.type, n.is_read)}`}>
-                        {notificationIcon(n.type)}
-                      </div>
-
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <p className={`text-xs font-bold leading-tight truncate ${n.is_read ? 'text-slate-600' : 'text-slate-900'}`}>
-                            {n.title}
-                          </p>
-                          <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap flex-shrink-0">
-                            {timeAgo(n.timestamp)}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">
-                          {n.description}
-                        </p>
-                      </div>
-
-                      {/* Unread dot */}
-                      {!n.is_read && (
-                        <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Footer */}
-              {notifications.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/80 flex justify-between items-center">
-                  <p className="text-[10px] text-slate-400 font-medium">
-                    Showing {notifications.length} recent notification{notifications.length !== 1 ? 's' : ''}
-                  </p>
+                </button>
+                {/* Mark all read */}
+                {unreadCount > 0 && (
                   <button
                     type="button"
-                    onClick={handleClearAll}
-                    className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded transition-colors"
+                    onClick={handleMarkAllRead}
+                    title="Mark all as read"
+                    className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                   >
-                    Clear All
+                    <CheckCheck className="w-3.5 h-3.5" />
                   </button>
+                )}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto max-h-[380px] divide-y divide-slate-100">
+              {notifLoading ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <p className="text-xs font-medium">Loading notifications…</p>
                 </div>
+              ) : notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
+                  <Bell className="w-8 h-8 opacity-30" />
+                  <p className="text-xs font-semibold">You're all caught up!</p>
+                  <p className="text-[11px] text-slate-400 text-center px-6">
+                    No notifications to show. We'll alert you when something needs your attention.
+                  </p>
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/80 cursor-default ${!n.is_read ? 'bg-blue-50/30' : ''
+                      }`}
+                  >
+                    {/* Icon */}
+                    <div className={`mt-0.5 p-1.5 rounded-lg border ${notificationBg(n.type, n.is_read)}`}>
+                      {notificationIcon(n.type)}
+                    </div>
+
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <p className={`text-xs font-bold leading-tight truncate ${n.is_read ? 'text-slate-600' : 'text-slate-900'}`}>
+                          {n.title}
+                        </p>
+                        <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap flex-shrink-0">
+                          {timeAgo(n.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">
+                        {n.description}
+                      </p>
+                    </div>
+
+                    {/* Unread dot */}
+                    {!n.is_read && (
+                      <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                    )}
+                  </div>
+                ))
               )}
             </div>
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                <p className="text-[10px] text-slate-400 font-medium">
+                  Showing {notifications.length} recent notification{notifications.length !== 1 ? 's' : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
           )}
         </div>
 
@@ -367,20 +365,20 @@ export const Header: React.FC<HeaderProps> = React.memo(({
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
             }}
-            className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+            className="flex items-center gap-2.5 px-2.5 py-1 rounded-xl bg-slate-50/90 hover:bg-slate-100 border border-slate-200/90 transition-colors shadow-2xs cursor-pointer"
           >
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-7 h-7 rounded-lg object-cover ring-2 ring-blue-500/20"
+              className="w-7 h-7 rounded-lg object-cover ring-2 ring-indigo-500/20 shrink-0"
             />
             <div className="text-left hidden lg:block">
               <p className="text-xs font-bold text-slate-900 leading-none">
                 {currentUser.name}
               </p>
-              <p className="text-[10px] text-blue-600 mt-0.5 leading-none font-extrabold capitalize">
-                {currentUser.role.replace('_', ' ')}
-              </p>
+                <p className="text-[10px] text-indigo-600 mt-0.5 leading-none font-extrabold capitalize">
+                  {currentUser.role.replace('_', ' ')}
+                </p>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
           </button>
